@@ -1,1 +1,16 @@
-
+{
+  "expo": {
+    "name": "NMIX",
+    "slug": "nmix",
+    "version": "1.0.0",
+    "orientation": "default",
+    "userInterfaceStyle": "automatic",
+    "android": {
+      "package": "com.lxzrvi.nmix",
+      "versionCode": 1
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
