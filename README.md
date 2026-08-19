@@ -38,7 +38,7 @@ A simple number utility app built with React Native + Expo.
 
 ## 👨‍💻 Developer
 
-**Alex Ravi**
+**lxzrvi**
 
 Made with ❤️ using React Native
 
