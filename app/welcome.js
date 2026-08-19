@@ -35,24 +35,15 @@ import useNMixSettings
 import MotionPressable
   from '../src/MotionPressable';
 
-import {
-  GalleryIcon
-} from '../src/icons';
-
 const WELCOME_KEY =
   'nmix-welcome-seen';
 
 const descriptions = [
   'NMIX brings useful number tools together in one simple and responsive interface.',
-
   'Calculate, count, generate random values and work with time from one place.',
-
   'NMIX keeps everyday number tools quick, clean and easy to reach.',
-
   'Use the calculator, timer, local clock, stopwatch and counters without switching between apps.',
-
   'Themes, dark mode and fonts let you personalize how NMIX looks and feels.',
-
   'NMIX is built as a native Android experience with smooth interaction and offline-ready tools.'
 ];
 
@@ -71,20 +62,17 @@ export default function Welcome() {
     setDescriptionIndex
   ] = useState(0);
 
-  const entrance =
-    useRef(
-      new Animated.Value(0)
-    ).current;
+  const entrance = useRef(
+    new Animated.Value(0)
+  ).current;
 
-  const glowA =
-    useRef(
-      new Animated.Value(0)
-    ).current;
+  const glowOne = useRef(
+    new Animated.Value(0)
+  ).current;
 
-  const glowB =
-    useRef(
-      new Animated.Value(0)
-    ).current;
+  const glowTwo = useRef(
+    new Animated.Value(0)
+  ).current;
 
   const descriptionMotion =
     useRef(
@@ -96,7 +84,6 @@ export default function Welcome() {
       entrance,
       {
         toValue: 1,
-
         duration: 900,
 
         easing:
@@ -107,19 +94,17 @@ export default function Welcome() {
             1
           ),
 
-        useNativeDriver:
-          true
+        useNativeDriver: true
       }
     ).start();
 
-    const firstGlow =
+    const first =
       Animated.loop(
         Animated.sequence([
           Animated.timing(
-            glowA,
+            glowOne,
             {
               toValue: 1,
-
               duration: 10500,
 
               easing:
@@ -127,16 +112,14 @@ export default function Welcome() {
                   Easing.ease
                 ),
 
-              useNativeDriver:
-                true
+              useNativeDriver: true
             }
           ),
 
           Animated.timing(
-            glowA,
+            glowOne,
             {
               toValue: 0,
-
               duration: 10500,
 
               easing:
@@ -144,21 +127,19 @@ export default function Welcome() {
                   Easing.ease
                 ),
 
-              useNativeDriver:
-                true
+              useNativeDriver: true
             }
           )
         ])
       );
 
-    const secondGlow =
+    const second =
       Animated.loop(
         Animated.sequence([
           Animated.timing(
-            glowB,
+            glowTwo,
             {
               toValue: 1,
-
               duration: 13000,
 
               easing:
@@ -166,16 +147,14 @@ export default function Welcome() {
                   Easing.ease
                 ),
 
-              useNativeDriver:
-                true
+              useNativeDriver: true
             }
           ),
 
           Animated.timing(
-            glowB,
+            glowTwo,
             {
               toValue: 0,
-
               duration: 13000,
 
               easing:
@@ -183,15 +162,14 @@ export default function Welcome() {
                   Easing.ease
                 ),
 
-              useNativeDriver:
-                true
+              useNativeDriver: true
             }
           )
         ])
       );
 
-    firstGlow.start();
-    secondGlow.start();
+    first.start();
+    second.start();
 
     const timer =
       setInterval(() => {
@@ -199,22 +177,14 @@ export default function Welcome() {
           descriptionMotion,
           {
             toValue: 0,
-
             duration: 260,
-
-            easing:
-              Easing.out(
-                Easing.ease
-              ),
-
-            useNativeDriver:
-              true
+            useNativeDriver: true
           }
         ).start(() => {
           setDescriptionIndex(
-            current =>
+            value =>
               (
-                current + 1
+                value + 1
               ) %
               descriptions.length
           );
@@ -226,7 +196,6 @@ export default function Welcome() {
             descriptionMotion,
             {
               toValue: 1,
-
               duration: 650,
 
               easing:
@@ -237,28 +206,25 @@ export default function Welcome() {
                   1
                 ),
 
-              useNativeDriver:
-                true
+              useNativeDriver: true
             }
           ).start();
         });
       }, 6800);
 
     return () => {
-      firstGlow.stop();
-      secondGlow.stop();
-
+      first.stop();
+      second.stop();
       clearInterval(timer);
     };
   }, []);
 
   async function enterApp() {
     try {
-      await AsyncStorage
-        .setItem(
-          WELCOME_KEY,
-          '1'
-        );
+      await AsyncStorage.setItem(
+        WELCOME_KEY,
+        '1'
+      );
     } catch {}
 
     router.replace(
@@ -278,9 +244,11 @@ export default function Welcome() {
   }
 
   function openGithub() {
-    Linking.openURL(
-      'https://github.com/lxzrvi'
-    ).catch(() => {});
+    Linking
+      .openURL(
+        'https://github.com/lxzrvi'
+      )
+      .catch(() => {});
   }
 
   if (
@@ -291,7 +259,6 @@ export default function Welcome() {
       <View
         style={{
           flex: 1,
-
           backgroundColor:
             '#07110f'
         }}
@@ -312,32 +279,28 @@ export default function Welcome() {
       ? '#aab6b1'
       : '#66706c';
 
-  const actionBackground =
+  const buttonBackground =
     dark
-      ? '#101513'
+      ? '#0d1210'
       : '#ffffff';
 
   const cardBackground =
     dark
-      ? 'rgba(16,23,20,.82)'
-      : 'rgba(240,248,245,.84)';
+      ? 'rgba(15,22,19,.82)'
+      : 'rgba(241,248,245,.88)';
 
   const innerBackground =
     dark
-      ? 'rgba(255,255,255,.055)'
-      : 'rgba(255,255,255,.52)';
+      ? 'rgba(255,255,255,.052)'
+      : 'rgba(255,255,255,.50)';
 
   return (
     <LinearGradient
       colors={[
         '#020807',
-
         theme.topOne,
-
         theme.topTwo,
-
         theme.topThree,
-
         '#020807'
       ]}
       locations={[
@@ -355,9 +318,7 @@ export default function Welcome() {
         x: 1,
         y: 1
       }}
-      style={
-        styles.page
-      }
+      style={styles.page}
     >
       <View
         pointerEvents="none"
@@ -367,22 +328,21 @@ export default function Welcome() {
       >
         <Animated.View
           style={[
-            styles.glowOne,
-
+            styles.glowA,
             {
               opacity:
-                glowA.interpolate({
+                glowOne.interpolate({
                   inputRange:
                     [0, 1],
 
                   outputRange:
-                    [0.32, 0.82]
+                    [0.30, 0.80]
                 }),
 
               transform: [
                 {
                   translateX:
-                    glowA.interpolate({
+                    glowOne.interpolate({
                       inputRange:
                         [0, 1],
 
@@ -393,7 +353,7 @@ export default function Welcome() {
 
                 {
                   translateY:
-                    glowA.interpolate({
+                    glowOne.interpolate({
                       inputRange:
                         [0, 1],
 
@@ -404,7 +364,7 @@ export default function Welcome() {
 
                 {
                   scale:
-                    glowA.interpolate({
+                    glowOne.interpolate({
                       inputRange:
                         [0, 1],
 
@@ -419,13 +379,9 @@ export default function Welcome() {
           <LinearGradient
             colors={[
               'transparent',
-
-              `${theme.accentLight}06`,
-
-              `${theme.accentLight}2D`,
-
-              `${theme.accentLight}08`,
-
+              `${theme.accentLight}05`,
+              `${theme.accentLight}2B`,
+              `${theme.accentLight}07`,
               'transparent'
             ]}
             style={
@@ -436,22 +392,21 @@ export default function Welcome() {
 
         <Animated.View
           style={[
-            styles.glowTwo,
-
+            styles.glowB,
             {
               opacity:
-                glowB.interpolate({
+                glowTwo.interpolate({
                   inputRange:
                     [0, 1],
 
                   outputRange:
-                    [0.62, 0.2]
+                    [0.58, 0.18]
                 }),
 
               transform: [
                 {
                   translateX:
-                    glowB.interpolate({
+                    glowTwo.interpolate({
                       inputRange:
                         [0, 1],
 
@@ -462,7 +417,7 @@ export default function Welcome() {
 
                 {
                   translateY:
-                    glowB.interpolate({
+                    glowTwo.interpolate({
                       inputRange:
                         [0, 1],
 
@@ -477,13 +432,9 @@ export default function Welcome() {
           <LinearGradient
             colors={[
               'transparent',
-
+              `${accent}04`,
+              `${accent}25`,
               `${accent}05`,
-
-              `${accent}28`,
-
-              `${accent}06`,
-
               'transparent'
             ]}
             style={
@@ -496,7 +447,6 @@ export default function Welcome() {
       <Animated.View
         style={[
           styles.content,
-
           {
             opacity:
               entrance,
@@ -509,22 +459,17 @@ export default function Welcome() {
                       [0, 1],
 
                     outputRange:
-                      [26, 0]
+                      [25, 0]
                   })
               }
             ]
           }
         ]}
       >
-        <View
-          style={
-            styles.brand
-          }
-        >
+        <View style={styles.brand}>
           <Text
             style={[
               styles.subtitle,
-
               {
                 color:
                   theme.accentLight
@@ -534,59 +479,37 @@ export default function Welcome() {
             EVERYTHING WITH NUMBERS
           </Text>
 
-          <View
-            style={
-              styles.logoFix
-            }
-          >
+          <View style={styles.logoFix}>
             <Text
               numberOfLines={1}
-              style={
-                styles.logo
-              }
+              style={styles.logo}
             >
               NMIX
             </Text>
           </View>
         </View>
 
-        <View
-          style={
-            styles.actions
-          }
-        >
+        <View style={styles.actions}>
           <MotionPressable
-            onPress={
-              enterApp
-            }
+            onPress={enterApp}
             style={[
               styles.actionButton,
-
               {
                 backgroundColor:
-                  actionBackground,
+                  buttonBackground,
 
                 borderColor:
                   dark
-                    ? 'rgba(255,255,255,.13)'
-                    : 'rgba(255,255,255,.82)'
+                    ? 'rgba(255,255,255,.10)'
+                    : 'rgba(0,0,0,.045)'
               }
             ]}
           >
-            <View
-              pointerEvents="none"
-              style={
-                styles.actionHighlight
-              }
-            />
-
             <Text
               style={[
                 styles.actionText,
-
                 {
-                  color:
-                    accent
+                  color: accent
                 }
               ]}
             >
@@ -595,37 +518,25 @@ export default function Welcome() {
           </MotionPressable>
 
           <MotionPressable
-            onPress={
-              shareApp
-            }
+            onPress={shareApp}
             style={[
               styles.actionButton,
-
               {
                 backgroundColor:
-                  actionBackground,
+                  buttonBackground,
 
                 borderColor:
                   dark
-                    ? 'rgba(255,255,255,.13)'
-                    : 'rgba(255,255,255,.82)'
+                    ? 'rgba(255,255,255,.10)'
+                    : 'rgba(0,0,0,.045)'
               }
             ]}
           >
-            <View
-              pointerEvents="none"
-              style={
-                styles.actionHighlight
-              }
-            />
-
             <Text
               style={[
                 styles.actionText,
-
                 {
-                  color:
-                    accent
+                  color: accent
                 }
               ]}
             >
@@ -637,26 +548,18 @@ export default function Welcome() {
         <View
           style={[
             styles.infoCard,
-
             {
               backgroundColor:
-                cardBackground,
-
-              borderColor:
-                dark
-                  ? 'rgba(255,255,255,.13)'
-                  : 'rgba(255,255,255,.48)'
+                cardBackground
             }
           ]}
         >
           <LinearGradient
             pointerEvents="none"
             colors={[
-              'rgba(255,255,255,.12)',
-
-              'rgba(255,255,255,.025)',
-
-              `${accent}08`
+              'rgba(255,255,255,.09)',
+              'rgba(255,255,255,.015)',
+              `${accent}06`
             ]}
             style={
               StyleSheet.absoluteFill
@@ -665,34 +568,27 @@ export default function Welcome() {
 
           <Text
             style={[
-              styles.infoTitle,
-
+              styles.heading,
               {
-                color:
-                  text
+                color: text
               }
             ]}
           >
             More Info
           </Text>
 
-          <View
-            style={
-              styles.infoLayout
-            }
-          >
+          <View style={styles.columns}>
             <View
               style={[
-                styles.appCard,
-
+                styles.appBox,
                 {
                   backgroundColor:
                     innerBackground,
 
                   borderColor:
                     dark
-                      ? 'rgba(255,255,255,.08)'
-                      : 'rgba(0,0,0,.07)'
+                      ? 'rgba(255,255,255,.07)'
+                      : 'rgba(0,0,0,.055)'
                 }
               ]}
             >
@@ -705,7 +601,6 @@ export default function Welcome() {
                   numberOfLines={1}
                   style={[
                     styles.appName,
-
                     {
                       color:
                         accent
@@ -719,10 +614,8 @@ export default function Welcome() {
               <Animated.Text
                 style={[
                   styles.description,
-
                   {
-                    color:
-                      muted,
+                    color: muted,
 
                     opacity:
                       descriptionMotion,
@@ -730,13 +623,14 @@ export default function Welcome() {
                     transform: [
                       {
                         translateY:
-                          descriptionMotion.interpolate({
-                            inputRange:
-                              [0, 1],
+                          descriptionMotion
+                            .interpolate({
+                              inputRange:
+                                [0, 1],
 
-                            outputRange:
-                              [13, 0]
-                          })
+                              outputRange:
+                                [13, 0]
+                            })
                       }
                     ]
                   }
@@ -752,51 +646,39 @@ export default function Welcome() {
 
             <View
               style={[
-                styles.detailsCard,
-
+                styles.detailsBox,
                 {
                   backgroundColor:
                     innerBackground,
 
                   borderColor:
                     dark
-                      ? 'rgba(255,255,255,.08)'
-                      : 'rgba(0,0,0,.07)'
+                      ? 'rgba(255,255,255,.07)'
+                      : 'rgba(0,0,0,.055)'
                 }
               ]}
             >
               <Text
                 style={[
-                  styles.detailsTitle,
-
+                  styles.detailsHeading,
                   {
-                    color:
-                      text
+                    color: text
                   }
                 ]}
               >
                 App Details
               </Text>
 
-              <View
-                style={
-                  styles.chips
-                }
-              >
+              <View style={styles.chips}>
                 {[
                   'React Native',
                   'Expo',
                   'JavaScript'
                 ].map(item => (
-                  <InfoChip
+                  <Chip
                     key={item}
-
                     text={item}
-
-                    accent={
-                      accent
-                    }
-
+                    accent={accent}
                     color={
                       dark
                         ? theme.accentLight
@@ -808,36 +690,25 @@ export default function Welcome() {
 
               <Text
                 style={[
-                  styles.builtTitle,
-
+                  styles.builtFor,
                   {
-                    color:
-                      muted
+                    color: muted
                   }
                 ]}
               >
                 Built For
               </Text>
 
-              <View
-                style={
-                  styles.chips
-                }
-              >
+              <View style={styles.chips}>
                 {[
                   'Android',
                   'Offline Tools',
                   'Native UI'
                 ].map(item => (
-                  <InfoChip
+                  <Chip
                     key={item}
-
                     text={item}
-
-                    accent={
-                      accent
-                    }
-
+                    accent={accent}
                     color={
                       dark
                         ? theme.accentLight
@@ -854,19 +725,13 @@ export default function Welcome() {
               openGithub
             }
             style={[
-              styles.githubButton,
-
+              styles.github,
               {
                 backgroundColor:
                   accent
               }
             ]}
           >
-            <GalleryIcon
-              size={15}
-              color="#ffffff"
-            />
-
             <Text
               style={
                 styles.githubText
@@ -878,14 +743,10 @@ export default function Welcome() {
         </View>
       </Animated.View>
 
-      <View
-        style={
-          styles.footer
-        }
-      >
+      <View style={styles.footer}>
         <Text
           style={
-            styles.footerText
+            styles.footerMain
           }
         >
           © {new Date().getFullYear()} Alex Ravi
@@ -903,7 +764,7 @@ export default function Welcome() {
   );
 }
 
-function InfoChip({
+function Chip({
   text,
   accent,
   color
@@ -912,20 +773,18 @@ function InfoChip({
     <View
       style={[
         styles.chip,
-
         {
           backgroundColor:
             `${accent}18`,
 
           borderColor:
-            `${accent}3E`
+            `${accent}38`
         }
       ]}
     >
       <Text
         style={[
           styles.chipText,
-
           {
             color
           }
@@ -941,393 +800,240 @@ const styles =
   StyleSheet.create({
     page: {
       flex: 1,
-      overflow:
-        'hidden'
+      overflow: 'hidden'
     },
 
-    glowOne: {
-      position:
-        'absolute',
-
+    glowA: {
+      position: 'absolute',
       width: 570,
-
       height: 570,
-
       left: -280,
-
       top: -270
     },
 
-    glowTwo: {
-      position:
-        'absolute',
-
+    glowB: {
+      position: 'absolute',
       width: 680,
-
       height: 680,
-
       right: -345,
-
       bottom: -325
     },
 
     glowFill: {
       flex: 1,
-
       borderRadius: 350
     },
 
     content: {
       flex: 1,
-
       paddingHorizontal: 16,
-
       paddingTop: 50,
-
       paddingBottom: 52,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
+      justifyContent: 'center',
+      alignItems: 'center'
     },
 
     brand: {
-      alignItems:
-        'center',
-
+      alignItems: 'center',
       marginBottom: 18
     },
 
     subtitle: {
       fontFamily:
         'Poppins-Bold',
-
       fontSize: 10,
-
       lineHeight: 15,
-
       letterSpacing: 2.8,
-
-      textAlign:
-        'center'
+      textAlign: 'center'
     },
 
     logoFix: {
       minWidth: 200,
-
       paddingHorizontal: 22,
-
       paddingVertical: 4,
-
-      overflow:
-        'visible',
-
-      alignItems:
-        'center'
+      overflow: 'visible',
+      alignItems: 'center'
     },
 
     logo: {
-      color:
-        '#ffffff',
-
+      color: '#fff',
       fontFamily:
         logoFont,
-
       fontSize: 46,
-
       lineHeight: 60,
-
       letterSpacing: 5,
-
-      textAlign:
-        'center',
-
+      textAlign: 'center',
       includeFontPadding:
-        false,
-
-      textShadowColor:
-        'rgba(0,0,0,.32)',
-
-      textShadowOffset: {
-        width: 0,
-        height: 7
-      },
-
-      textShadowRadius: 20
+        false
     },
 
     actions: {
       width: '72%',
-
       maxWidth: 280,
-
       gap: 10,
-
       marginBottom: 18
     },
 
     actionButton: {
-      position:
-        'relative',
-
       minHeight: 51,
-
-      overflow:
-        'hidden',
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center',
-
+      justifyContent: 'center',
+      alignItems: 'center',
       borderWidth: 1,
-
       borderRadius: 999,
-
-      elevation: 6
-    },
-
-    actionHighlight: {
-      position:
-        'absolute',
-
-      top: 1,
-
-      left: 20,
-
-      right: 20,
-
-      height: 1,
-
-      backgroundColor:
-        'rgba(255,255,255,.34)'
+      elevation: 5
     },
 
     actionText: {
       fontFamily:
         'Poppins-Bold',
-
-      fontSize: 14,
-
-      lineHeight: 20
-    },
-
-    infoCard: {
-      position:
-        'relative',
-
-      width: '100%',
-
-      maxWidth: 460,
-
-      minHeight: 205,
-
-      padding: 12,
-
-      paddingBottom: 55,
-
-      overflow:
-        'hidden',
-
-      borderWidth: 1,
-
-      borderRadius: 18,
-
-      elevation: 8
-    },
-
-    infoTitle: {
-      marginBottom: 10,
-
-      fontFamily:
-        'Poppins-Bold',
-
       fontSize: 14
     },
 
-    infoLayout: {
-      flexDirection:
-        'row',
-
-      gap: 9
+    /*
+     * No thick outer border.
+     */
+    infoCard: {
+      position: 'relative',
+      width: '100%',
+      maxWidth: 460,
+      minHeight: 210,
+      padding: 13,
+      paddingBottom: 58,
+      overflow: 'hidden',
+      borderRadius: 18,
+      elevation: 8
     },
 
-    appCard: {
+    heading: {
+      marginBottom: 11,
+      fontFamily:
+        'Poppins-Bold',
+      fontSize: 14
+    },
+
+    columns: {
+      flexDirection: 'row',
+      alignItems: 'stretch',
+      gap: 10
+    },
+
+    appBox: {
       flex: 1,
-
       minHeight: 132,
-
       padding: 11,
-
-      overflow:
-        'hidden',
-
+      overflow: 'hidden',
       borderWidth: 1,
-
       borderRadius: 12
     },
 
     appNameFix: {
       minWidth: 95,
-
       paddingRight: 10,
-
-      overflow:
-        'visible'
+      overflow: 'visible'
     },
 
     appName: {
       fontFamily:
         logoFont,
-
       fontSize: 16,
-
       lineHeight: 25,
-
       letterSpacing: 1,
-
       includeFontPadding:
         false
     },
 
     description: {
       marginTop: 6,
-
       fontFamily:
         'Poppins-Regular',
-
       fontSize: 10.5,
-
       lineHeight: 16
     },
 
-    detailsCard: {
+    detailsBox: {
       flex: 1,
-
       minHeight: 132,
-
       padding: 10,
-
       borderWidth: 1,
-
       borderRadius: 12
     },
 
-    detailsTitle: {
+    detailsHeading: {
       fontFamily:
         'Poppins-Bold',
-
       fontSize: 11.5
     },
 
-    builtTitle: {
+    builtFor: {
       marginTop: 10,
-
       fontFamily:
         'Poppins-Bold',
-
       fontSize: 9.5
     },
 
     chips: {
       marginTop: 7,
-
-      flexDirection:
-        'row',
-
-      flexWrap:
-        'wrap',
-
+      flexDirection: 'row',
+      flexWrap: 'wrap',
       gap: 5
     },
 
     chip: {
       paddingHorizontal: 7,
-
       paddingVertical: 4,
-
       borderWidth: 1,
-
       borderRadius: 999
     },
 
     chipText: {
       fontFamily:
         'Poppins-Bold',
-
       fontSize: 8
     },
 
-    githubButton: {
-      position:
-        'absolute',
-
-      right: 12,
-
-      bottom: 11,
-
+    /*
+     * Bottom-left as requested.
+     */
+    github: {
+      position: 'absolute',
+      left: 13,
+      bottom: 12,
+      minWidth: 76,
       minHeight: 34,
-
-      paddingHorizontal: 13,
-
-      flexDirection:
-        'row',
-
-      gap: 6,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center',
-
+      paddingHorizontal: 14,
+      justifyContent: 'center',
+      alignItems: 'center',
       borderRadius: 999
     },
 
     githubText: {
-      color:
-        '#ffffff',
-
+      color: '#fff',
       fontFamily:
         'Poppins-Bold',
-
       fontSize: 10
     },
 
     footer: {
-      position:
-        'absolute',
-
+      position: 'absolute',
       left: 0,
-
       right: 0,
-
       bottom: 9,
-
-      alignItems:
-        'center'
+      alignItems: 'center'
     },
 
-    footerText: {
+    footerMain: {
       color:
         'rgba(255,255,255,.72)',
-
       fontFamily:
         'Poppins-Regular',
-
       fontSize: 10
     },
 
     footerSub: {
       color:
         'rgba(255,255,255,.52)',
-
       fontFamily:
         'Poppins-Regular',
-
       fontSize: 8
     }
   });
