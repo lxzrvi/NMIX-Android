@@ -1,10 +1,8 @@
-import React, {
-  useEffect,
-  useRef
-} from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import {
   Animated,
+  Easing,
   Pressable,
   StyleSheet,
   Text,
@@ -26,32 +24,42 @@ export default function AnimatedSection({
 }) {
   const active = open === name;
 
-  const animation = useRef(
+  const motion = useRef(
     new Animated.Value(active ? 1 : 0)
   ).current;
 
   useEffect(() => {
-    Animated.spring(animation, {
+    Animated.timing(motion, {
       toValue: active ? 1 : 0,
-      friction: 7,
-      tension: 70,
+      duration: 620,
+      easing: Easing.bezier(0.22, 1, 0.36, 1),
       useNativeDriver: true
     }).start();
   }, [active]);
 
-  const iconSpin = animation.interpolate({
+  const outerSpin = motion.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '180deg']
   });
 
-  const arrowSpin = animation.interpolate({
+  const innerSpin = motion.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '-180deg']
+  });
+
+  const arrowSpin = motion.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '180deg']
   });
 
-  const iconScale = animation.interpolate({
+  const outerScale = motion.interpolate({
     inputRange: [0, 0.55, 1],
-    outputRange: [1, 1.12, 1.04]
+    outputRange: [1, 1.1, 1.04]
+  });
+
+  const innerScale = motion.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: [1, 0.84, 1]
   });
 
   return (
@@ -71,40 +79,45 @@ export default function AnimatedSection({
           pressed && styles.pressed
         ]}
       >
-        <Animated.View
-          style={[
-            styles.iconOuter,
-            {
-              backgroundColor: accent,
-              transform: [
-                {
-                  rotate: iconSpin
-                },
-                {
-                  scale: iconScale
-                }
-              ]
-            }
-          ]}
-        >
-          <View
+        <View style={styles.iconStage}>
+          <Animated.View
             style={[
-              styles.iconInner,
-              active && styles.iconInnerOpen
+              styles.outerShape,
+              {
+                backgroundColor: accent,
+                borderRadius: active ? 21 : 9,
+                transform: [
+                  { rotate: outerSpin },
+                  { scale: outerScale }
+                ]
+              }
             ]}
-          >
+          />
+
+          <Animated.View
+            style={[
+              styles.innerShape,
+              {
+                borderRadius: active ? 16 : 6,
+                transform: [
+                  { rotate: innerSpin },
+                  { scale: innerScale }
+                ]
+              }
+            ]}
+          />
+
+          <View style={styles.symbolLayer}>
             <Text
               style={[
                 styles.iconText,
-                {
-                  fontFamily: bold
-                }
+                { fontFamily: bold }
               ]}
             >
               {icon}
             </Text>
           </View>
-        </Animated.View>
+        </View>
 
         <View style={styles.copy}>
           <Text
@@ -134,20 +147,17 @@ export default function AnimatedSection({
         </View>
 
         <Animated.View
-          style={{
-            transform: [
-              {
-                rotate: arrowSpin
-              }
-            ]
-          }}
+          style={[
+            styles.arrowStage,
+            {
+              transform: [{ rotate: arrowSpin }]
+            }
+          ]}
         >
           <View
             style={[
               styles.arrow,
-              {
-                borderColor: colors.muted
-              }
+              { borderColor: colors.muted }
             ]}
           />
         </Animated.View>
@@ -157,9 +167,7 @@ export default function AnimatedSection({
         <View
           style={[
             styles.body,
-            {
-              borderTopColor: colors.border
-            }
+            { borderTopColor: colors.border }
           ]}
         >
           {children}
@@ -184,38 +192,45 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
 
-  iconOuter: {
-    width: 42,
-    height: 42,
+  iconStage: {
+    width: 44,
+    height: 44,
     flexShrink: 0,
     justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 10
+    alignItems: 'center'
   },
 
-  iconInner: {
+  outerShape: {
+    position: 'absolute',
+    width: 42,
+    height: 42
+  },
+
+  innerShape: {
+    position: 'absolute',
     width: 31,
     height: 31,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor:
-      'rgba(255,255,255,0.20)',
-    borderRadius: 7
+    borderWidth: 1.3,
+    borderColor: 'rgba(255,255,255,.25)'
   },
 
-  iconInnerOpen: {
-    borderRadius: 16
+  symbolLayer: {
+    position: 'absolute',
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
 
   iconText: {
-    width: '100%',
+    width: 44,
+    height: 44,
     color: '#fff',
+    fontSize: 18,
+    lineHeight: 44,
     textAlign: 'center',
     textAlignVertical: 'center',
-    includeFontPadding: false,
-    fontSize: 18,
-    lineHeight: 22
+    includeFontPadding: false
   },
 
   copy: {
@@ -236,17 +251,19 @@ const styles = StyleSheet.create({
     lineHeight: 14
   },
 
+  arrowStage: {
+    width: 28,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+
   arrow: {
     width: 10,
     height: 10,
-    marginRight: 3,
     borderRightWidth: 2,
     borderBottomWidth: 2,
-    transform: [
-      {
-        rotate: '45deg'
-      }
-    ]
+    transform: [{ rotate: '45deg' }]
   },
 
   body: {
@@ -254,6 +271,6 @@ const styles = StyleSheet.create({
   },
 
   pressed: {
-    opacity: 0.76
+    opacity: 0.78
   }
 });
