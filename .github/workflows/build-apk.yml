@@ -22,6 +22,10 @@ jobs:
           rm -f package-lock.json
           npm install
 
+      - name: Install NMIX native packages
+        run: |
+          npx expo install react-native-svg expo-splash-screen expo-image-picker expo-file-system
+
       - name: Check Expo project
         run: npx expo-doctor
 
