@@ -13,6 +13,10 @@ import {
   fontChoices
 } from './theme';
 
+import {
+  fontFamily
+} from './useNMixFonts';
+
 export default function SettingsPanel({
   visible,
   onClose,
@@ -30,6 +34,7 @@ export default function SettingsPanel({
       visible={visible}
       transparent
       animationType="fade"
+      statusBarTranslucent
       onRequestClose={onClose}
     >
       <Pressable
@@ -46,18 +51,26 @@ export default function SettingsPanel({
           }
         ]}
       >
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
           <View
             style={[
               styles.header,
-              { borderBottomColor: colors.border }
+              {
+                borderBottomColor: colors.border
+              }
             ]}
           >
-            <View>
+            <View style={styles.headerCopy}>
               <Text
                 style={[
                   styles.headerTitle,
-                  { color: colors.text }
+                  {
+                    color: colors.text,
+                    fontFamily: fontFamily(font, true)
+                  }
                 ]}
               >
                 NMIX Settings
@@ -66,7 +79,10 @@ export default function SettingsPanel({
               <Text
                 style={[
                   styles.small,
-                  { color: colors.muted }
+                  {
+                    color: colors.muted,
+                    fontFamily: fontFamily(font)
+                  }
                 ]}
               >
                 Personalize your interface
@@ -75,15 +91,21 @@ export default function SettingsPanel({
 
             <Pressable
               onPress={onClose}
-              style={[
+              style={({ pressed }) => [
                 styles.close,
-                { backgroundColor: colors.surface2 }
+                {
+                  backgroundColor: colors.surface2
+                },
+                pressed && styles.pressed
               ]}
             >
               <Text
                 style={[
                   styles.closeText,
-                  { color: colors.text }
+                  {
+                    color: colors.text,
+                    fontFamily: fontFamily(font)
+                  }
                 ]}
               >
                 ×
@@ -94,14 +116,19 @@ export default function SettingsPanel({
           <View
             style={[
               styles.row,
-              { borderBottomColor: colors.border }
+              {
+                borderBottomColor: colors.border
+              }
             ]}
           >
-            <View>
+            <View style={styles.rowCopy}>
               <Text
                 style={[
                   styles.title,
-                  { color: colors.text }
+                  {
+                    color: colors.text,
+                    fontFamily: fontFamily(font, true)
+                  }
                 ]}
               >
                 Appearance
@@ -110,7 +137,10 @@ export default function SettingsPanel({
               <Text
                 style={[
                   styles.small,
-                  { color: colors.muted }
+                  {
+                    color: colors.muted,
+                    fontFamily: fontFamily(font)
+                  }
                 ]}
               >
                 Light or dark interface
@@ -119,11 +149,17 @@ export default function SettingsPanel({
 
             <Pressable
               onPress={() => setDark(!dark)}
+              accessibilityRole="switch"
+              accessibilityState={{
+                checked: dark
+              }}
               style={[
                 styles.switch,
                 {
                   backgroundColor:
-                    dark ? accent : colors.surface3
+                    dark
+                      ? accent
+                      : colors.surface3
                 }
               ]}
             >
@@ -139,13 +175,18 @@ export default function SettingsPanel({
           <View
             style={[
               styles.block,
-              { borderBottomColor: colors.border }
+              {
+                borderBottomColor: colors.border
+              }
             ]}
           >
             <Text
               style={[
                 styles.title,
-                { color: colors.text }
+                {
+                  color: colors.text,
+                  fontFamily: fontFamily(font, true)
+                }
               ]}
             >
               Color Theme
@@ -154,46 +195,62 @@ export default function SettingsPanel({
             <Text
               style={[
                 styles.small,
-                { color: colors.muted }
+                {
+                  color: colors.muted,
+                  fontFamily: fontFamily(font)
+                }
               ]}
             >
               Choose your NMIX color
             </Text>
 
             <View style={styles.themeRow}>
-              {Object.keys(themes).map(name => (
-                <Pressable
-                  key={name}
-                  onPress={() => setThemeName(name)}
-                  style={[
-                    styles.themeOuter,
-                    {
-                      borderColor:
-                        themeName === name
-                          ? colors.text
-                          : 'transparent'
-                    }
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.themeCircle,
+              {Object.keys(themes).map(name => {
+                const selected = themeName === name;
+
+                return (
+                  <Pressable
+                    key={name}
+                    onPress={() => setThemeName(name)}
+                    accessibilityLabel={`${name} theme`}
+                    style={({ pressed }) => [
+                      styles.themeOuter,
                       {
-                        backgroundColor:
-                          themes[name].accent
-                      }
+                        borderColor:
+                          selected
+                            ? colors.text
+                            : 'transparent'
+                      },
+                      pressed && styles.pressed
                     ]}
-                  />
-                </Pressable>
-              ))}
+                  >
+                    <View
+                      style={[
+                        styles.themeCircle,
+                        {
+                          backgroundColor:
+                            themes[name].accent
+                        }
+                      ]}
+                    >
+                      {selected && (
+                        <View style={styles.themeSelected} />
+                      )}
+                    </View>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
 
-          <View style={styles.block}>
+          <View style={styles.blockLast}>
             <Text
               style={[
                 styles.title,
-                { color: colors.text }
+                {
+                  color: colors.text,
+                  fontFamily: fontFamily(font, true)
+                }
               ]}
             >
               Font Style
@@ -202,48 +259,88 @@ export default function SettingsPanel({
             <Text
               style={[
                 styles.small,
-                { color: colors.muted }
+                {
+                  color: colors.muted,
+                  fontFamily: fontFamily(font)
+                }
               ]}
             >
               Choose how NMIX feels
             </Text>
 
             <View style={styles.fontGrid}>
-              {fontChoices.map(name => (
-                <Pressable
-                  key={name}
-                  onPress={() => setFont(name)}
-                  style={[
-                    styles.fontButton,
-                    {
-                      borderColor:
-                        font === name
-                          ? accent
-                          : colors.border,
-                      backgroundColor: colors.surface2
-                    }
-                  ]}
-                >
-                  <Text
-                    style={{
-                      color:
-                        font === name
-                          ? accent
-                          : colors.text,
-                      fontWeight: '600'
-                    }}
+              {fontChoices.map(name => {
+                const selected = font === name;
+
+                return (
+                  <Pressable
+                    key={name}
+                    onPress={() => setFont(name)}
+                    style={({ pressed }) => [
+                      styles.fontButton,
+                      {
+                        borderColor:
+                          selected
+                            ? accent
+                            : colors.border,
+                        backgroundColor:
+                          colors.surface2
+                      },
+                      pressed && styles.pressed
+                    ]}
                   >
-                    Aa  {name}
-                  </Text>
-                </Pressable>
-              ))}
+                    <View
+                      style={[
+                        styles.aaBox,
+                        {
+                          backgroundColor:
+                            selected
+                              ? `${accent}18`
+                              : colors.surface
+                        }
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color: accent,
+                          fontFamily: fontFamily(
+                            name,
+                            true
+                          ),
+                          fontSize: 14
+                        }}
+                      >
+                        Aa
+                      </Text>
+                    </View>
+
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        flex: 1,
+                        color:
+                          selected
+                            ? accent
+                            : colors.text,
+                        fontFamily: fontFamily(name),
+                        fontSize: 11
+                      }}
+                    >
+                      {name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
 
           <Text
             style={[
               styles.note,
-              { color: colors.muted }
+              {
+                color: colors.muted,
+                fontFamily: fontFamily(font)
+              }
             ]}
           >
             Theme, dark mode and font settings are saved on this device.
@@ -257,7 +354,7 @@ export default function SettingsPanel({
 const styles = StyleSheet.create({
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.34)'
+    backgroundColor: 'rgba(0,0,0,0.38)'
   },
 
   panel: {
@@ -270,19 +367,28 @@ const styles = StyleSheet.create({
     padding: 17,
     borderWidth: 1,
     borderRadius: 20,
-    elevation: 20
+    elevation: 24
+  },
+
+  scrollContent: {
+    paddingBottom: 2
   },
 
   header: {
     paddingBottom: 14,
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 15,
     borderBottomWidth: 1
   },
 
+  headerCopy: {
+    flex: 1
+  },
+
   headerTitle: {
-    fontSize: 15,
-    fontWeight: '700'
+    fontSize: 15
   },
 
   small: {
@@ -299,6 +405,7 @@ const styles = StyleSheet.create({
   },
 
   closeText: {
+    marginTop: -2,
     fontSize: 23
   },
 
@@ -307,12 +414,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
     borderBottomWidth: 1
   },
 
+  rowCopy: {
+    flex: 1
+  },
+
   title: {
-    fontSize: 13,
-    fontWeight: '700'
+    fontSize: 13
   },
 
   switch: {
@@ -326,16 +437,26 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#fff'
+    backgroundColor: '#ffffff',
+    elevation: 2
   },
 
   knobOn: {
-    transform: [{ translateX: 21 }]
+    transform: [
+      {
+        translateX: 21
+      }
+    ]
   },
 
   block: {
     paddingVertical: 16,
     borderBottomWidth: 1
+  },
+
+  blockLast: {
+    paddingTop: 16,
+    paddingBottom: 4
   },
 
   themeRow: {
@@ -346,16 +467,26 @@ const styles = StyleSheet.create({
   },
 
   themeOuter: {
-    width: 40,
-    height: 40,
+    width: 42,
+    height: 42,
     padding: 3,
     borderWidth: 3,
-    borderRadius: 20
+    borderRadius: 21
   },
 
   themeCircle: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 20
+  },
+
+  themeSelected: {
+    width: 14,
+    height: 14,
+    borderWidth: 2,
+    borderColor: '#ffffff',
+    borderRadius: 7
   },
 
   fontGrid: {
@@ -367,15 +498,35 @@ const styles = StyleSheet.create({
 
   fontButton: {
     width: '48%',
-    minHeight: 48,
-    paddingHorizontal: 9,
-    justifyContent: 'center',
+    minHeight: 50,
+    paddingHorizontal: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
     borderWidth: 1,
     borderRadius: 10
   },
 
+  aaBox: {
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 7
+  },
+
   note: {
-    marginTop: 12,
-    fontSize: 9
+    marginTop: 13,
+    fontSize: 9,
+    lineHeight: 14
+  },
+
+  pressed: {
+    opacity: 0.72,
+    transform: [
+      {
+        scale: 0.96
+      }
+    ]
   }
 });
