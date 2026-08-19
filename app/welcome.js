@@ -9,7 +9,6 @@ import {
   Easing,
   Linking,
   Pressable,
-  SafeAreaView,
   Share,
   StyleSheet,
   Text,
@@ -18,6 +17,7 @@ import {
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import useNMixFonts, {
@@ -28,13 +28,13 @@ import useNMixSettings from '../src/useNMixSettings';
 
 const WELCOME_KEY = 'nmix-welcome-seen';
 
-const bios = [
-  "I'm currently doing a diploma in web development and building my skills step by step.",
-  "I'm learning HTML, CSS and JavaScript and understanding more about how real websites work.",
-  "I enjoy taking small ideas and turning them into projects that I can improve as I learn more.",
-  "I'm learning responsive design, interfaces and how to make websites feel smoother and easier to use.",
-  "I keep experimenting with new web development concepts so I can improve with every project I build.",
-  "NMIX is one of my projects for practising JavaScript logic, useful tools, interaction and interface design."
+const descriptions = [
+  'NMIX brings useful number tools together in one simple and responsive interface.',
+  'Calculate, count, generate random values and work with time from one place.',
+  'NMIX is designed to keep everyday number tools quick, clean and easy to reach.',
+  'Use the calculator, timer, local clock, stopwatch and counters without switching between apps.',
+  'Themes, dark mode and fonts let you personalize how NMIX looks and feels.',
+  'NMIX is built as a native Android experience with smooth interaction and offline-ready tools.'
 ];
 
 export default function Welcome() {
@@ -46,7 +46,8 @@ export default function Welcome() {
     dark
   } = useNMixSettings();
 
-  const [bioIndex, setBioIndex] = useState(0);
+  const [descriptionIndex, setDescriptionIndex] =
+    useState(0);
 
   const entrance = useRef(
     new Animated.Value(0)
@@ -60,38 +61,42 @@ export default function Welcome() {
     new Animated.Value(0)
   ).current;
 
-  const shine = useRef(
-    new Animated.Value(0)
-  ).current;
-
-  const bioAnim = useRef(
+  const descriptionAnim = useRef(
     new Animated.Value(1)
   ).current;
 
   useEffect(() => {
-    const intro = Animated.timing(
-      entrance,
-      {
-        toValue: 1,
-        duration: 900,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true
-      }
-    );
+    Animated.timing(entrance, {
+      toValue: 1,
+      duration: 900,
+      easing: Easing.bezier(
+        0.22,
+        1,
+        0.36,
+        1
+      ),
+      useNativeDriver: true
+    }).start();
 
     const a = Animated.loop(
       Animated.sequence([
         Animated.timing(glowA, {
           toValue: 1,
-          duration: 9000,
-          easing: Easing.inOut(Easing.ease),
+          duration: 9500,
+          easing:
+            Easing.inOut(
+              Easing.ease
+            ),
           useNativeDriver: true
         }),
 
         Animated.timing(glowA, {
           toValue: 0,
-          duration: 9000,
-          easing: Easing.inOut(Easing.ease),
+          duration: 9500,
+          easing:
+            Easing.inOut(
+              Easing.ease
+            ),
           useNativeDriver: true
         })
       ])
@@ -101,68 +106,68 @@ export default function Welcome() {
       Animated.sequence([
         Animated.timing(glowB, {
           toValue: 1,
-          duration: 11500,
-          easing: Easing.inOut(Easing.ease),
+          duration: 12000,
+          easing:
+            Easing.inOut(
+              Easing.ease
+            ),
           useNativeDriver: true
         }),
 
         Animated.timing(glowB, {
           toValue: 0,
-          duration: 11500,
-          easing: Easing.inOut(Easing.ease),
+          duration: 12000,
+          easing:
+            Easing.inOut(
+              Easing.ease
+            ),
           useNativeDriver: true
         })
       ])
     );
 
-    const s = Animated.loop(
-      Animated.sequence([
-        Animated.timing(shine, {
-          toValue: 1,
-          duration: 5500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true
-        }),
-
-        Animated.timing(shine, {
-          toValue: 0,
-          duration: 2500,
-          useNativeDriver: true
-        })
-      ])
-    );
-
-    intro.start();
     a.start();
     b.start();
-    s.start();
 
-    const bioTimer = setInterval(() => {
-      Animated.timing(bioAnim, {
-        toValue: 0,
-        duration: 260,
-        useNativeDriver: true
-      }).start(() => {
-        setBioIndex(
-          value => (value + 1) % bios.length
+    const messageTimer = setInterval(() => {
+      Animated.timing(
+        descriptionAnim,
+        {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true
+        }
+      ).start(() => {
+        setDescriptionIndex(
+          current =>
+            (current + 1) %
+            descriptions.length
         );
 
-        bioAnim.setValue(0);
+        descriptionAnim.setValue(0);
 
-        Animated.timing(bioAnim, {
-          toValue: 1,
-          duration: 600,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true
-        }).start();
+        Animated.timing(
+          descriptionAnim,
+          {
+            toValue: 1,
+            duration: 600,
+            easing:
+              Easing.bezier(
+                0.22,
+                1,
+                0.36,
+                1
+              ),
+            useNativeDriver: true
+          }
+        ).start();
       });
     }, 6800);
 
     return () => {
       a.stop();
       b.stop();
-      s.stop();
-      clearInterval(bioTimer);
+      clearInterval(messageTimer);
     };
   }, []);
 
@@ -182,7 +187,7 @@ export default function Welcome() {
       await Share.share({
         title: 'NMIX',
         message:
-          'Check out NMIX — anything with numbers! https://lxzrvi.github.io/NMIX/'
+          'Check out NMIX — everything with numbers! https://lxzrvi.github.io/NMIX/'
       });
     } catch {}
   }
@@ -200,6 +205,16 @@ export default function Welcome() {
 
   const accent = theme.accent;
 
+  const text =
+    dark
+      ? '#edf4f1'
+      : '#202321';
+
+  const muted =
+    dark
+      ? '#aab6b1'
+      : '#66706c';
+
   return (
     <LinearGradient
       colors={[
@@ -211,9 +226,9 @@ export default function Welcome() {
       ]}
       locations={[
         0,
-        0.24,
-        0.51,
-        0.78,
+        0.25,
+        0.52,
+        0.79,
         1
       ]}
       start={{
@@ -232,379 +247,357 @@ export default function Welcome() {
       >
         <Animated.View
           style={[
-            styles.glowWrapA,
-            {
-              transform: [
-                {
-                  translateX:
-                    glowA.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [-100, 100]
-                    })
-                },
-                {
-                  translateY:
-                    glowA.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [-80, 100]
-                    })
-                },
-                {
-                  scale:
-                    glowA.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1, 1.3]
-                    })
-                }
-              ]
-            }
-          ]}
-        >
-          <LinearGradient
-            colors={[
-              'transparent',
-              `${theme.accentLight}10`,
-              `${theme.accentLight}35`,
-              `${theme.accentLight}08`,
-              'transparent'
-            ]}
-            locations={[
-              0,
-              0.18,
-              0.5,
-              0.8,
-              1
-            ]}
-            style={styles.softGlow}
-          />
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            styles.glowWrapB,
-            {
-              transform: [
-                {
-                  translateX:
-                    glowB.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [110, -100]
-                    })
-                },
-                {
-                  translateY:
-                    glowB.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [90, -80]
-                    })
-                },
-                {
-                  scale:
-                    glowB.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [1.2, 0.9]
-                    })
-                }
-              ]
-            }
-          ]}
-        >
-          <LinearGradient
-            colors={[
-              'transparent',
-              `${accent}10`,
-              `${accent}3D`,
-              `${accent}0A`,
-              'transparent'
-            ]}
-            style={styles.softGlow}
-          />
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            styles.shine,
+            styles.glowA,
             {
               opacity:
-                shine.interpolate({
+                glowA.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [0.04, 0.17]
+                  outputRange: [
+                    0.42,
+                    0.9
+                  ]
                 }),
 
               transform: [
                 {
                   translateX:
-                    shine.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [-420, 420]
+                    glowA.interpolate({
+                      inputRange:
+                        [0, 1],
+                      outputRange:
+                        [-100, 115]
                     })
                 },
-                {
-                  rotate: '-18deg'
-                }
-              ]
-            }
-          ]}
-        />
-      </View>
 
-      <SafeAreaView style={styles.safe}>
-        <Animated.View
-          style={[
-            styles.content,
-            {
-              opacity: entrance,
-
-              transform: [
                 {
                   translateY:
-                    entrance.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [28, 0]
+                    glowA.interpolate({
+                      inputRange:
+                        [0, 1],
+                      outputRange:
+                        [-80, 95]
+                    })
+                },
+
+                {
+                  scale:
+                    glowA.interpolate({
+                      inputRange:
+                        [0, 1],
+                      outputRange:
+                        [1, 1.2]
                     })
                 }
               ]
             }
           ]}
         >
-          <View style={styles.brand}>
-            <Text
-              style={[
-                styles.subtitle,
+          <LinearGradient
+            colors={[
+              'transparent',
+              `${theme.accentLight}08`,
+              `${theme.accentLight}2E`,
+              `${theme.accentLight}08`,
+              'transparent'
+            ]}
+            style={styles.glowGradient}
+          />
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            styles.glowB,
+            {
+              opacity:
+                glowB.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [
+                    0.75,
+                    0.28
+                  ]
+                }),
+
+              transform: [
                 {
-                  color:
-                    theme.accentLight
+                  translateX:
+                    glowB.interpolate({
+                      inputRange:
+                        [0, 1],
+                      outputRange:
+                        [110, -110]
+                    })
+                },
+
+                {
+                  translateY:
+                    glowB.interpolate({
+                      inputRange:
+                        [0, 1],
+                      outputRange:
+                        [90, -80]
+                    })
                 }
-              ]}
-            >
-              ANYTHING WITH NUMBERS
-            </Text>
+              ]
+            }
+          ]}
+        >
+          <LinearGradient
+            colors={[
+              'transparent',
+              `${accent}06`,
+              `${accent}2A`,
+              `${accent}08`,
+              'transparent'
+            ]}
+            style={styles.glowGradient}
+          />
+        </Animated.View>
+      </View>
 
-            <Text style={styles.logo}>
-              NMIX
-            </Text>
-          </View>
+      <Animated.View
+        style={[
+          styles.content,
+          {
+            opacity: entrance,
 
-          <View style={styles.actions}>
-            <GlassButton
-              title="Start"
-              onPress={enterApp}
-              accent={accent}
-            />
-
-            <GlassButton
-              title="Share"
-              onPress={shareApp}
-              accent={accent}
-            />
-          </View>
-
-          <View
-            style={[
-              styles.card,
+            transform: [
               {
-                borderColor:
-                  'rgba(255,255,255,0.22)',
-                backgroundColor:
-                  dark
-                    ? 'rgba(12,20,17,0.72)'
-                    : 'rgba(245,250,248,0.78)'
+                translateY:
+                  entrance.interpolate({
+                    inputRange:
+                      [0, 1],
+                    outputRange:
+                      [28, 0]
+                  })
+              }
+            ]
+          }
+        ]}
+      >
+        <View style={styles.brand}>
+          <Text
+            style={[
+              styles.subtitle,
+              {
+                color:
+                  theme.accentLight
               }
             ]}
           >
-            <View
-              pointerEvents="none"
-              style={StyleSheet.absoluteFill}
-            >
-              <LinearGradient
-                colors={[
-                  'rgba(255,255,255,0.19)',
-                  'rgba(255,255,255,0.04)',
-                  `${accent}10`
-                ]}
-                style={StyleSheet.absoluteFill}
-              />
-            </View>
+            EVERYTHING WITH NUMBERS
+          </Text>
 
+          <View style={styles.logoClipFix}>
             <Text
+              numberOfLines={1}
+              style={styles.logo}
+            >
+              NMIX
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.actions}>
+          <GlassButton
+            title="Start"
+            onPress={enterApp}
+            accent={accent}
+          />
+
+          <GlassButton
+            title="Share"
+            onPress={shareApp}
+            accent={accent}
+          />
+        </View>
+
+        <View
+          style={[
+            styles.infoCard,
+            {
+              borderColor:
+                'rgba(255,255,255,.22)',
+
+              backgroundColor:
+                dark
+                  ? 'rgba(14,23,20,.64)'
+                  : 'rgba(238,248,244,.64)'
+            }
+          ]}
+        >
+          <LinearGradient
+            pointerEvents="none"
+            colors={[
+              'rgba(255,255,255,.18)',
+              'rgba(255,255,255,.04)',
+              `${accent}0C`
+            ]}
+            style={StyleSheet.absoluteFill}
+          />
+
+          <Text
+            style={[
+              styles.infoHeading,
+              {
+                color: text
+              }
+            ]}
+          >
+            More Info
+          </Text>
+
+          <View style={styles.infoLayout}>
+            <View
               style={[
-                styles.heading,
+                styles.aboutApp,
                 {
-                  color:
+                  backgroundColor:
                     dark
-                      ? '#f2f7f5'
-                      : '#202321'
+                      ? 'rgba(255,255,255,.055)'
+                      : 'rgba(255,255,255,.32)'
                 }
               ]}
             >
-              Contributor
-            </Text>
-
-            <View style={styles.columns}>
-              <View
-                style={[
-                  styles.about,
-                  {
-                    backgroundColor:
-                      dark
-                        ? 'rgba(255,255,255,0.06)'
-                        : 'rgba(255,255,255,0.42)'
-                  }
-                ]}
-              >
+              <View style={styles.appNameWrap}>
                 <Text
+                  numberOfLines={1}
                   style={[
-                    styles.name,
+                    styles.appName,
                     {
                       color: accent
                     }
                   ]}
                 >
-                  Alex Ravi
+                  NMIX
                 </Text>
-
-                <Animated.Text
-                  style={[
-                    styles.bio,
-                    {
-                      color:
-                        dark
-                          ? '#aebbb6'
-                          : '#66706c',
-
-                      opacity: bioAnim,
-
-                      transform: [
-                        {
-                          translateY:
-                            bioAnim.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [14, 0]
-                            })
-                        }
-                      ]
-                    }
-                  ]}
-                >
-                  {bios[bioIndex]}
-                </Animated.Text>
               </View>
 
-              <View style={styles.skills}>
-                <Text
-                  style={[
-                    styles.skillTitle,
-                    {
-                      color:
-                        dark
-                          ? '#edf4f1'
-                          : '#202321'
-                    }
-                  ]}
-                >
-                  Skills
-                </Text>
+              <Animated.Text
+                style={[
+                  styles.description,
+                  {
+                    color: muted,
 
-                <View style={styles.chips}>
-                  {[
-                    'HTML',
-                    'CSS',
-                    'JavaScript'
-                  ].map(item => (
-                    <Chip
-                      key={item}
-                      text={item}
-                      accent={accent}
-                      light={theme.accentLight}
-                      dark={dark}
-                    />
-                  ))}
-                </View>
+                    opacity:
+                      descriptionAnim,
 
-                <Text
-                  style={[
-                    styles.learning,
-                    {
-                      color:
-                        dark
-                          ? '#aebbb6'
-                          : '#66706c'
-                    }
-                  ]}
-                >
-                  Learning More
-                </Text>
-
-                <View style={styles.chips}>
-                  {[
-                    'Responsive Design',
-                    'UI / UX',
-                    'Web APIs'
-                  ].map(item => (
-                    <Chip
-                      key={item}
-                      text={item}
-                      accent={accent}
-                      light={theme.accentLight}
-                      dark={dark}
-                    />
-                  ))}
-                </View>
-              </View>
+                    transform: [
+                      {
+                        translateY:
+                          descriptionAnim.interpolate({
+                            inputRange:
+                              [0, 1],
+                            outputRange:
+                              [14, 0]
+                          })
+                      }
+                    ]
+                  }
+                ]}
+              >
+                {
+                  descriptions[
+                    descriptionIndex
+                  ]
+                }
+              </Animated.Text>
             </View>
 
-            <View style={styles.contacts}>
-              <Pressable
-                onPress={() =>
-                  Linking.openURL(
-                    'tel:+919805414723'
-                  )
-                }
-                style={({ pressed }) => [
-                  styles.contact,
+            <View style={styles.details}>
+              <Text
+                style={[
+                  styles.detailTitle,
                   {
-                    backgroundColor: accent
-                  },
-                  pressed && styles.pressed
+                    color: text
+                  }
                 ]}
               >
-                <Text style={styles.contactText}>
-                  Contact
-                </Text>
-              </Pressable>
+                App Details
+              </Text>
 
-              <Pressable
-                onPress={() =>
-                  Linking.openURL(
-                    'mailto:lxzrvi@gmail.com'
-                  )
-                }
-                style={({ pressed }) => [
-                  styles.contact,
+              <View style={styles.chips}>
+                {[
+                  'React Native',
+                  'Expo',
+                  'JavaScript'
+                ].map(item => (
+                  <Chip
+                    key={item}
+                    text={item}
+                    accent={accent}
+                    light={
+                      theme.accentLight
+                    }
+                    dark={dark}
+                  />
+                ))}
+              </View>
+
+              <Text
+                style={[
+                  styles.moreTitle,
                   {
-                    backgroundColor: accent
-                  },
-                  pressed && styles.pressed
+                    color: muted
+                  }
                 ]}
               >
-                <Text style={styles.contactText}>
-                  Go to Mail
-                </Text>
-              </Pressable>
+                Built For
+              </Text>
+
+              <View style={styles.chips}>
+                {[
+                  'Android',
+                  'Offline Tools',
+                  'Native UI'
+                ].map(item => (
+                  <Chip
+                    key={item}
+                    text={item}
+                    accent={accent}
+                    light={
+                      theme.accentLight
+                    }
+                    dark={dark}
+                  />
+                ))}
+              </View>
             </View>
           </View>
-        </Animated.View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            © {new Date().getFullYear()} Alex Ravi
-          </Text>
-
-          <Text style={styles.footerSmall}>
-            All Rights Reserved
-          </Text>
+          <View style={styles.links}>
+            <Pressable
+              onPress={() =>
+                Linking.openURL(
+                  'https://github.com/lxzrvi'
+                )
+              }
+              style={({ pressed }) => [
+                styles.githubButton,
+                {
+                  backgroundColor:
+                    accent
+                },
+                pressed &&
+                  styles.pressed
+              ]}
+            >
+              <Text style={styles.githubText}>
+                GitHub
+              </Text>
+            </Pressable>
+          </View>
         </View>
-      </SafeAreaView>
+      </Animated.View>
+
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>
+          © {new Date().getFullYear()} Alex Ravi
+        </Text>
+
+        <Text style={styles.footerSmall}>
+          All Rights Reserved
+        </Text>
+      </View>
     </LinearGradient>
   );
 }
@@ -618,19 +611,16 @@ function GlassButton({
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
-        styles.actionButton,
-        {
-          borderColor:
-            'rgba(255,255,255,0.32)'
-        },
-        pressed && styles.pressed
+        styles.glassButton,
+        pressed &&
+          styles.pressed
       ]}
     >
       <LinearGradient
         colors={[
-          'rgba(255,255,255,0.92)',
-          'rgba(255,255,255,0.72)',
-          `${accent}30`
+          'rgba(255,255,255,.16)',
+          `${accent}20`,
+          'rgba(255,255,255,.08)'
         ]}
         start={{
           x: 0,
@@ -640,15 +630,15 @@ function GlassButton({
           x: 1,
           y: 1
         }}
-        style={styles.actionGradient}
+        style={styles.glassButtonFill}
       >
+        <View
+          pointerEvents="none"
+          style={styles.glassHighlight}
+        />
+
         <Text
-          style={[
-            styles.actionText,
-            {
-              color: '#123c30'
-            }
-          ]}
+          style={styles.glassButtonText}
         >
           {title}
         </Text>
@@ -699,46 +689,34 @@ const styles = StyleSheet.create({
     overflow: 'hidden'
   },
 
-  safe: {
-    flex: 1
-  },
-
-  glowWrapA: {
+  glowA: {
     position: 'absolute',
-    width: 520,
-    height: 520,
-    left: -250,
-    top: -240
+    width: 560,
+    height: 560,
+    left: -270,
+    top: -260
   },
 
-  glowWrapB: {
+  glowB: {
     position: 'absolute',
-    width: 620,
-    height: 620,
-    right: -310,
-    bottom: -290
+    width: 650,
+    height: 650,
+    right: -330,
+    bottom: -310
   },
 
-  softGlow: {
+  glowGradient: {
     flex: 1,
-    borderRadius: 310
-  },
-
-  shine: {
-    position: 'absolute',
-    top: -100,
-    bottom: -100,
-    left: '40%',
-    width: 130,
-    backgroundColor: '#ffffff'
+    borderRadius: 340
   },
 
   content: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     paddingHorizontal: 16,
-    paddingBottom: 38
+    paddingTop: 50,
+    paddingBottom: 52,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
 
   brand: {
@@ -749,18 +727,28 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: 'Poppins-Bold',
     fontSize: 10,
-    letterSpacing: 3
+    letterSpacing: 2.8,
+    textAlign: 'center'
+  },
+
+  logoClipFix: {
+    minWidth: 190,
+    paddingHorizontal: 20,
+    paddingVertical: 5,
+    overflow: 'visible',
+    alignItems: 'center'
   },
 
   logo: {
-    marginTop: 2,
     color: '#fff',
     fontFamily: logoFont,
     fontSize: 46,
-    lineHeight: 58,
-    letterSpacing: 6,
+    lineHeight: 60,
+    letterSpacing: 5,
+    textAlign: 'center',
+    includeFontPadding: false,
     textShadowColor:
-      'rgba(0,0,0,0.35)',
+      'rgba(0,0,0,.35)',
     textShadowOffset: {
       width: 0,
       height: 7
@@ -775,26 +763,44 @@ const styles = StyleSheet.create({
     marginBottom: 18
   },
 
-  actionButton: {
+  glassButton: {
     height: 51,
     overflow: 'hidden',
     borderWidth: 1,
+    borderColor:
+      'rgba(255,255,255,.29)',
     borderRadius: 999,
-    elevation: 5
+    backgroundColor:
+      'rgba(255,255,255,.06)',
+    elevation: 4
   },
 
-  actionGradient: {
+  glassButtonFill: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center'
   },
 
-  actionText: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 14
+  glassHighlight: {
+    position: 'absolute',
+    top: 1,
+    left: 18,
+    right: 18,
+    height: 1,
+    backgroundColor:
+      'rgba(255,255,255,.38)'
   },
 
-  card: {
+  glassButtonText: {
+    color: '#fff',
+    fontFamily: 'Poppins-Bold',
+    fontSize: 14,
+    textShadowColor:
+      'rgba(0,0,0,.18)',
+    textShadowRadius: 5
+  },
+
+  infoCard: {
     position: 'relative',
     width: '100%',
     maxWidth: 460,
@@ -803,51 +809,60 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderRadius: 18,
-    elevation: 8
+    elevation: 7
   },
 
-  heading: {
+  infoHeading: {
     marginBottom: 10,
     fontFamily: 'Poppins-Bold',
     fontSize: 14
   },
 
-  columns: {
+  infoLayout: {
     flexDirection: 'row',
     gap: 8
   },
 
-  about: {
+  aboutApp: {
     flex: 1,
-    minHeight: 125,
+    minHeight: 132,
     padding: 12,
     overflow: 'hidden',
     borderRadius: 12
   },
 
-  name: {
+  appNameWrap: {
+    minWidth: 90,
+    paddingRight: 12,
+    overflow: 'visible'
+  },
+
+  appName: {
     fontFamily: logoFont,
-    fontSize: 16
+    fontSize: 16,
+    lineHeight: 24,
+    letterSpacing: 1,
+    includeFontPadding: false
   },
 
-  bio: {
-    marginTop: 8,
+  description: {
+    marginTop: 7,
     fontFamily: 'Poppins-Regular',
-    fontSize: 11,
-    lineHeight: 17
+    fontSize: 10.5,
+    lineHeight: 16
   },
 
-  skills: {
+  details: {
     flex: 1,
     padding: 8
   },
 
-  skillTitle: {
+  detailTitle: {
     fontFamily: 'Poppins-Bold',
     fontSize: 12
   },
 
-  learning: {
+  moreTitle: {
     marginTop: 10,
     fontFamily: 'Poppins-Bold',
     fontSize: 10
@@ -869,24 +884,24 @@ const styles = StyleSheet.create({
 
   chipText: {
     fontFamily: 'Poppins-Bold',
-    fontSize: 9
+    fontSize: 8.5
   },
 
-  contacts: {
+  links: {
     position: 'absolute',
     right: 12,
-    bottom: 11,
-    flexDirection: 'row',
-    gap: 7
+    bottom: 11
   },
 
-  contact: {
-    paddingHorizontal: 11,
-    paddingVertical: 7,
+  githubButton: {
+    minWidth: 74,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    alignItems: 'center',
     borderRadius: 999
   },
 
-  contactText: {
+  githubText: {
     color: '#fff',
     fontFamily: 'Poppins-Bold',
     fontSize: 10
@@ -896,26 +911,26 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 8,
+    bottom: 9,
     alignItems: 'center'
   },
 
   footerText: {
     color:
-      'rgba(255,255,255,0.72)',
+      'rgba(255,255,255,.72)',
     fontFamily: 'Poppins-Regular',
     fontSize: 10
   },
 
   footerSmall: {
     color:
-      'rgba(255,255,255,0.54)',
+      'rgba(255,255,255,.54)',
     fontFamily: 'Poppins-Regular',
     fontSize: 8
   },
 
   pressed: {
-    opacity: 0.82,
+    opacity: 0.78,
     transform: [
       {
         scale: 0.96
