@@ -5,9 +5,14 @@
     "version": "1.0.0",
     "orientation": "default",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
     "android": {
-      "package": "com.lxzrvi.nmix",
-      "versionCode": 1
+      "package": "com.lxz.nmix",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0b261e"
+      }
     },
     "plugins": [
       "expo-router"
