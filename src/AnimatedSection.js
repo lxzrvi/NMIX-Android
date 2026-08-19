@@ -1,14 +1,18 @@
 import React, {
   useEffect,
-  useRef
+  useRef,
+  useState
 } from 'react';
 
 import {
   Animated,
   Easing,
+  LayoutAnimation,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
+  UIManager,
   View
 } from 'react-native';
 
@@ -19,11 +23,65 @@ import {
   HelpIcon
 } from './icons';
 
+if (
+  Platform.OS ===
+    'android' &&
+  UIManager
+    .setLayoutAnimationEnabledExperimental
+) {
+  UIManager
+    .setLayoutAnimationEnabledExperimental(
+      true
+    );
+}
+
 const iconMap = {
-  calculator: CalculatorIcon,
-  clock: ClockIcon,
-  counter: CounterIcon,
-  instructions: HelpIcon
+  calculator:
+    CalculatorIcon,
+
+  clock:
+    ClockIcon,
+
+  counter:
+    CounterIcon,
+
+  instructions:
+    HelpIcon
+};
+
+const smoothLayout = {
+  duration: 500,
+
+  create: {
+    type:
+      LayoutAnimation
+        .Types
+        .easeInEaseOut,
+
+    property:
+      LayoutAnimation
+        .Properties
+        .opacity
+  },
+
+  update: {
+    type:
+      LayoutAnimation
+        .Types
+        .easeInEaseOut
+  },
+
+  delete: {
+    type:
+      LayoutAnimation
+        .Types
+        .easeInEaseOut,
+
+    property:
+      LayoutAnimation
+        .Properties
+        .opacity
+  }
 };
 
 export default function AnimatedSection({
@@ -41,38 +99,152 @@ export default function AnimatedSection({
   const active =
     open === name;
 
-  const motion = useRef(
-    new Animated.Value(
-      active ? 1 : 0
-    )
-  ).current;
+  const [
+    bodyVisible,
+    setBodyVisible
+  ] = useState(
+    active
+  );
+
+  const iconMotion =
+    useRef(
+      new Animated.Value(
+        active ? 1 : 0
+      )
+    ).current;
+
+  const bodyMotion =
+    useRef(
+      new Animated.Value(
+        active ? 1 : 0
+      )
+    ).current;
 
   useEffect(() => {
-    Animated.timing(
-      motion,
-      {
-        toValue:
-          active ? 1 : 0,
+    /*
+     * OPEN:
+     * mount body first, then animate.
+     */
+    if (active) {
+      LayoutAnimation
+        .configureNext(
+          smoothLayout
+        );
 
-        duration: 620,
+      setBodyVisible(
+        true
+      );
 
-        easing:
-          Easing.bezier(
-            0.22,
-            1,
-            0.36,
-            1
-          ),
+      Animated.parallel([
+        Animated.timing(
+          iconMotion,
+          {
+            toValue: 1,
 
-        useNativeDriver:
-          true
+            duration: 620,
+
+            easing:
+              Easing.bezier(
+                0.22,
+                1,
+                0.36,
+                1
+              ),
+
+            useNativeDriver:
+              true
+          }
+        ),
+
+        Animated.timing(
+          bodyMotion,
+          {
+            toValue: 1,
+
+            duration: 470,
+
+            easing:
+              Easing.bezier(
+                0.22,
+                1,
+                0.36,
+                1
+              ),
+
+            useNativeDriver:
+              true
+          }
+        )
+      ]).start();
+
+      return;
+    }
+
+    /*
+     * CLOSE:
+     * animate icon and body first.
+     * Remove body only after motion,
+     * so closing animation is visible.
+     */
+    Animated.parallel([
+      Animated.timing(
+        iconMotion,
+        {
+          toValue: 0,
+
+          duration: 620,
+
+          easing:
+            Easing.bezier(
+              0.22,
+              1,
+              0.36,
+              1
+            ),
+
+          useNativeDriver:
+            true
+        }
+      ),
+
+      Animated.timing(
+        bodyMotion,
+        {
+          toValue: 0,
+
+          duration: 300,
+
+          easing:
+            Easing.inOut(
+              Easing.ease
+            ),
+
+          useNativeDriver:
+            true
+        }
+      )
+    ]).start(
+      ({ finished }) => {
+        if (
+          finished
+        ) {
+          LayoutAnimation
+            .configureNext(
+              smoothLayout
+            );
+
+          setBodyVisible(
+            false
+          );
+        }
       }
-    ).start();
+    );
   }, [active]);
 
   const outerSpin =
-    motion.interpolate({
+    iconMotion.interpolate({
       inputRange: [0, 1],
+
       outputRange: [
         '0deg',
         '180deg'
@@ -80,8 +252,9 @@ export default function AnimatedSection({
     });
 
   const innerSpin =
-    motion.interpolate({
+    iconMotion.interpolate({
       inputRange: [0, 1],
+
       outputRange: [
         '0deg',
         '-180deg'
@@ -89,8 +262,9 @@ export default function AnimatedSection({
     });
 
   const arrowSpin =
-    motion.interpolate({
+    iconMotion.interpolate({
       inputRange: [0, 1],
+
       outputRange: [
         '0deg',
         '180deg'
@@ -98,12 +272,13 @@ export default function AnimatedSection({
     });
 
   const outerScale =
-    motion.interpolate({
+    iconMotion.interpolate({
       inputRange: [
         0,
         0.52,
         1
       ],
+
       outputRange: [
         1,
         1.08,
@@ -112,12 +287,13 @@ export default function AnimatedSection({
     });
 
   const innerScale =
-    motion.interpolate({
+    iconMotion.interpolate({
       inputRange: [
         0,
         0.5,
         1
       ],
+
       outputRange: [
         1,
         0.91,
@@ -125,9 +301,38 @@ export default function AnimatedSection({
       ]
     });
 
+  const bodyTranslate =
+    bodyMotion.interpolate({
+      inputRange: [0, 1],
+
+      outputRange: [
+        -9,
+        0
+      ]
+    });
+
+  const bodyScale =
+    bodyMotion.interpolate({
+      inputRange: [0, 1],
+
+      outputRange: [
+        0.985,
+        1
+      ]
+    });
+
   const Icon =
     iconMap[name] ||
     HelpIcon;
+
+  function handlePress() {
+    /*
+     * Tell parent to change the open
+     * section. Animation is handled
+     * from the resulting active state.
+     */
+    toggle(name);
+  }
 
   return (
     <View
@@ -144,14 +349,14 @@ export default function AnimatedSection({
       ]}
     >
       <Pressable
-        onPress={() =>
-          toggle(name)
+        onPress={
+          handlePress
         }
         style={({ pressed }) => [
           styles.bar,
 
           pressed && {
-            opacity: 0.82
+            opacity: 0.84
           }
         ]}
       >
@@ -162,12 +367,21 @@ export default function AnimatedSection({
         >
           <Animated.View
             style={[
-              styles.outerShape,
+              styles.outer,
 
               {
                 backgroundColor:
                   accent,
 
+                /*
+                 * Animated borderRadius
+                 * isn't native-driver
+                 * compatible, so the
+                 * scale/spin supplies
+                 * the fluid motion while
+                 * active state switches
+                 * the final shape.
+                 */
                 borderRadius:
                   active
                     ? 21
@@ -190,7 +404,7 @@ export default function AnimatedSection({
 
           <Animated.View
             style={[
-              styles.innerShape,
+              styles.inner,
 
               {
                 borderRadius:
@@ -292,19 +506,34 @@ export default function AnimatedSection({
         </Animated.View>
       </Pressable>
 
-      {active && (
-        <View
+      {bodyVisible && (
+        <Animated.View
           style={[
             styles.body,
 
             {
               borderTopColor:
-                colors.border
+                colors.border,
+
+              opacity:
+                bodyMotion,
+
+              transform: [
+                {
+                  translateY:
+                    bodyTranslate
+                },
+
+                {
+                  scale:
+                    bodyScale
+                }
+              ]
             }
           ]}
         >
           {children}
-        </View>
+        </Animated.View>
       )}
     </View>
   );
@@ -349,7 +578,7 @@ const styles =
         'center'
     },
 
-    outerShape: {
+    outer: {
       position:
         'absolute',
 
@@ -359,10 +588,10 @@ const styles =
     },
 
     /*
-     * This outline is deliberately
-     * close to the outer layer.
+     * Close to outer edge, as in
+     * your website's ::after layer.
      */
-    innerShape: {
+    inner: {
       position:
         'absolute',
 
@@ -370,14 +599,16 @@ const styles =
 
       height: 35,
 
-      borderWidth: 1.25,
+      borderWidth: 1.3,
 
       borderColor:
-        'rgba(255,255,255,.27)'
+        'rgba(255,255,255,.28)'
     },
 
     /*
-     * SVG itself never rotates.
+     * Actual SVG is completely
+     * independent of both spinning
+     * layers, so it stays still.
      */
     iconContent: {
       position:
