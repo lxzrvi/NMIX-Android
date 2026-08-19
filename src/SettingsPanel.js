@@ -1,12 +1,22 @@
-import React from 'react';
+import React, {
+  useEffect,
+  useRef
+} from 'react';
+
 import {
-  Modal,
+  Animated,
+  Easing,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View
 } from 'react-native';
+
+import {
+  useSafeAreaInsets
+} from 'react-native-safe-area-context';
 
 import {
   themes,
@@ -16,6 +26,31 @@ import {
 import {
   fontFamily
 } from './useNMixFonts';
+
+import MotionPressable
+  from './MotionPressable';
+
+const THEME_META = {
+  green: {
+    label: 'Emerald'
+  },
+
+  blue: {
+    label: 'Ocean'
+  },
+
+  purple: {
+    label: 'Violet'
+  },
+
+  orange: {
+    label: 'Sunset'
+  },
+
+  rose: {
+    label: 'Rose'
+  }
+};
 
 export default function SettingsPanel({
   visible,
@@ -29,47 +64,226 @@ export default function SettingsPanel({
   colors,
   accent
 }) {
-  return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={onClose}
-    >
-      <Pressable
-        style={styles.backdrop}
-        onPress={onClose}
-      />
+  const insets =
+    useSafeAreaInsets();
 
-      <View
+  const {
+    width,
+    height
+  } = useWindowDimensions();
+
+  const motion =
+    useRef(
+      new Animated.Value(
+        visible ? 1 : 0
+      )
+    ).current;
+
+  useEffect(() => {
+    Animated.timing(
+      motion,
+      {
+        toValue:
+          visible
+            ? 1
+            : 0,
+
+        duration:
+          visible
+            ? 430
+            : 330,
+
+        easing:
+          Easing.bezier(
+            0.22,
+            1,
+            0.36,
+            1
+          ),
+
+        useNativeDriver:
+          true
+      }
+    ).start();
+  }, [visible]);
+
+  const regular =
+    fontFamily(font);
+
+  const bold =
+    fontFamily(
+      font,
+      true
+    );
+
+  const panelWidth =
+    Math.min(
+      350,
+      width - 24
+    );
+
+  const translateX =
+    motion.interpolate({
+      inputRange: [0, 1],
+
+      outputRange: [
+        32,
+        0
+      ]
+    });
+
+  const translateY =
+    motion.interpolate({
+      inputRange: [0, 1],
+
+      outputRange: [
+        -18,
+        0
+      ]
+    });
+
+  const scale =
+    motion.interpolate({
+      inputRange: [0, 1],
+
+      outputRange: [
+        0.94,
+        1
+      ]
+    });
+
+  /*
+   * Keep the component mounted for
+   * the closing animation, but once
+   * invisible it no longer captures
+   * touches.
+   */
+  return (
+    <View
+      pointerEvents={
+        visible
+          ? 'box-none'
+          : 'none'
+      }
+      style={
+        styles.root
+      }
+    >
+      <Animated.View
+        pointerEvents={
+          visible
+            ? 'auto'
+            : 'none'
+        }
+        style={[
+          styles.backdrop,
+
+          {
+            opacity:
+              motion.interpolate({
+                inputRange:
+                  [0, 1],
+
+                outputRange:
+                  [0, 1]
+              })
+          }
+        ]}
+      >
+        <Pressable
+          style={
+            StyleSheet.absoluteFill
+          }
+          onPress={
+            onClose
+          }
+        />
+      </Animated.View>
+
+      <Animated.View
+        pointerEvents={
+          visible
+            ? 'auto'
+            : 'none'
+        }
         style={[
           styles.panel,
+
           {
-            backgroundColor: colors.surface,
-            borderColor: colors.border
+            top:
+              insets.top +
+              62,
+
+            right:
+              Math.max(
+                12,
+                insets.right +
+                12
+              ),
+
+            width:
+              panelWidth,
+
+            maxHeight:
+              height -
+              insets.top -
+              insets.bottom -
+              82,
+
+            backgroundColor:
+              colors.surface,
+
+            borderColor:
+              colors.border,
+
+            opacity:
+              motion,
+
+            transform: [
+              {
+                translateX
+              },
+
+              {
+                translateY
+              },
+
+              {
+                scale
+              }
+            ]
           }
         ]}
       >
         <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={
+            false
+          }
+          contentContainerStyle={
+            styles.scroll
+          }
         >
           <View
             style={[
               styles.header,
+
               {
-                borderBottomColor: colors.border
+                borderBottomColor:
+                  colors.border
               }
             ]}
           >
-            <View style={styles.headerCopy}>
+            <View>
               <Text
                 style={[
                   styles.headerTitle,
+
                   {
-                    color: colors.text,
-                    fontFamily: fontFamily(font, true)
+                    color:
+                      colors.text,
+
+                    fontFamily:
+                      bold
                   }
                 ]}
               >
@@ -78,10 +292,14 @@ export default function SettingsPanel({
 
               <Text
                 style={[
-                  styles.small,
+                  styles.headerSub,
+
                   {
-                    color: colors.muted,
-                    fontFamily: fontFamily(font)
+                    color:
+                      colors.muted,
+
+                    fontFamily:
+                      regular
                   }
                 ]}
               >
@@ -89,45 +307,70 @@ export default function SettingsPanel({
               </Text>
             </View>
 
-            <Pressable
-              onPress={onClose}
-              style={({ pressed }) => [
-                styles.close,
+            <View
+              style={[
+                styles.connectedHint,
+
                 {
-                  backgroundColor: colors.surface2
-                },
-                pressed && styles.pressed
+                  backgroundColor:
+                    `${accent}18`
+                }
               ]}
             >
+              <View
+                style={[
+                  styles.connectedDot,
+
+                  {
+                    backgroundColor:
+                      accent
+                  }
+                ]}
+              />
+
               <Text
                 style={[
-                  styles.closeText,
+                  styles.connectedText,
+
                   {
-                    color: colors.text,
-                    fontFamily: fontFamily(font)
+                    color:
+                      accent,
+
+                    fontFamily:
+                      bold
                   }
                 ]}
               >
-                ×
+                Live
               </Text>
-            </Pressable>
+            </View>
           </View>
 
           <View
             style={[
-              styles.row,
+              styles.appearanceRow,
+
               {
-                borderBottomColor: colors.border
+                borderBottomColor:
+                  colors.border
               }
             ]}
           >
-            <View style={styles.rowCopy}>
+            <View
+              style={
+                styles.rowCopy
+              }
+            >
               <Text
                 style={[
                   styles.title,
+
                   {
-                    color: colors.text,
-                    fontFamily: fontFamily(font, true)
+                    color:
+                      colors.text,
+
+                    fontFamily:
+                      bold
                   }
                 ]}
               >
@@ -137,9 +380,13 @@ export default function SettingsPanel({
               <Text
                 style={[
                   styles.small,
+
                   {
-                    color: colors.muted,
-                    fontFamily: fontFamily(font)
+                    color:
+                      colors.muted,
+
+                    fontFamily:
+                      regular
                   }
                 ]}
               >
@@ -147,45 +394,42 @@ export default function SettingsPanel({
               </Text>
             </View>
 
-            <Pressable
-              onPress={() => setDark(!dark)}
-              accessibilityRole="switch"
-              accessibilityState={{
-                checked: dark
-              }}
-              style={[
-                styles.switch,
-                {
-                  backgroundColor:
-                    dark
-                      ? accent
-                      : colors.surface3
-                }
-              ]}
-            >
-              <View
-                style={[
-                  styles.knob,
-                  dark && styles.knobOn
-                ]}
-              />
-            </Pressable>
+            <AnimatedSwitch
+              value={
+                dark
+              }
+              onChange={
+                setDark
+              }
+              accent={
+                accent
+              }
+              inactive={
+                colors.surface3
+              }
+            />
           </View>
 
           <View
             style={[
               styles.block,
+
               {
-                borderBottomColor: colors.border
+                borderBottomColor:
+                  colors.border
               }
             ]}
           >
             <Text
               style={[
                 styles.title,
+
                 {
-                  color: colors.text,
-                  fontFamily: fontFamily(font, true)
+                  color:
+                    colors.text,
+
+                  fontFamily:
+                    bold
                 }
               ]}
             >
@@ -195,61 +439,104 @@ export default function SettingsPanel({
             <Text
               style={[
                 styles.small,
+
                 {
-                  color: colors.muted,
-                  fontFamily: fontFamily(font)
+                  color:
+                    colors.muted,
+
+                  fontFamily:
+                    regular
                 }
               ]}
             >
-              Choose your NMIX color
+              Selected · {
+                THEME_META[
+                  themeName
+                ]?.label ||
+                'Emerald'
+              }
             </Text>
 
-            <View style={styles.themeRow}>
-              {Object.keys(themes).map(name => {
-                const selected = themeName === name;
+            <View
+              style={
+                styles.themeGrid
+              }
+            >
+              {Object.keys(
+                themes
+              ).map(name => (
+                <ThemeChoice
+                  key={name}
 
-                return (
-                  <Pressable
-                    key={name}
-                    onPress={() => setThemeName(name)}
-                    accessibilityLabel={`${name} theme`}
-                    style={({ pressed }) => [
-                      styles.themeOuter,
-                      {
-                        borderColor:
-                          selected
-                            ? colors.text
-                            : 'transparent'
-                      },
-                      pressed && styles.pressed
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.themeCircle,
-                        {
-                          backgroundColor:
-                            themes[name].accent
-                        }
-                      ]}
-                    >
-                      {selected && (
-                        <View style={styles.themeSelected} />
-                      )}
-                    </View>
-                  </Pressable>
-                );
-              })}
+                  name={name}
+
+                  label={
+                    THEME_META[
+                      name
+                    ]?.label ||
+                    name
+                  }
+
+                  selected={
+                    themeName ===
+                    name
+                  }
+
+                  color={
+                    themes[
+                      name
+                    ].accent
+                  }
+
+                  textColor={
+                    colors.text
+                  }
+
+                  muted={
+                    colors.muted
+                  }
+
+                  surface={
+                    colors.surface2
+                  }
+
+                  border={
+                    colors.border
+                  }
+
+                  font={
+                    regular
+                  }
+
+                  bold={
+                    bold
+                  }
+
+                  onPress={() =>
+                    setThemeName(
+                      name
+                    )
+                  }
+                />
+              ))}
             </View>
           </View>
 
-          <View style={styles.blockLast}>
+          <View
+            style={
+              styles.fontBlock
+            }
+          >
             <Text
               style={[
                 styles.title,
+
                 {
-                  color: colors.text,
-                  fontFamily: fontFamily(font, true)
+                  color:
+                    colors.text,
+
+                  fontFamily:
+                    bold
                 }
               ]}
             >
@@ -259,42 +546,58 @@ export default function SettingsPanel({
             <Text
               style={[
                 styles.small,
+
                 {
-                  color: colors.muted,
-                  fontFamily: fontFamily(font)
+                  color:
+                    colors.muted,
+
+                  fontFamily:
+                    regular
                 }
               ]}
             >
-              Choose how NMIX feels
+              Selected · {font}
             </Text>
 
-            <View style={styles.fontGrid}>
-              {fontChoices.map(name => {
-                const selected = font === name;
-
-                return (
-                  <Pressable
+            <View
+              style={
+                styles.fontGrid
+              }
+            >
+              {fontChoices.map(
+                name => (
+                  <MotionPressable
                     key={name}
-                    onPress={() => setFont(name)}
-                    style={({ pressed }) => [
+
+                    onPress={() =>
+                      setFont(
+                        name
+                      )
+                    }
+
+                    style={[
                       styles.fontButton,
+
                       {
                         borderColor:
-                          selected
+                          font ===
+                          name
                             ? accent
                             : colors.border,
+
                         backgroundColor:
                           colors.surface2
-                      },
-                      pressed && styles.pressed
+                      }
                     ]}
                   >
                     <View
                       style={[
-                        styles.aaBox,
+                        styles.aa,
+
                         {
                           backgroundColor:
-                            selected
+                            font ===
+                            name
                               ? `${accent}18`
                               : colors.surface
                         }
@@ -302,11 +605,15 @@ export default function SettingsPanel({
                     >
                       <Text
                         style={{
-                          color: accent,
-                          fontFamily: fontFamily(
-                            name,
-                            true
-                          ),
+                          color:
+                            accent,
+
+                          fontFamily:
+                            fontFamily(
+                              name,
+                              true
+                            ),
+
                           fontSize: 14
                         }}
                       >
@@ -318,215 +625,567 @@ export default function SettingsPanel({
                       numberOfLines={1}
                       style={{
                         flex: 1,
+
                         color:
-                          selected
+                          font ===
+                          name
                             ? accent
                             : colors.text,
-                        fontFamily: fontFamily(name),
-                        fontSize: 11
+
+                        fontFamily:
+                          fontFamily(
+                            name
+                          ),
+
+                        fontSize: 10.5
                       }}
                     >
                       {name}
                     </Text>
-                  </Pressable>
-                );
-              })}
+                  </MotionPressable>
+                )
+              )}
             </View>
           </View>
 
           <Text
             style={[
               styles.note,
+
               {
-                color: colors.muted,
-                fontFamily: fontFamily(font)
+                color:
+                  colors.muted,
+
+                fontFamily:
+                  regular
               }
             ]}
           >
-            Theme, dark mode and font settings are saved on this device.
+            Theme, dark mode and font are saved automatically on this device. Use the top-right X to close Settings.
           </Text>
         </ScrollView>
-      </View>
-    </Modal>
+      </Animated.View>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.38)'
-  },
+function AnimatedSwitch({
+  value,
+  onChange,
+  accent,
+  inactive
+}) {
+  const motion =
+    useRef(
+      new Animated.Value(
+        value ? 1 : 0
+      )
+    ).current;
 
-  panel: {
-    position: 'absolute',
-    top: 45,
-    right: 12,
-    width: '91%',
-    maxWidth: 350,
-    maxHeight: '88%',
-    padding: 17,
-    borderWidth: 1,
-    borderRadius: 20,
-    elevation: 24
-  },
-
-  scrollContent: {
-    paddingBottom: 2
-  },
-
-  header: {
-    paddingBottom: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 15,
-    borderBottomWidth: 1
-  },
-
-  headerCopy: {
-    flex: 1
-  },
-
-  headerTitle: {
-    fontSize: 15
-  },
-
-  small: {
-    marginTop: 2,
-    fontSize: 10
-  },
-
-  close: {
-    width: 34,
-    height: 34,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 17
-  },
-
-  closeText: {
-    marginTop: -2,
-    fontSize: 23
-  },
-
-  row: {
-    paddingVertical: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    borderBottomWidth: 1
-  },
-
-  rowCopy: {
-    flex: 1
-  },
-
-  title: {
-    fontSize: 13
-  },
-
-  switch: {
-    width: 49,
-    height: 28,
-    padding: 4,
-    borderRadius: 999
-  },
-
-  knob: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#ffffff',
-    elevation: 2
-  },
-
-  knobOn: {
-    transform: [
+  useEffect(() => {
+    Animated.spring(
+      motion,
       {
-        translateX: 21
+        toValue:
+          value ? 1 : 0,
+
+        friction: 8,
+
+        tension: 80,
+
+        useNativeDriver:
+          false
       }
-    ]
-  },
+    ).start();
+  }, [value]);
 
-  block: {
-    paddingVertical: 16,
-    borderBottomWidth: 1
-  },
+  const left =
+    motion.interpolate({
+      inputRange: [0, 1],
 
-  blockLast: {
-    paddingTop: 16,
-    paddingBottom: 4
-  },
+      outputRange: [
+        4,
+        25
+      ]
+    });
 
-  themeRow: {
-    marginTop: 12,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10
-  },
+  const backgroundColor =
+    motion.interpolate({
+      inputRange: [0, 1],
 
-  themeOuter: {
-    width: 42,
-    height: 42,
-    padding: 3,
-    borderWidth: 3,
-    borderRadius: 21
-  },
+      outputRange: [
+        inactive,
+        accent
+      ]
+    });
 
-  themeCircle: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 20
-  },
+  return (
+    <MotionPressable
+      onPress={() =>
+        onChange(
+          !value
+        )
+      }
+      style={
+        styles.switchTouch
+      }
+    >
+      <Animated.View
+        style={[
+          styles.switchTrack,
 
-  themeSelected: {
-    width: 14,
-    height: 14,
-    borderWidth: 2,
-    borderColor: '#ffffff',
-    borderRadius: 7
-  },
+          {
+            backgroundColor
+          }
+        ]}
+      >
+        <Animated.View
+          style={[
+            styles.switchKnob,
 
-  fontGrid: {
-    marginTop: 11,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8
-  },
+            {
+              left
+            }
+          ]}
+        />
+      </Animated.View>
+    </MotionPressable>
+  );
+}
 
-  fontButton: {
-    width: '48%',
-    minHeight: 50,
-    paddingHorizontal: 7,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    borderWidth: 1,
-    borderRadius: 10
-  },
+function ThemeChoice({
+  label,
+  selected,
+  color,
+  textColor,
+  muted,
+  surface,
+  border,
+  font,
+  bold,
+  onPress
+}) {
+  const selection =
+    useRef(
+      new Animated.Value(
+        selected ? 1 : 0
+      )
+    ).current;
 
-  aaBox: {
-    width: 30,
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 7
-  },
-
-  note: {
-    marginTop: 13,
-    fontSize: 9,
-    lineHeight: 14
-  },
-
-  pressed: {
-    opacity: 0.72,
-    transform: [
+  useEffect(() => {
+    Animated.spring(
+      selection,
       {
-        scale: 0.96
+        toValue:
+          selected ? 1 : 0,
+
+        friction: 7,
+
+        tension: 80,
+
+        useNativeDriver:
+          true
       }
-    ]
-  }
-});
+    ).start();
+  }, [selected]);
+
+  const scale =
+    selection.interpolate({
+      inputRange: [0, 1],
+
+      outputRange: [
+        1,
+        1.035
+      ]
+    });
+
+  return (
+    <MotionPressable
+      onPress={
+        onPress
+      }
+      style={[
+        styles.themeChoice,
+
+        {
+          backgroundColor:
+            surface,
+
+          borderColor:
+            selected
+              ? color
+              : border
+        }
+      ]}
+    >
+      <Animated.View
+        style={[
+          styles.themePreview,
+
+          {
+            backgroundColor:
+              color,
+
+            transform: [
+              {
+                scale
+              }
+            ]
+          }
+        ]}
+      >
+        <Animated.View
+          style={[
+            styles.themeCheck,
+
+            {
+              opacity:
+                selection,
+
+              transform: [
+                {
+                  scale:
+                    selection
+                }
+              ]
+            }
+          ]}
+        />
+      </Animated.View>
+
+      <View
+        style={
+          styles.themeCopy
+        }
+      >
+        <Text
+          style={[
+            styles.themeName,
+
+            {
+              color:
+                selected
+                  ? color
+                  : textColor,
+
+              fontFamily:
+                bold
+            }
+          ]}
+        >
+          {label}
+        </Text>
+
+        <Text
+          style={[
+            styles.themeStatus,
+
+            {
+              color:
+                muted,
+
+              fontFamily:
+                font
+            }
+          ]}
+        >
+          {selected
+            ? 'Active'
+            : 'Tap to apply'}
+        </Text>
+      </View>
+    </MotionPressable>
+  );
+}
+
+const styles =
+  StyleSheet.create({
+    root: {
+      ...StyleSheet.absoluteFillObject,
+
+      zIndex: 900
+    },
+
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+
+      backgroundColor:
+        'rgba(0,0,0,.34)'
+    },
+
+    panel: {
+      position:
+        'absolute',
+
+      overflow:
+        'hidden',
+
+      borderWidth: 1,
+
+      borderRadius: 20,
+
+      elevation: 20
+    },
+
+    scroll: {
+      padding: 17,
+
+      paddingBottom: 18
+    },
+
+    header: {
+      paddingBottom: 14,
+
+      flexDirection:
+        'row',
+
+      justifyContent:
+        'space-between',
+
+      alignItems:
+        'center',
+
+      gap: 12,
+
+      borderBottomWidth: 1
+    },
+
+    headerTitle: {
+      fontSize: 15
+    },
+
+    headerSub: {
+      marginTop: 2,
+
+      fontSize: 10
+    },
+
+    connectedHint: {
+      height: 28,
+
+      paddingHorizontal: 9,
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      gap: 5,
+
+      borderRadius: 999
+    },
+
+    connectedDot: {
+      width: 6,
+
+      height: 6,
+
+      borderRadius: 3
+    },
+
+    connectedText: {
+      fontSize: 8
+    },
+
+    appearanceRow: {
+      paddingVertical: 16,
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'space-between',
+
+      gap: 12,
+
+      borderBottomWidth: 1
+    },
+
+    rowCopy: {
+      flex: 1
+    },
+
+    title: {
+      fontSize: 13
+    },
+
+    small: {
+      marginTop: 2,
+
+      fontSize: 10
+    },
+
+    switchTouch: {
+      width: 53,
+
+      height: 32,
+
+      justifyContent:
+        'center'
+    },
+
+    switchTrack: {
+      position:
+        'relative',
+
+      width: 53,
+
+      height: 28,
+
+      borderRadius: 999
+    },
+
+    switchKnob: {
+      position:
+        'absolute',
+
+      top: 4,
+
+      width: 20,
+
+      height: 20,
+
+      borderRadius: 10,
+
+      backgroundColor:
+        '#fff',
+
+      elevation: 2
+    },
+
+    block: {
+      paddingVertical: 16,
+
+      borderBottomWidth: 1
+    },
+
+    themeGrid: {
+      marginTop: 12,
+
+      gap: 8
+    },
+
+    themeChoice: {
+      minHeight: 54,
+
+      paddingHorizontal: 10,
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      gap: 10,
+
+      borderWidth: 1,
+
+      borderRadius: 12
+    },
+
+    themePreview: {
+      width: 34,
+
+      height: 34,
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center',
+
+      borderRadius: 17
+    },
+
+    themeCheck: {
+      width: 13,
+
+      height: 13,
+
+      borderWidth: 2,
+
+      borderColor:
+        '#ffffff',
+
+      borderRadius: 7
+    },
+
+    themeCopy: {
+      flex: 1
+    },
+
+    themeName: {
+      fontSize: 11.5
+    },
+
+    themeStatus: {
+      marginTop: 1,
+
+      fontSize: 8.5
+    },
+
+    fontBlock: {
+      paddingTop: 16
+    },
+
+    fontGrid: {
+      marginTop: 11,
+
+      flexDirection:
+        'row',
+
+      flexWrap:
+        'wrap',
+
+      justifyContent:
+        'space-between',
+
+      rowGap: 8
+    },
+
+    fontButton: {
+      width: '48.5%',
+
+      minHeight: 50,
+
+      paddingHorizontal: 7,
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      gap: 7,
+
+      borderWidth: 1,
+
+      borderRadius: 10
+    },
+
+    aa: {
+      width: 30,
+
+      height: 30,
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center',
+
+      borderRadius: 7
+    },
+
+    note: {
+      marginTop: 14,
+
+      fontSize: 8.5,
+
+      lineHeight: 13
+    }
+  });
