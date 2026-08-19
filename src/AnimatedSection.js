@@ -1,4 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, {
+  useEffect,
+  useRef
+} from 'react';
 
 import {
   Animated,
@@ -9,8 +12,21 @@ import {
   View
 } from 'react-native';
 
+import {
+  CalculatorIcon,
+  ClockIcon,
+  CounterIcon,
+  HelpIcon
+} from './icons';
+
+const iconMap = {
+  calculator: CalculatorIcon,
+  clock: ClockIcon,
+  counter: CounterIcon,
+  instructions: HelpIcon
+};
+
 export default function AnimatedSection({
-  icon,
   title,
   subtitle,
   name,
@@ -22,73 +38,151 @@ export default function AnimatedSection({
   bold,
   children
 }) {
-  const active = open === name;
+  const active =
+    open === name;
 
   const motion = useRef(
-    new Animated.Value(active ? 1 : 0)
+    new Animated.Value(
+      active ? 1 : 0
+    )
   ).current;
 
   useEffect(() => {
-    Animated.timing(motion, {
-      toValue: active ? 1 : 0,
-      duration: 620,
-      easing: Easing.bezier(0.22, 1, 0.36, 1),
-      useNativeDriver: true
-    }).start();
+    Animated.timing(
+      motion,
+      {
+        toValue:
+          active ? 1 : 0,
+
+        duration: 620,
+
+        easing:
+          Easing.bezier(
+            0.22,
+            1,
+            0.36,
+            1
+          ),
+
+        useNativeDriver:
+          true
+      }
+    ).start();
   }, [active]);
 
-  const outerSpin = motion.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '180deg']
-  });
+  const outerSpin =
+    motion.interpolate({
+      inputRange: [0, 1],
+      outputRange: [
+        '0deg',
+        '180deg'
+      ]
+    });
 
-  const innerSpin = motion.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '-180deg']
-  });
+  const innerSpin =
+    motion.interpolate({
+      inputRange: [0, 1],
+      outputRange: [
+        '0deg',
+        '-180deg'
+      ]
+    });
 
-  const arrowSpin = motion.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '180deg']
-  });
+  const arrowSpin =
+    motion.interpolate({
+      inputRange: [0, 1],
+      outputRange: [
+        '0deg',
+        '180deg'
+      ]
+    });
 
-  const outerScale = motion.interpolate({
-    inputRange: [0, 0.55, 1],
-    outputRange: [1, 1.1, 1.04]
-  });
+  const outerScale =
+    motion.interpolate({
+      inputRange: [
+        0,
+        0.52,
+        1
+      ],
+      outputRange: [
+        1,
+        1.08,
+        1.03
+      ]
+    });
 
-  const innerScale = motion.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [1, 0.84, 1]
-  });
+  const innerScale =
+    motion.interpolate({
+      inputRange: [
+        0,
+        0.5,
+        1
+      ],
+      outputRange: [
+        1,
+        0.91,
+        1
+      ]
+    });
+
+  const Icon =
+    iconMap[name] ||
+    HelpIcon;
 
   return (
     <View
       style={[
         styles.section,
+
         {
-          backgroundColor: colors.surface,
-          borderColor: colors.border
+          backgroundColor:
+            colors.surface,
+
+          borderColor:
+            colors.border
         }
       ]}
     >
       <Pressable
-        onPress={() => toggle(name)}
+        onPress={() =>
+          toggle(name)
+        }
         style={({ pressed }) => [
           styles.bar,
-          pressed && styles.pressed
+
+          pressed && {
+            opacity: 0.82
+          }
         ]}
       >
-        <View style={styles.iconStage}>
+        <View
+          style={
+            styles.iconStage
+          }
+        >
           <Animated.View
             style={[
               styles.outerShape,
+
               {
-                backgroundColor: accent,
-                borderRadius: active ? 21 : 9,
+                backgroundColor:
+                  accent,
+
+                borderRadius:
+                  active
+                    ? 21
+                    : 9,
+
                 transform: [
-                  { rotate: outerSpin },
-                  { scale: outerScale }
+                  {
+                    rotate:
+                      outerSpin
+                  },
+
+                  {
+                    scale:
+                      outerScale
+                  }
                 ]
               }
             ]}
@@ -97,35 +191,56 @@ export default function AnimatedSection({
           <Animated.View
             style={[
               styles.innerShape,
+
               {
-                borderRadius: active ? 16 : 6,
+                borderRadius:
+                  active
+                    ? 17
+                    : 6,
+
                 transform: [
-                  { rotate: innerSpin },
-                  { scale: innerScale }
+                  {
+                    rotate:
+                      innerSpin
+                  },
+
+                  {
+                    scale:
+                      innerScale
+                  }
                 ]
               }
             ]}
           />
 
-          <View style={styles.symbolLayer}>
-            <Text
-              style={[
-                styles.iconText,
-                { fontFamily: bold }
-              ]}
-            >
-              {icon}
-            </Text>
+          <View
+            pointerEvents="none"
+            style={
+              styles.iconContent
+            }
+          >
+            <Icon
+              size={21}
+              color="#ffffff"
+            />
           </View>
         </View>
 
-        <View style={styles.copy}>
+        <View
+          style={
+            styles.copy
+          }
+        >
           <Text
             style={[
               styles.title,
+
               {
-                color: colors.text,
-                fontFamily: bold
+                color:
+                  colors.text,
+
+                fontFamily:
+                  bold
               }
             ]}
           >
@@ -136,9 +251,13 @@ export default function AnimatedSection({
             numberOfLines={1}
             style={[
               styles.subtitle,
+
               {
-                color: colors.muted,
-                fontFamily: regular
+                color:
+                  colors.muted,
+
+                fontFamily:
+                  regular
               }
             ]}
           >
@@ -149,15 +268,25 @@ export default function AnimatedSection({
         <Animated.View
           style={[
             styles.arrowStage,
+
             {
-              transform: [{ rotate: arrowSpin }]
+              transform: [
+                {
+                  rotate:
+                    arrowSpin
+                }
+              ]
             }
           ]}
         >
           <View
             style={[
               styles.arrow,
-              { borderColor: colors.muted }
+
+              {
+                borderColor:
+                  colors.muted
+              }
             ]}
           />
         </Animated.View>
@@ -167,7 +296,11 @@ export default function AnimatedSection({
         <View
           style={[
             styles.body,
-            { borderTopColor: colors.border }
+
+            {
+              borderTopColor:
+                colors.border
+            }
           ]}
         >
           {children}
@@ -177,100 +310,145 @@ export default function AnimatedSection({
   );
 }
 
-const styles = StyleSheet.create({
-  section: {
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderRadius: 14
-  },
+const styles =
+  StyleSheet.create({
+    section: {
+      overflow:
+        'hidden',
 
-  bar: {
-    minHeight: 67,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
+      borderWidth: 1,
 
-  iconStage: {
-    width: 44,
-    height: 44,
-    flexShrink: 0,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
+      borderRadius: 14
+    },
 
-  outerShape: {
-    position: 'absolute',
-    width: 42,
-    height: 42
-  },
+    bar: {
+      minHeight: 67,
 
-  innerShape: {
-    position: 'absolute',
-    width: 31,
-    height: 31,
-    borderWidth: 1.3,
-    borderColor: 'rgba(255,255,255,.25)'
-  },
+      paddingHorizontal: 14,
 
-  symbolLayer: {
-    position: 'absolute',
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
+      paddingVertical: 11,
 
-  iconText: {
-    width: 44,
-    height: 44,
-    color: '#fff',
-    fontSize: 18,
-    lineHeight: 44,
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    includeFontPadding: false
-  },
+      flexDirection:
+        'row',
 
-  copy: {
-    flex: 1,
-    minWidth: 0,
-    paddingHorizontal: 12,
-    justifyContent: 'center'
-  },
+      alignItems:
+        'center'
+    },
 
-  title: {
-    fontSize: 14,
-    lineHeight: 19
-  },
+    iconStage: {
+      width: 44,
 
-  subtitle: {
-    marginTop: 1,
-    fontSize: 10,
-    lineHeight: 14
-  },
+      height: 44,
 
-  arrowStage: {
-    width: 28,
-    height: 28,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
+      flexShrink: 0,
 
-  arrow: {
-    width: 10,
-    height: 10,
-    borderRightWidth: 2,
-    borderBottomWidth: 2,
-    transform: [{ rotate: '45deg' }]
-  },
+      justifyContent:
+        'center',
 
-  body: {
-    borderTopWidth: 1
-  },
+      alignItems:
+        'center'
+    },
 
-  pressed: {
-    opacity: 0.78
-  }
-});
+    outerShape: {
+      position:
+        'absolute',
+
+      width: 42,
+
+      height: 42
+    },
+
+    /*
+     * This outline is deliberately
+     * close to the outer layer.
+     */
+    innerShape: {
+      position:
+        'absolute',
+
+      width: 35,
+
+      height: 35,
+
+      borderWidth: 1.25,
+
+      borderColor:
+        'rgba(255,255,255,.27)'
+    },
+
+    /*
+     * SVG itself never rotates.
+     */
+    iconContent: {
+      position:
+        'absolute',
+
+      width: 44,
+
+      height: 44,
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center'
+    },
+
+    copy: {
+      flex: 1,
+
+      minWidth: 0,
+
+      paddingHorizontal: 12,
+
+      justifyContent:
+        'center'
+    },
+
+    title: {
+      fontSize: 14,
+
+      lineHeight: 19
+    },
+
+    subtitle: {
+      marginTop: 1,
+
+      fontSize: 10,
+
+      lineHeight: 14
+    },
+
+    arrowStage: {
+      width: 28,
+
+      height: 28,
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center'
+    },
+
+    arrow: {
+      width: 10,
+
+      height: 10,
+
+      borderRightWidth: 2,
+
+      borderBottomWidth: 2,
+
+      transform: [
+        {
+          rotate:
+            '45deg'
+        }
+      ]
+    },
+
+    body: {
+      borderTopWidth: 1
+    }
+  });
