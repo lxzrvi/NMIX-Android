@@ -1,5 +1,4 @@
 import React, {
-  useEffect,
   useState
 } from 'react';
 
@@ -10,23 +9,34 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View
 } from 'react-native';
 
-import { LinearGradient } from 'expo-linear-gradient';
+import {
+  LinearGradient
+} from 'expo-linear-gradient';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage
+  from '@react-native-async-storage/async-storage';
 
-import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as ImagePicker
+  from 'expo-image-picker';
+
+import * as FileSystem
+  from 'expo-file-system/legacy';
 
 import {
   GalleryIcon,
   WallpaperIcon
 } from './icons';
 
-import MotionPressable from './MotionPressable';
-import { fontFamily } from './useNMixFonts';
+import MotionPressable
+  from './MotionPressable';
+
+import {
+  fontFamily
+} from './useNMixFonts';
 
 export const WALLPAPER_KEY =
   'nmix-clock-wallpaper';
@@ -34,6 +44,7 @@ export const WALLPAPER_KEY =
 export const BUILTIN_WALLPAPERS = {
   midnight: {
     name: 'Midnight',
+
     colors: [
       '#020706',
       '#071511',
@@ -44,6 +55,7 @@ export const BUILTIN_WALLPAPERS = {
 
   emerald: {
     name: 'Emerald',
+
     colors: [
       '#020806',
       '#0a241b',
@@ -54,6 +66,7 @@ export const BUILTIN_WALLPAPERS = {
 
   ocean: {
     name: 'Ocean',
+
     colors: [
       '#02070b',
       '#082236',
@@ -64,6 +77,7 @@ export const BUILTIN_WALLPAPERS = {
 
   violet: {
     name: 'Violet',
+
     colors: [
       '#08050d',
       '#241538',
@@ -74,6 +88,7 @@ export const BUILTIN_WALLPAPERS = {
 
   sunset: {
     name: 'Sunset',
+
     colors: [
       '#110705',
       '#3c1c12',
@@ -84,6 +99,7 @@ export const BUILTIN_WALLPAPERS = {
 
   rose: {
     name: 'Rose',
+
     colors: [
       '#0f0509',
       '#351320',
@@ -95,48 +111,58 @@ export const BUILTIN_WALLPAPERS = {
 
 export async function loadClockWallpaper() {
   try {
-    const raw = await AsyncStorage.getItem(
-      WALLPAPER_KEY
-    );
+    const raw =
+      await AsyncStorage.getItem(
+        WALLPAPER_KEY
+      );
 
     if (!raw) {
-      return {
-        type: 'builtin',
-        id: 'midnight'
-      };
+      return defaultWallpaper();
     }
 
-    const value = JSON.parse(raw);
+    const saved =
+      JSON.parse(raw);
 
     if (
-      value?.type === 'custom' &&
-      value?.uri
+      saved?.type ===
+        'builtin' &&
+      BUILTIN_WALLPAPERS[
+        saved.id
+      ]
+    ) {
+      return saved;
+    }
+
+    if (
+      saved?.type ===
+        'custom' &&
+      saved?.uri
     ) {
       const info =
-        await FileSystem.getInfoAsync(
-          value.uri
-        );
+        await FileSystem
+          .getInfoAsync(
+            saved.uri
+          );
 
       if (info.exists) {
-        return value;
+        return saved;
       }
-    }
-
-    if (
-      value?.type === 'builtin' &&
-      BUILTIN_WALLPAPERS[value.id]
-    ) {
-      return value;
     }
   } catch {}
 
+  return defaultWallpaper();
+}
+
+function defaultWallpaper() {
   return {
     type: 'builtin',
     id: 'midnight'
   };
 }
 
-async function saveWallpaper(value) {
+async function saveWallpaper(
+  value
+) {
   try {
     await AsyncStorage.setItem(
       WALLPAPER_KEY,
@@ -153,6 +179,9 @@ export default function ClockWallpaperPicker({
   theme,
   font
 }) {
+  const { width } =
+    useWindowDimensions();
+
   const [busy, setBusy] =
     useState(false);
 
@@ -160,23 +189,45 @@ export default function ClockWallpaperPicker({
     fontFamily(font);
 
   const bold =
-    fontFamily(font, true);
+    fontFamily(
+      font,
+      true
+    );
 
-  useEffect(() => {
-    if (!visible) {
-      setBusy(false);
-    }
-  }, [visible]);
+  /*
+   * 2 columns on a normal phone.
+   * This avoids percentage-width
+   * collapsing into thin strips.
+   */
+  const sheetWidth =
+    Math.min(
+      width - 24,
+      500
+    );
 
-  async function chooseBuiltin(id) {
+  const tileWidth =
+    Math.max(
+      125,
+      (
+        sheetWidth -
+        52
+      ) / 2
+    );
+
+  async function chooseBuiltin(
+    id
+  ) {
     const value = {
       type: 'builtin',
       id
     };
 
-    await saveWallpaper(value);
+    await saveWallpaper(
+      value
+    );
 
     onChange(value);
+
     onClose();
   }
 
@@ -189,95 +240,108 @@ export default function ClockWallpaperPicker({
 
     try {
       const permission =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+        await ImagePicker
+          .requestMediaLibraryPermissionsAsync();
 
-      if (!permission.granted) {
-        setBusy(false);
+      if (
+        !permission.granted
+      ) {
         return;
       }
 
       const result =
-        await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ['images'],
-          allowsEditing: false,
-          quality: 1
-        });
+        await ImagePicker
+          .launchImageLibraryAsync({
+            mediaTypes:
+              ImagePicker
+                .MediaTypeOptions
+                .Images,
+
+            allowsEditing:
+              false,
+
+            quality: 1,
+
+            exif: false
+          });
 
       if (
         result.canceled ||
-        !result.assets?.[0]?.uri
+        !result.assets ||
+        !result.assets[0]
       ) {
-        setBusy(false);
         return;
       }
 
-      const source =
-        result.assets[0].uri;
+      const asset =
+        result.assets[0];
 
-      /*
-       * This lives inside Android's
-       * app-private document storage.
-       * It survives app restarts and
-       * disappears when app data is
-       * cleared / app is uninstalled.
-       */
-      const folder =
-        `${FileSystem.documentDirectory}nmix/`;
-
-      const folderInfo =
-        await FileSystem.getInfoAsync(
-          folder
-        );
-
-      if (!folderInfo.exists) {
-        await FileSystem.makeDirectoryAsync(
-          folder,
-          {
-            intermediates: true
-          }
-        );
+      if (!asset.uri) {
+        return;
       }
 
+      const folder =
+        `${FileSystem.documentDirectory}nmix-wallpapers/`;
+
+      const folderInfo =
+        await FileSystem
+          .getInfoAsync(
+            folder
+          );
+
+      if (
+        !folderInfo.exists
+      ) {
+        await FileSystem
+          .makeDirectoryAsync(
+            folder,
+            {
+              intermediates: true
+            }
+          );
+      }
+
+      /*
+       * We create a new filename each
+       * time. React Native otherwise
+       * may continue displaying a
+       * cached old image when the URI
+       * stays identical.
+       */
       const extension =
-        getExtension(
-          result.assets[0].fileName ||
-          source
+        extensionFromAsset(
+          asset
         );
 
       const destination =
-        `${folder}clock-wallpaper.${extension}`;
+        `${folder}clock-${Date.now()}.${extension}`;
 
-      const oldInfo =
-        await FileSystem.getInfoAsync(
-          destination
-        );
+      await FileSystem
+        .copyAsync({
+          from:
+            asset.uri,
 
-      if (oldInfo.exists) {
-        await FileSystem.deleteAsync(
-          destination,
-          {
-            idempotent: true
-          }
-        );
-      }
-
-      await FileSystem.copyAsync({
-        from: source,
-        to: destination
-      });
+          to:
+            destination
+        });
 
       const value = {
         type: 'custom',
-        uri: destination
+
+        uri:
+          destination
       };
 
-      await saveWallpaper(value);
+      await saveWallpaper(
+        value
+      );
 
       onChange(value);
+
       onClose();
     } catch (error) {
       console.warn(
-        'NMIX wallpaper error:',
+        'NMIX wallpaper:',
         error
       );
     } finally {
@@ -291,32 +355,49 @@ export default function ClockWallpaperPicker({
       transparent
       animationType="fade"
       statusBarTranslucent
-      onRequestClose={onClose}
+      onRequestClose={
+        onClose
+      }
     >
       <Pressable
-        style={styles.backdrop}
-        onPress={onClose}
+        style={
+          styles.backdrop
+        }
+        onPress={
+          onClose
+        }
       />
 
       <View
         style={[
           styles.sheet,
+
           {
-            borderColor:
-              'rgba(255,255,255,.14)'
+            width:
+              sheetWidth
           }
         ]}
       >
         <LinearGradient
           colors={[
-            'rgba(24,31,28,.98)',
-            'rgba(10,15,13,.99)'
+            'rgba(24,31,28,.99)',
+            'rgba(8,13,11,.995)'
           ]}
-          style={StyleSheet.absoluteFill}
+          style={
+            StyleSheet.absoluteFill
+          }
         />
 
-        <View style={styles.header}>
-          <View style={styles.headerIcon}>
+        <View
+          style={
+            styles.header
+          }
+        >
+          <View
+            style={
+              styles.headerIcon
+            }
+          >
             <WallpaperIcon
               size={21}
               color={
@@ -325,12 +406,18 @@ export default function ClockWallpaperPicker({
             />
           </View>
 
-          <View style={styles.headerCopy}>
+          <View
+            style={
+              styles.headerCopy
+            }
+          >
             <Text
               style={[
                 styles.heading,
+
                 {
-                  fontFamily: bold
+                  fontFamily:
+                    bold
                 }
               ]}
             >
@@ -340,24 +427,32 @@ export default function ClockWallpaperPicker({
             <Text
               style={[
                 styles.subheading,
+
                 {
-                  fontFamily: regular
+                  fontFamily:
+                    regular
                 }
               ]}
             >
-              Choose a background for fullscreen clock
+              Choose a fullscreen background
             </Text>
           </View>
 
           <MotionPressable
-            onPress={onClose}
-            style={styles.close}
+            onPress={
+              onClose
+            }
+            style={
+              styles.close
+            }
           >
             <Text
               style={[
                 styles.closeText,
+
                 {
-                  fontFamily: regular
+                  fontFamily:
+                    regular
                 }
               ]}
             >
@@ -367,41 +462,66 @@ export default function ClockWallpaperPicker({
         </View>
 
         <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={
+            false
+          }
+          contentContainerStyle={
+            styles.scroll
+          }
         >
           <Text
             style={[
               styles.sectionTitle,
+
               {
-                fontFamily: bold
+                fontFamily:
+                  bold
               }
             ]}
           >
             Built-in
           </Text>
 
-          <View style={styles.grid}>
+          <View
+            style={
+              styles.grid
+            }
+          >
             {Object.entries(
               BUILTIN_WALLPAPERS
             ).map(
-              ([id, item]) => {
-                const active =
-                  current?.type ===
+              ([
+                id,
+                item
+              ]) => {
+                const selected =
+                  current
+                    ?.type ===
                     'builtin' &&
-                  current?.id === id;
+                  current
+                    ?.id === id;
 
                 return (
                   <MotionPressable
                     key={id}
+
                     onPress={() =>
-                      chooseBuiltin(id)
+                      chooseBuiltin(
+                        id
+                      )
                     }
+
                     style={[
-                      styles.option,
-                      active && {
+                      styles.tile,
+
+                      {
+                        width:
+                          tileWidth,
+
                         borderColor:
-                          theme.accentLight
+                          selected
+                            ? theme.accentLight
+                            : 'rgba(255,255,255,.10)'
                       }
                     ]}
                   >
@@ -424,17 +544,32 @@ export default function ClockWallpaperPicker({
                       <View
                         style={[
                           styles.previewGlow,
+
                           {
                             backgroundColor:
-                              `${theme.accent}30`
+                              `${theme.accent}28`
                           }
                         ]}
                       />
 
-                      {active && (
+                      <Text
+                        style={[
+                          styles.previewTime,
+
+                          {
+                            fontFamily:
+                              bold
+                          }
+                        ]}
+                      >
+                        10:28
+                      </Text>
+
+                      {selected && (
                         <View
                           style={[
-                            styles.activeDot,
+                            styles.selected,
+
                             {
                               backgroundColor:
                                 theme.accentLight
@@ -446,13 +581,16 @@ export default function ClockWallpaperPicker({
 
                     <Text
                       style={[
-                        styles.optionName,
+                        styles.tileName,
+
                         {
                           color:
-                            active
+                            selected
                               ? theme.accentLight
                               : '#eaf2ef',
-                          fontFamily: regular
+
+                          fontFamily:
+                            regular
                         }
                       ]}
                     >
@@ -468,8 +606,10 @@ export default function ClockWallpaperPicker({
             style={[
               styles.sectionTitle,
               styles.customTitle,
+
               {
-                fontFamily: bold
+                fontFamily:
+                  bold
               }
             ]}
           >
@@ -477,16 +617,21 @@ export default function ClockWallpaperPicker({
           </Text>
 
           <MotionPressable
-            onPress={chooseCustom}
-            disabled={busy}
+            onPress={
+              chooseCustom
+            }
+            disabled={
+              busy
+            }
             style={[
-              styles.customButton,
+              styles.custom,
+
               {
                 borderColor:
                   current?.type ===
-                  'custom'
+                    'custom'
                     ? theme.accentLight
-                    : 'rgba(255,255,255,.14)'
+                    : 'rgba(255,255,255,.12)'
               }
             ]}
           >
@@ -494,29 +639,41 @@ export default function ClockWallpaperPicker({
               'custom' &&
             current?.uri ? (
               <Image
+                key={
+                  current.uri
+                }
                 source={{
-                  uri: current.uri
+                  uri:
+                    current.uri
                 }}
                 resizeMode="cover"
-                style={styles.customImage}
+                style={
+                  StyleSheet.absoluteFill
+                }
               />
             ) : (
               <LinearGradient
                 colors={[
-                  `${theme.accent}35`,
-                  'rgba(255,255,255,.04)'
+                  `${theme.accent}38`,
+                  '#101613'
                 ]}
-                style={styles.customImage}
+                style={
+                  StyleSheet.absoluteFill
+                }
               />
             )}
 
             <View
               style={
-                styles.customOverlay
+                styles.customShade
               }
             />
 
-            <View style={styles.galleryIcon}>
+            <View
+              style={
+                styles.gallery
+              }
+            >
               <GalleryIcon
                 size={24}
                 color="#ffffff"
@@ -531,8 +688,10 @@ export default function ClockWallpaperPicker({
               <Text
                 style={[
                   styles.customHeading,
+
                   {
-                    fontFamily: bold
+                    fontFamily:
+                      bold
                   }
                 ]}
               >
@@ -544,12 +703,14 @@ export default function ClockWallpaperPicker({
               <Text
                 style={[
                   styles.customSub,
+
                   {
-                    fontFamily: regular
+                    fontFamily:
+                      regular
                   }
                 ]}
               >
-                Choose a photo from your phone
+                Choose any image from your phone
               </Text>
             </View>
           </MotionPressable>
@@ -557,12 +718,14 @@ export default function ClockWallpaperPicker({
           <Text
             style={[
               styles.note,
+
               {
-                fontFamily: regular
+                fontFamily:
+                  regular
               }
             ]}
           >
-            Your selection stays saved on this device until NMIX data is cleared or the app is uninstalled.
+            Custom wallpaper is copied into NMIX storage and remains available until app data is cleared or NMIX is uninstalled.
           </Text>
         </ScrollView>
       </View>
@@ -570,27 +733,63 @@ export default function ClockWallpaperPicker({
   );
 }
 
-function getExtension(value) {
-  const clean =
-    String(value)
+function extensionFromAsset(
+  asset
+) {
+  const mime =
+    String(
+      asset.mimeType ||
+      ''
+    ).toLowerCase();
+
+  if (
+    mime.includes(
+      'png'
+    )
+  ) {
+    return 'png';
+  }
+
+  if (
+    mime.includes(
+      'webp'
+    )
+  ) {
+    return 'webp';
+  }
+
+  if (
+    mime.includes(
+      'heic'
+    ) ||
+    mime.includes(
+      'heif'
+    )
+  ) {
+    /*
+     * Image component may display
+     * HEIC on supported Android
+     * devices, so preserve it.
+     */
+    return 'heic';
+  }
+
+  const name =
+    String(
+      asset.fileName ||
+      asset.uri ||
+      ''
+    )
       .split('?')[0]
       .toLowerCase();
 
   const match =
-    clean.match(
+    name.match(
       /\.([a-z0-9]+)$/
     );
 
-  const extension =
-    match?.[1];
-
-  if (
-    extension === 'jpg' ||
-    extension === 'jpeg' ||
-    extension === 'png' ||
-    extension === 'webp'
-  ) {
-    return extension;
+  if (match?.[1]) {
+    return match[1];
   }
 
   return 'jpg';
@@ -600,195 +799,307 @@ const styles =
   StyleSheet.create({
     backdrop: {
       ...StyleSheet.absoluteFillObject,
+
       backgroundColor:
-        'rgba(0,0,0,.58)'
+        'rgba(0,0,0,.60)'
     },
 
     sheet: {
-      position: 'absolute',
-      left: 12,
-      right: 12,
+      position:
+        'absolute',
+
+      alignSelf:
+        'center',
+
       bottom: 12,
-      maxHeight: '78%',
-      overflow: 'hidden',
+
+      maxWidth: 500,
+
+      maxHeight:
+        '82%',
+
+      overflow:
+        'hidden',
+
       borderWidth: 1,
+
+      borderColor:
+        'rgba(255,255,255,.12)',
+
       borderRadius: 24,
+
       elevation: 25
     },
 
     header: {
       minHeight: 78,
+
       paddingHorizontal: 16,
-      flexDirection: 'row',
-      alignItems: 'center',
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       borderBottomWidth: 1,
+
       borderBottomColor:
         'rgba(255,255,255,.08)'
     },
 
     headerIcon: {
       width: 40,
+
       height: 40,
-      justifyContent: 'center',
-      alignItems: 'center',
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center',
+
       borderRadius: 12,
+
       backgroundColor:
         'rgba(255,255,255,.06)'
     },
 
     headerCopy: {
       flex: 1,
+
       paddingHorizontal: 11
     },
 
     heading: {
       color: '#ffffff',
+
       fontSize: 14
     },
 
     subheading: {
       marginTop: 2,
+
       color:
         'rgba(255,255,255,.52)',
+
       fontSize: 9.5
     },
 
     close: {
       width: 36,
+
       height: 36,
-      justifyContent: 'center',
-      alignItems: 'center',
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center',
+
       borderRadius: 18,
+
       backgroundColor:
         'rgba(255,255,255,.07)'
     },
 
     closeText: {
-      color: '#ffffff',
+      color: '#fff',
+
       fontSize: 21,
-      lineHeight: 25
+
+      lineHeight: 24
     },
 
     scroll: {
       padding: 16,
+
       paddingBottom: 22
     },
 
     sectionTitle: {
       color:
         'rgba(255,255,255,.72)',
+
       fontSize: 11
     },
 
     grid: {
       marginTop: 10,
-      flexDirection: 'row',
-      flexWrap: 'wrap',
+
+      flexDirection:
+        'row',
+
+      flexWrap:
+        'wrap',
+
+      justifyContent:
+        'space-between',
+
       gap: 10
     },
 
-    option: {
-      width: '31%',
-      overflow: 'hidden',
+    tile: {
+      overflow:
+        'hidden',
+
       borderWidth: 1,
-      borderColor:
-        'rgba(255,255,255,.09)',
-      borderRadius: 13,
+
+      borderRadius: 14,
+
       backgroundColor:
         'rgba(255,255,255,.04)'
     },
 
     preview: {
-      height: 70,
-      overflow: 'hidden'
+      width: '100%',
+
+      height: 92,
+
+      overflow:
+        'hidden',
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center'
     },
 
     previewGlow: {
-      position: 'absolute',
-      width: 65,
-      height: 65,
-      right: -20,
-      top: -20,
-      borderRadius: 40
+      position:
+        'absolute',
+
+      width: 100,
+
+      height: 100,
+
+      right: -32,
+
+      top: -35,
+
+      borderRadius: 50
     },
 
-    activeDot: {
-      position: 'absolute',
-      right: 7,
-      top: 7,
-      width: 8,
-      height: 8,
+    previewTime: {
+      color:
+        'rgba(255,255,255,.88)',
+
+      fontSize: 19
+    },
+
+    selected: {
+      position:
+        'absolute',
+
+      top: 8,
+
+      right: 8,
+
+      width: 9,
+
+      height: 9,
+
       borderWidth: 2,
+
       borderColor:
-        'rgba(255,255,255,.8)',
-      borderRadius: 4
+        '#ffffff',
+
+      borderRadius: 5
     },
 
-    optionName: {
-      paddingVertical: 8,
+    tileName: {
+      paddingVertical: 9,
+
       paddingHorizontal: 7,
+
       fontSize: 9,
-      textAlign: 'center'
+
+      textAlign:
+        'center'
     },
 
     customTitle: {
       marginTop: 20
     },
 
-    customButton: {
-      position: 'relative',
-      height: 92,
+    custom: {
+      position:
+        'relative',
+
+      height: 105,
+
       marginTop: 10,
-      overflow: 'hidden',
-      flexDirection: 'row',
-      alignItems: 'center',
+
+      overflow:
+        'hidden',
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       borderWidth: 1,
-      borderRadius: 15
+
+      borderRadius: 16
     },
 
-    customImage: {
-      ...StyleSheet.absoluteFillObject
-    },
-
-    customOverlay: {
+    customShade: {
       ...StyleSheet.absoluteFillObject,
+
       backgroundColor:
-        'rgba(0,0,0,.34)'
+        'rgba(0,0,0,.38)'
     },
 
-    galleryIcon: {
-      width: 46,
-      height: 46,
-      marginLeft: 14,
-      justifyContent: 'center',
-      alignItems: 'center',
+    gallery: {
+      width: 48,
+
+      height: 48,
+
+      marginLeft: 15,
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center',
+
       borderRadius: 14,
+
       backgroundColor:
-        'rgba(255,255,255,.12)'
+        'rgba(255,255,255,.13)'
     },
 
     customCopy: {
       flex: 1,
+
       paddingHorizontal: 12
     },
 
     customHeading: {
-      color: '#fff',
+      color: '#ffffff',
+
       fontSize: 12
     },
 
     customSub: {
       marginTop: 3,
+
       color:
         'rgba(255,255,255,.62)',
+
       fontSize: 9
     },
 
     note: {
       marginTop: 15,
+
       color:
         'rgba(255,255,255,.42)',
+
       fontSize: 8.5,
+
       lineHeight: 13
     }
   });
