@@ -16,6 +16,9 @@ jobs:
         with:
           node-version: 24
 
+      - name: Configure npm
+        run: npm config set legacy-peer-deps true
+
       - name: Clean and install dependencies
         run: |
           rm -rf node_modules
