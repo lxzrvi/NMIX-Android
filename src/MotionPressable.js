@@ -7,14 +7,21 @@ import {
   Pressable
 } from 'react-native';
 
+const AnimatedPressable =
+  Animated.createAnimatedComponent(
+    Pressable
+  );
+
 export default function MotionPressable({
   children,
   style,
   onPress,
   onLongPress,
   delayLongPress,
-  disabled,
-  hitSlop
+  disabled = false,
+  hitSlop,
+  onPressIn,
+  onPressOut
 }) {
   const scale = useRef(
     new Animated.Value(1)
@@ -24,17 +31,13 @@ export default function MotionPressable({
     new Animated.Value(1)
   ).current;
 
-  function animate(
-    toScale,
-    toOpacity
-  ) {
+  function pressIn(event) {
     Animated.parallel([
-      Animated.spring(
+      Animated.timing(
         scale,
         {
-          toValue: toScale,
-          friction: 7,
-          tension: 120,
+          toValue: 0.955,
+          duration: 150,
           useNativeDriver: true
         }
       ),
@@ -42,54 +45,63 @@ export default function MotionPressable({
       Animated.timing(
         opacity,
         {
-          toValue:
-            toOpacity,
-          duration: 190,
+          toValue: 0.86,
+          duration: 150,
           useNativeDriver: true
         }
       )
     ]).start();
+
+    onPressIn?.(event);
+  }
+
+  function pressOut(event) {
+    Animated.parallel([
+      Animated.spring(
+        scale,
+        {
+          toValue: 1,
+          friction: 7,
+          tension: 85,
+          useNativeDriver: true
+        }
+      ),
+
+      Animated.timing(
+        opacity,
+        {
+          toValue: 1,
+          duration: 220,
+          useNativeDriver: true
+        }
+      )
+    ]).start();
+
+    onPressOut?.(event);
   }
 
   return (
-    <Pressable
+    <AnimatedPressable
       disabled={disabled}
       hitSlop={hitSlop}
-      delayLongPress={
-        delayLongPress
-      }
+      delayLongPress={delayLongPress}
       onPress={onPress}
-      onLongPress={
-        onLongPress
-      }
-      onPressIn={() =>
-        animate(
-          0.94,
-          0.82
-        )
-      }
-      onPressOut={() =>
-        animate(
-          1,
-          1
-        )
-      }
+      onLongPress={onLongPress}
+      onPressIn={pressIn}
+      onPressOut={pressOut}
+      style={[
+        style,
+        {
+          opacity,
+          transform: [
+            {
+              scale
+            }
+          ]
+        }
+      ]}
     >
-      <Animated.View
-        style={[
-          style,
-          {
-            opacity,
-            transform: [
-              {
-                scale
-              }
-            ]
-          }
-        ]}
-      >
-        {children}
-      </Animated.View>
-    </Pressable>
+      {children}
+    </AnimatedPressable>
   );
 }
