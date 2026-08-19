@@ -7,12 +7,9 @@ import React, {
 import {
   Animated,
   Easing,
-  LayoutAnimation,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
-  UIManager,
   View
 } from 'react-native';
 
@@ -23,66 +20,19 @@ import {
   HelpIcon
 } from './icons';
 
-if (
-  Platform.OS ===
-    'android' &&
-  UIManager
-    .setLayoutAnimationEnabledExperimental
-) {
-  UIManager
-    .setLayoutAnimationEnabledExperimental(
-      true
-    );
-}
-
-const iconMap = {
-  calculator:
-    CalculatorIcon,
-
-  clock:
-    ClockIcon,
-
-  counter:
-    CounterIcon,
-
-  instructions:
-    HelpIcon
+const ICONS = {
+  calculator: CalculatorIcon,
+  clock: ClockIcon,
+  counter: CounterIcon,
+  instructions: HelpIcon
 };
 
-const smoothLayout = {
-  duration: 500,
-
-  create: {
-    type:
-      LayoutAnimation
-        .Types
-        .easeInEaseOut,
-
-    property:
-      LayoutAnimation
-        .Properties
-        .opacity
-  },
-
-  update: {
-    type:
-      LayoutAnimation
-        .Types
-        .easeInEaseOut
-  },
-
-  delete: {
-    type:
-      LayoutAnimation
-        .Types
-        .easeInEaseOut,
-
-    property:
-      LayoutAnimation
-        .Properties
-        .opacity
-  }
-};
+const EASE = Easing.bezier(
+  0.22,
+  1,
+  0.36,
+  1
+);
 
 export default function AnimatedSection({
   title,
@@ -99,12 +49,11 @@ export default function AnimatedSection({
   const active =
     open === name;
 
-  const [
-    bodyVisible,
-    setBodyVisible
-  ] = useState(
-    active
-  );
+  const [measuredHeight, setMeasuredHeight] =
+    useState(0);
+
+  const measured =
+    useRef(false);
 
   const iconMotion =
     useRef(
@@ -113,7 +62,14 @@ export default function AnimatedSection({
       )
     ).current;
 
-  const bodyMotion =
+  const panelMotion =
+    useRef(
+      new Animated.Value(
+        active ? 1 : 0
+      )
+    ).current;
+
+  const contentMotion =
     useRef(
       new Animated.Value(
         active ? 1 : 0
@@ -121,130 +77,103 @@ export default function AnimatedSection({
     ).current;
 
   useEffect(() => {
-    /*
-     * OPEN:
-     * mount body first, then animate.
-     */
+    if (
+      !measured.current ||
+      measuredHeight <= 0
+    ) {
+      return;
+    }
+
+    iconMotion.stopAnimation();
+    panelMotion.stopAnimation();
+    contentMotion.stopAnimation();
+
     if (active) {
-      LayoutAnimation
-        .configureNext(
-          smoothLayout
-        );
-
-      setBodyVisible(
-        true
-      );
-
       Animated.parallel([
         Animated.timing(
           iconMotion,
           {
             toValue: 1,
-
-            duration: 620,
-
-            easing:
-              Easing.bezier(
-                0.22,
-                1,
-                0.36,
-                1
-              ),
-
-            useNativeDriver:
-              true
+            duration: 600,
+            easing: EASE,
+            useNativeDriver: true
           }
         ),
 
         Animated.timing(
-          bodyMotion,
+          panelMotion,
           {
             toValue: 1,
+            duration: 500,
+            easing: EASE,
+            useNativeDriver: false
+          }
+        ),
 
+        Animated.sequence([
+          Animated.delay(75),
+
+          Animated.timing(
+            contentMotion,
+            {
+              toValue: 1,
+              duration: 390,
+              easing: EASE,
+              useNativeDriver: true
+            }
+          )
+        ])
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(
+          iconMotion,
+          {
+            toValue: 0,
+            duration: 600,
+            easing: EASE,
+            useNativeDriver: true
+          }
+        ),
+
+        Animated.sequence([
+          Animated.timing(
+            contentMotion,
+            {
+              toValue: 0,
+              duration: 210,
+              easing:
+                Easing.inOut(
+                  Easing.ease
+                ),
+              useNativeDriver: true
+            }
+          )
+        ]),
+
+        Animated.timing(
+          panelMotion,
+          {
+            toValue: 0,
             duration: 470,
-
-            easing:
-              Easing.bezier(
-                0.22,
-                1,
-                0.36,
-                1
-              ),
-
-            useNativeDriver:
-              true
+            easing: EASE,
+            useNativeDriver: false
           }
         )
       ]).start();
-
-      return;
     }
+  }, [
+    active,
+    measuredHeight
+  ]);
 
-    /*
-     * CLOSE:
-     * animate icon and body first.
-     * Remove body only after motion,
-     * so closing animation is visible.
-     */
-    Animated.parallel([
-      Animated.timing(
-        iconMotion,
-        {
-          toValue: 0,
-
-          duration: 620,
-
-          easing:
-            Easing.bezier(
-              0.22,
-              1,
-              0.36,
-              1
-            ),
-
-          useNativeDriver:
-            true
-        }
-      ),
-
-      Animated.timing(
-        bodyMotion,
-        {
-          toValue: 0,
-
-          duration: 300,
-
-          easing:
-            Easing.inOut(
-              Easing.ease
-            ),
-
-          useNativeDriver:
-            true
-        }
-      )
-    ]).start(
-      ({ finished }) => {
-        if (
-          finished
-        ) {
-          LayoutAnimation
-            .configureNext(
-              smoothLayout
-            );
-
-          setBodyVisible(
-            false
-          );
-        }
-      }
-    );
-  }, [active]);
+  const Icon =
+    ICONS[name] ||
+    HelpIcon;
 
   const outerSpin =
     iconMotion.interpolate({
       inputRange: [0, 1],
-
       outputRange: [
         '0deg',
         '180deg'
@@ -254,7 +183,6 @@ export default function AnimatedSection({
   const innerSpin =
     iconMotion.interpolate({
       inputRange: [0, 1],
-
       outputRange: [
         '0deg',
         '-180deg'
@@ -264,7 +192,6 @@ export default function AnimatedSection({
   const arrowSpin =
     iconMotion.interpolate({
       inputRange: [0, 1],
-
       outputRange: [
         '0deg',
         '180deg'
@@ -278,10 +205,9 @@ export default function AnimatedSection({
         0.52,
         1
       ],
-
       outputRange: [
         1,
-        1.08,
+        1.09,
         1.03
       ]
     });
@@ -290,10 +216,9 @@ export default function AnimatedSection({
     iconMotion.interpolate({
       inputRange: [
         0,
-        0.5,
+        0.48,
         1
       ],
-
       outputRange: [
         1,
         0.91,
@@ -301,44 +226,37 @@ export default function AnimatedSection({
       ]
     });
 
-  const bodyTranslate =
-    bodyMotion.interpolate({
+  const panelHeight =
+    panelMotion.interpolate({
       inputRange: [0, 1],
-
       outputRange: [
-        -9,
+        0,
+        measuredHeight
+      ]
+    });
+
+  const contentY =
+    contentMotion.interpolate({
+      inputRange: [0, 1],
+      outputRange: [
+        -14,
         0
       ]
     });
 
-  const bodyScale =
-    bodyMotion.interpolate({
+  const contentScale =
+    contentMotion.interpolate({
       inputRange: [0, 1],
-
       outputRange: [
         0.985,
         1
       ]
     });
 
-  const Icon =
-    iconMap[name] ||
-    HelpIcon;
-
-  function handlePress() {
-    /*
-     * Tell parent to change the open
-     * section. Animation is handled
-     * from the resulting active state.
-     */
-    toggle(name);
-  }
-
   return (
     <View
       style={[
         styles.section,
-
         {
           backgroundColor:
             colors.surface,
@@ -349,15 +267,13 @@ export default function AnimatedSection({
       ]}
     >
       <Pressable
-        onPress={
-          handlePress
+        onPress={() =>
+          toggle(name)
         }
         style={({ pressed }) => [
           styles.bar,
-
-          pressed && {
-            opacity: 0.84
-          }
+          pressed &&
+            styles.barPressed
         ]}
       >
         <View
@@ -373,15 +289,6 @@ export default function AnimatedSection({
                 backgroundColor:
                   accent,
 
-                /*
-                 * Animated borderRadius
-                 * isn't native-driver
-                 * compatible, so the
-                 * scale/spin supplies
-                 * the fluid motion while
-                 * active state switches
-                 * the final shape.
-                 */
                 borderRadius:
                   active
                     ? 21
@@ -506,27 +413,86 @@ export default function AnimatedSection({
         </Animated.View>
       </Pressable>
 
-      {bodyVisible && (
+      {/*
+        Hidden measurement copy.
+        It does not participate in
+        visible layout or interaction.
+      */}
+      <View
+        pointerEvents="none"
+        style={
+          styles.measure
+        }
+        onLayout={event => {
+          const height =
+            event.nativeEvent.layout.height;
+
+          if (
+            height > 0 &&
+            height !== measuredHeight
+          ) {
+            measured.current =
+              true;
+
+            setMeasuredHeight(
+              height
+            );
+
+            if (active) {
+              panelMotion.setValue(1);
+              contentMotion.setValue(1);
+            }
+          }
+        }}
+      >
+        <View
+          style={[
+            styles.measureBody,
+            {
+              borderTopColor:
+                colors.border
+            }
+          ]}
+        >
+          {children}
+        </View>
+      </View>
+
+      <Animated.View
+        pointerEvents={
+          active
+            ? 'auto'
+            : 'none'
+        }
+        style={[
+          styles.panel,
+          {
+            height:
+              panelHeight
+          }
+        ]}
+      >
         <Animated.View
           style={[
             styles.body,
-
             {
+              width: '100%',
+
               borderTopColor:
                 colors.border,
 
               opacity:
-                bodyMotion,
+                contentMotion,
 
               transform: [
                 {
                   translateY:
-                    bodyTranslate
+                    contentY
                 },
 
                 {
                   scale:
-                    bodyScale
+                    contentScale
                 }
               ]
             }
@@ -534,7 +500,7 @@ export default function AnimatedSection({
         >
           {children}
         </Animated.View>
-      )}
+      </Animated.View>
     </View>
   );
 }
@@ -542,144 +508,116 @@ export default function AnimatedSection({
 const styles =
   StyleSheet.create({
     section: {
-      overflow:
-        'hidden',
-
+      position: 'relative',
+      overflow: 'hidden',
       borderWidth: 1,
-
       borderRadius: 14
     },
 
     bar: {
       minHeight: 67,
-
       paddingHorizontal: 14,
-
       paddingVertical: 11,
+      flexDirection: 'row',
+      alignItems: 'center'
+    },
 
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center'
+    barPressed: {
+      opacity: 0.86
     },
 
     iconStage: {
       width: 44,
-
       height: 44,
-
       flexShrink: 0,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
+      justifyContent: 'center',
+      alignItems: 'center'
     },
 
     outer: {
-      position:
-        'absolute',
-
+      position: 'absolute',
       width: 42,
-
       height: 42
     },
 
-    /*
-     * Close to outer edge, as in
-     * your website's ::after layer.
-     */
     inner: {
-      position:
-        'absolute',
-
+      position: 'absolute',
       width: 35,
-
       height: 35,
-
       borderWidth: 1.3,
-
       borderColor:
         'rgba(255,255,255,.28)'
     },
 
-    /*
-     * Actual SVG is completely
-     * independent of both spinning
-     * layers, so it stays still.
-     */
     iconContent: {
-      position:
-        'absolute',
-
+      position: 'absolute',
       width: 44,
-
       height: 44,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
+      justifyContent: 'center',
+      alignItems: 'center'
     },
 
     copy: {
       flex: 1,
-
       minWidth: 0,
-
       paddingHorizontal: 12,
-
-      justifyContent:
-        'center'
+      justifyContent: 'center'
     },
 
     title: {
       fontSize: 14,
-
       lineHeight: 19
     },
 
     subtitle: {
       marginTop: 1,
-
       fontSize: 10,
-
       lineHeight: 14
     },
 
     arrowStage: {
       width: 28,
-
       height: 28,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
+      justifyContent: 'center',
+      alignItems: 'center'
     },
 
     arrow: {
       width: 10,
-
       height: 10,
-
       borderRightWidth: 2,
-
       borderBottomWidth: 2,
-
       transform: [
         {
-          rotate:
-            '45deg'
+          rotate: '45deg'
         }
       ]
     },
 
+    panel: {
+      width: '100%',
+      overflow: 'hidden'
+    },
+
     body: {
+      borderTopWidth: 1
+    },
+
+    /*
+     * Measure children without ever
+     * showing them to the user.
+     */
+    measure: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 67,
+      opacity: 0,
+      zIndex: -10
+    },
+
+    measureBody: {
+      width: '100%',
       borderTopWidth: 1
     }
   });
