@@ -6,16 +6,29 @@
     "orientation": "default",
     "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
+
     "android": {
       "package": "com.lxz.nmix",
       "versionCode": 1,
+
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#0b261e"
+        "backgroundColor": "#07110f"
       }
     },
+
     "plugins": [
-      "expo-router"
+      "expo-router",
+
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#07110f",
+          "image": "./assets/icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain"
+        }
+      ]
     ]
   }
 }
