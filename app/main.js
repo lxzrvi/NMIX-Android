@@ -15,32 +15,17 @@ import {
   useWindowDimensions
 } from 'react-native';
 
-import {
-  LinearGradient
-} from 'expo-linear-gradient';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import {
-  router
-} from 'expo-router';
+import SettingsPanel from '../src/SettingsPanel';
+import AnimatedSection from '../src/AnimatedSection';
+import AnimatedMenuIcon from '../src/AnimatedMenuIcon';
+import FullscreenClock from '../src/FullscreenClock';
+import MotionPressable from '../src/MotionPressable';
 
-import {
-  useSafeAreaInsets
-} from 'react-native-safe-area-context';
-
-import SettingsPanel
-  from '../src/SettingsPanel';
-
-import AnimatedSection
-  from '../src/AnimatedSection';
-
-import FullscreenClock
-  from '../src/FullscreenClock';
-
-import MotionPressable
-  from '../src/MotionPressable';
-
-import useNMixSettings
-  from '../src/useNMixSettings';
+import useNMixSettings from '../src/useNMixSettings';
 
 import useNMixFonts, {
   fontFamily,
@@ -52,7 +37,6 @@ import {
   ChevronIcon,
   ClockIcon,
   FullscreenIcon,
-  MenuIcon,
   StopwatchIcon,
   TimerIcon
 } from '../src/icons';
@@ -60,62 +44,24 @@ import {
 const HOLD = 520;
 
 const instructions = [
-  [
-    'Calculator',
-    'Open Calculator and use the NMIX keypad.'
-  ],
-  [
-    'Operators',
-    'Choose +, −, ×, ÷ or %. Then enter the second number.'
-  ],
-  [
-    'Editing',
-    'Use decimal, ±, ⌫ and AC to edit or clear calculations.'
-  ],
-  [
-    'Result',
-    'Press = or tap the large NMIX display when the expression is ready.'
-  ],
-  [
-    'Timer',
-    'Tap Timer to open it. Use − / + for five seconds and hold Timer to start or pause.'
-  ],
-  [
-    'Clock',
-    'Tap Clock for local time. Use the fullscreen control inside Clock for full screen.'
-  ],
-  [
-    'Stopwatch',
-    'Tap to start or pause. Hold Stopwatch to reset.'
-  ],
-  [
-    'Counters',
-    'Add and Minus change the value by one.'
-  ],
-  [
-    'Random',
-    'Random generates a number from 1 to 1000.'
-  ],
-  [
-    'Top Screen',
-    'Use the top-left control to hide or show the NMIX screen.'
-  ],
-  [
-    'Settings',
-    'Use the menu for dark mode, five colors and five fonts.'
-  ]
+  ['Calculator', 'Open Calculator and use the NMIX keypad.'],
+  ['Operators', 'Choose +, −, ×, ÷ or %. Then enter the second number.'],
+  ['Editing', 'Use decimal, ±, ⌫ and AC to edit or clear calculations.'],
+  ['Result', 'Press = or tap the large NMIX display when the expression is ready.'],
+  ['Timer', 'Tap Timer to open it. Use − / + for five seconds and hold Timer to start or pause.'],
+  ['Clock', 'Tap Clock for local time. Use the fullscreen button on the right for full screen.'],
+  ['Stopwatch', 'Tap to start or pause. Hold Stopwatch to reset.'],
+  ['Counters', 'Add and Minus change the counter by one.'],
+  ['Random', 'Random generates a number from 1 to 1000.'],
+  ['Top Screen', 'Use the top-left control to hide or show the NMIX screen.'],
+  ['Settings', 'Use the top-right control for dark mode, colors and fonts.']
 ];
 
 export default function Main() {
-  const insets =
-    useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
 
-  const {
-    width
-  } = useWindowDimensions();
-
-  const fontsLoaded =
-    useNMixFonts();
+  const fontsLoaded = useNMixFonts();
 
   const {
     loaded,
@@ -129,378 +75,159 @@ export default function Main() {
     colors
   } = useNMixSettings();
 
-  const [
-    settingsOpen,
-    setSettingsOpen
-  ] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [screenClosed, setScreenClosed] = useState(false);
+  const [fullscreenClock, setFullscreenClock] = useState(false);
+  const [open, setOpen] = useState(null);
 
-  const [
-    screenClosed,
-    setScreenClosed
-  ] = useState(false);
+  const [num1, setNum1] = useState('');
+  const [num2, setNum2] = useState('');
+  const [operator, setOperator] = useState('');
+  const [target, setTarget] = useState(1);
 
-  const [
-    fullscreenClock,
-    setFullscreenClock
-  ] = useState(false);
+  const [mode, setMode] = useState('idle');
 
-  const [
-    open,
-    setOpen
-  ] = useState(null);
+  const [display, setDisplayState] = useState('Ready');
+  const [label, setLabel] = useState('NMIX LIVE');
+  const [status, setStatus] = useState('Choose a tool below.');
 
-  const [
-    num1,
-    setNum1
-  ] = useState('');
+  const [timerSec, setTimerSec] = useState(10);
+  const [timerRunning, setTimerRunning] = useState(false);
+  const timerEnd = useRef(null);
 
-  const [
-    num2,
-    setNum2
-  ] = useState('');
+  const [stopwatchMs, setStopwatchMs] = useState(0);
+  const [stopwatchRunning, setStopwatchRunning] = useState(false);
+  const stopwatchStart = useRef(null);
 
-  const [
-    operator,
-    setOperator
-  ] = useState('');
+  const [count, setCount] = useState(0);
 
-  const [
-    target,
-    setTarget
-  ] = useState(1);
+  const ambient = useRef(new Animated.Value(0)).current;
+  const timerMotion = useRef(new Animated.Value(0)).current;
+  const displayMotion = useRef(new Animated.Value(1)).current;
 
-  const [
-    mode,
-    setMode
-  ] = useState('idle');
+  const accent = theme.accent;
+  const regular = fontFamily(font);
+  const bold = fontFamily(font, true);
 
-  const [
-    display,
-    setDisplayState
-  ] = useState('Ready');
+  const appWidth = Math.min(width, 1100);
 
-  const [
-    label,
-    setLabel
-  ] = useState('NMIX LIVE');
-
-  const [
-    status,
-    setStatus
-  ] = useState(
-    'Choose a tool below.'
+  const keySize = Math.max(
+    42,
+    Math.min(
+      60,
+      (appWidth - 88) / 5
+    )
   );
 
-  const [
-    timerSec,
-    setTimerSec
-  ] = useState(10);
+  function updateDisplay(value, animate = true) {
+    setDisplayState(String(value));
 
-  const [
-    timerRunning,
-    setTimerRunning
-  ] = useState(false);
+    if (!animate) return;
 
-  const timerEnd =
-    useRef(null);
+    displayMotion.stopAnimation();
+    displayMotion.setValue(0);
 
-  const [
-    stopwatchMs,
-    setStopwatchMs
-  ] = useState(0);
-
-  const [
-    stopwatchRunning,
-    setStopwatchRunning
-  ] = useState(false);
-
-  const stopwatchStart =
-    useRef(null);
-
-  const [
-    count,
-    setCount
-  ] = useState(0);
-
-  const ambient =
-    useRef(
-      new Animated.Value(0)
-    ).current;
-
-  const timerMotion =
-    useRef(
-      new Animated.Value(0)
-    ).current;
-
-  const displayMotion =
-    useRef(
-      new Animated.Value(1)
-    ).current;
-
-  const accent =
-    theme.accent;
-
-  const regular =
-    fontFamily(font);
-
-  const bold =
-    fontFamily(
-      font,
-      true
-    );
-
-  const appWidth =
-    Math.min(
-      width,
-      1100
-    );
-
-  const calculatorWidth =
-    appWidth - 36;
-
-  const keySize =
-    Math.max(
-      42,
-      Math.min(
-        60,
-        (
-          calculatorWidth -
-          52
-        ) / 5
-      )
-    );
-
-  function updateDisplay(
-    value,
-    animate = true
-  ) {
-    setDisplayState(
-      String(value)
-    );
-
-    if (!animate) {
-      return;
-    }
-
-    displayMotion
-      .stopAnimation();
-
-    displayMotion
-      .setValue(0);
-
-    Animated.timing(
-      displayMotion,
-      {
-        toValue: 1,
-        duration: 300,
-
-        easing:
-          Easing.bezier(
-            0.22,
-            1,
-            0.36,
-            1
-          ),
-
-        useNativeDriver:
-          true
-      }
-    ).start();
+    Animated.timing(displayMotion, {
+      toValue: 1,
+      duration: 300,
+      easing: Easing.bezier(0.22, 1, 0.36, 1),
+      useNativeDriver: true
+    }).start();
   }
 
   useEffect(() => {
-    const loop =
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(
-            ambient,
-            {
-              toValue: 1,
-              duration: 7200,
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(ambient, {
+          toValue: 1,
+          duration: 7500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true
+        }),
 
-              easing:
-                Easing.inOut(
-                  Easing.ease
-                ),
-
-              useNativeDriver:
-                true
-            }
-          ),
-
-          Animated.timing(
-            ambient,
-            {
-              toValue: 0,
-              duration: 7200,
-
-              easing:
-                Easing.inOut(
-                  Easing.ease
-                ),
-
-              useNativeDriver:
-                true
-            }
-          )
-        ])
-      );
+        Animated.timing(ambient, {
+          toValue: 0,
+          duration: 7500,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true
+        })
+      ])
+    );
 
     loop.start();
 
-    return () => {
-      loop.stop();
-    };
+    return () => loop.stop();
   }, []);
 
   useEffect(() => {
-    Animated.spring(
-      timerMotion,
-      {
-        toValue:
-          mode === 'timer'
-            ? 1
-            : 0,
-
-        friction: 7,
-        tension: 72,
-
-        useNativeDriver:
-          true
-      }
-    ).start();
+    Animated.spring(timerMotion, {
+      toValue: mode === 'timer' ? 1 : 0,
+      friction: 8,
+      tension: 65,
+      useNativeDriver: true
+    }).start();
   }, [mode]);
 
   useEffect(() => {
-    const id =
-      setInterval(() => {
-        if (
-          mode ===
-          'clock'
-        ) {
-          setDisplayState(
-            formatClock(
-              new Date()
-            )
-          );
+    const id = setInterval(() => {
+      if (mode === 'clock') {
+        setDisplayState(formatClock(new Date()));
+      }
+
+      if (timerRunning && timerEnd.current) {
+        const remaining = Math.max(
+          0,
+          Math.ceil(
+            (timerEnd.current - Date.now()) / 1000
+          )
+        );
+
+        setTimerSec(remaining);
+        setDisplayState(formatTimer(remaining));
+
+        if (remaining <= 0) {
+          setTimerRunning(false);
+          timerEnd.current = null;
+          setStatus("Time's up!");
         }
+      }
 
-        if (
-          timerRunning &&
-          timerEnd.current
-        ) {
-          const remaining =
-            Math.max(
-              0,
-              Math.ceil(
-                (
-                  timerEnd.current -
-                  Date.now()
-                ) / 1000
-              )
-            );
+      if (
+        stopwatchRunning &&
+        stopwatchStart.current
+      ) {
+        const elapsed =
+          Date.now() - stopwatchStart.current;
 
-          setTimerSec(
-            remaining
-          );
+        setStopwatchMs(elapsed);
+        setDisplayState(formatStopwatch(elapsed));
+      }
+    }, 50);
 
-          setDisplayState(
-            formatTimer(
-              remaining
-            )
-          );
-
-          if (
-            remaining <= 0
-          ) {
-            setTimerRunning(
-              false
-            );
-
-            timerEnd.current =
-              null;
-
-            setStatus(
-              "Time's up!"
-            );
-          }
-        }
-
-        if (
-          stopwatchRunning &&
-          stopwatchStart.current
-        ) {
-          const elapsed =
-            Date.now() -
-            stopwatchStart.current;
-
-          setStopwatchMs(
-            elapsed
-          );
-
-          setDisplayState(
-            formatStopwatch(
-              elapsed
-            )
-          );
-        }
-      }, 50);
-
-    return () =>
-      clearInterval(id);
-  }, [
-    mode,
-    timerRunning,
-    stopwatchRunning
-  ]);
+    return () => clearInterval(id);
+  }, [mode, timerRunning, stopwatchRunning]);
 
   useEffect(() => {
     const subscription =
       AppState.addEventListener(
         'change',
         state => {
-          if (
-            state !==
-            'active'
-          ) {
-            return;
+          if (state !== 'active') return;
+
+          if (mode === 'clock') {
+            setDisplayState(formatClock(new Date()));
           }
 
-          if (
-            mode ===
-            'clock'
-          ) {
-            setDisplayState(
-              formatClock(
-                new Date()
+          if (timerRunning && timerEnd.current) {
+            const remaining = Math.max(
+              0,
+              Math.ceil(
+                (timerEnd.current - Date.now()) / 1000
               )
             );
-          }
 
-          if (
-            timerRunning &&
-            timerEnd.current
-          ) {
-            const remaining =
-              Math.max(
-                0,
-                Math.ceil(
-                  (
-                    timerEnd.current -
-                    Date.now()
-                  ) / 1000
-                )
-              );
-
-            setTimerSec(
-              remaining
-            );
-
-            setDisplayState(
-              formatTimer(
-                remaining
-              )
-            );
+            setTimerSec(remaining);
+            setDisplayState(formatTimer(remaining));
           }
 
           if (
@@ -508,139 +235,71 @@ export default function Main() {
             stopwatchStart.current
           ) {
             const elapsed =
-              Date.now() -
-              stopwatchStart.current;
+              Date.now() - stopwatchStart.current;
 
-            setStopwatchMs(
-              elapsed
-            );
-
-            setDisplayState(
-              formatStopwatch(
-                elapsed
-              )
-            );
+            setStopwatchMs(elapsed);
+            setDisplayState(formatStopwatch(elapsed));
           }
         }
       );
 
-    return () =>
-      subscription.remove();
-  }, [
-    mode,
-    timerRunning,
-    stopwatchRunning
-  ]);
+    return () => subscription.remove();
+  }, [mode, timerRunning, stopwatchRunning]);
 
   function ensureScreenOpen() {
-    setScreenClosed(
-      false
+    setScreenClosed(false);
+  }
+
+  function toggleSection(name) {
+    ensureScreenOpen();
+
+    setOpen(current =>
+      current === name
+        ? null
+        : name
     );
   }
 
-  function toggleSection(
-    name
-  ) {
-    ensureScreenOpen();
-
-    setOpen(
-      current =>
-        current === name
-          ? null
-          : name
-    );
-  }
-
-  function stopOtherTools(
-    except
-  ) {
-    if (
-      except !== 'timer'
-    ) {
-      setTimerRunning(
-        false
-      );
-
-      timerEnd.current =
-        null;
+  function stopOtherTools(except) {
+    if (except !== 'timer') {
+      setTimerRunning(false);
+      timerEnd.current = null;
     }
 
-    if (
-      except !==
-      'stopwatch'
-    ) {
-      setStopwatchRunning(
-        false
-      );
+    if (except !== 'stopwatch') {
+      setStopwatchRunning(false);
     }
   }
 
-  function calculatorKey(
-    value
-  ) {
+  function calculatorKey(value) {
     ensureScreenOpen();
-
     stopOtherTools();
+    setMode('calculator');
 
-    setMode(
-      'calculator'
-    );
-
-    if (
-      /^\d$/.test(value)
-    ) {
-      if (
-        target === 1
-      ) {
-        if (
-          num1.length >= 18
-        ) {
-          setStatus(
-            'Maximum number length reached.'
-          );
-
+    if (/^\d$/.test(value)) {
+      if (target === 1) {
+        if (num1.length >= 18) {
+          setStatus('Maximum number length reached.');
           return;
         }
 
-        const next =
-          num1 + value;
+        const next = num1 + value;
 
         setNum1(next);
-
-        updateDisplay(
-          next
-        );
-
-        setLabel(
-          'FIRST NUMBER'
-        );
-
-        setStatus(
-          'Choose an operator.'
-        );
+        updateDisplay(next);
+        setLabel('FIRST NUMBER');
+        setStatus('Choose an operator.');
       } else {
-        if (
-          num2.length >= 18
-        ) {
-          setStatus(
-            'Maximum number length reached.'
-          );
-
+        if (num2.length >= 18) {
+          setStatus('Maximum number length reached.');
           return;
         }
 
-        const next =
-          num2 + value;
+        const next = num2 + value;
 
         setNum2(next);
-
-        updateDisplay(
-          next
-        );
-
-        setLabel(
-          'SECOND NUMBER'
-        );
+        updateDisplay(next);
+        setLabel('SECOND NUMBER');
 
         setStatus(
           operator && next
@@ -652,38 +311,18 @@ export default function Main() {
       return;
     }
 
-    if (
-      [
-        '+',
-        '−',
-        '×',
-        '÷',
-        '%'
-      ].includes(
-        value
-      )
-    ) {
+    if (['+', '−', '×', '÷', '%'].includes(value)) {
       if (!num1) {
         setStatus(
           'Enter the first number before selecting an operator.'
         );
-
         return;
       }
 
-      setOperator(
-        value
-      );
-
+      setOperator(value);
       setTarget(2);
-
-      updateDisplay(
-        value
-      );
-
-      setLabel(
-        'OPERATOR'
-      );
+      updateDisplay(value);
+      setLabel('OPERATOR');
 
       setStatus(
         `${value} selected. Enter the second number.`
@@ -692,195 +331,101 @@ export default function Main() {
       return;
     }
 
-    if (
-      value === '.'
-    ) {
+    if (value === '.') {
       const current =
-        target === 1
-          ? num1
-          : num2;
+        target === 1 ? num1 : num2;
 
-      if (
-        current.includes(
-          '.'
-        )
-      ) {
+      if (current.includes('.')) {
         setStatus(
           'This number already contains a decimal.'
         );
-
         return;
       }
 
       const next =
-        current
-          ? `${current}.`
-          : '0.';
+        current ? `${current}.` : '0.';
 
-      if (
-        target === 1
-      ) {
-        setNum1(next);
-      } else {
-        setNum2(next);
-      }
+      if (target === 1) setNum1(next);
+      else setNum2(next);
 
-      updateDisplay(
-        next
-      );
-
-      setLabel(
-        'DECIMAL'
-      );
-
+      updateDisplay(next);
+      setLabel('DECIMAL');
       return;
     }
 
-    if (
-      value === '±'
-    ) {
+    if (value === '±') {
       const current =
-        target === 1
-          ? num1
-          : num2;
+        target === 1 ? num1 : num2;
 
       if (!current) {
         setStatus(
           'Enter a number before using ±.'
         );
-
         return;
       }
 
       const next =
-        String(
-          -Number(
-            current
-          )
-        );
+        String(-Number(current));
 
-      if (
-        target === 1
-      ) {
-        setNum1(next);
-      } else {
-        setNum2(next);
-      }
+      if (target === 1) setNum1(next);
+      else setNum2(next);
 
-      updateDisplay(
-        next
-      );
-
-      setLabel(
-        'SIGN CHANGED'
-      );
-
+      updateDisplay(next);
+      setLabel('SIGN CHANGED');
       return;
     }
 
-    if (
-      value === '⌫'
-    ) {
+    if (value === '⌫') {
       if (
         target === 2 &&
         !num2 &&
         operator
       ) {
         setOperator('');
-
         setTarget(1);
-
-        updateDisplay(
-          num1 ||
-          'Ready'
-        );
-
-        setLabel(
-          'EDITING'
-        );
-
+        updateDisplay(num1 || 'Ready');
+        setLabel('EDITING');
         return;
       }
 
       const current =
-        target === 1
-          ? num1
-          : num2;
+        target === 1 ? num1 : num2;
 
       const next =
-        current.slice(
-          0,
-          -1
-        );
+        current.slice(0, -1);
 
-      if (
-        target === 1
-      ) {
-        setNum1(next);
-      } else {
-        setNum2(next);
-      }
+      if (target === 1) setNum1(next);
+      else setNum2(next);
 
-      updateDisplay(
-        next || '0'
-      );
-
-      setLabel(
-        'EDITING'
-      );
-
+      updateDisplay(next || '0');
+      setLabel('EDITING');
       return;
     }
 
-    if (
-      value === 'AC'
-    ) {
+    if (value === 'AC') {
       setNum1('');
       setNum2('');
       setOperator('');
       setTarget(1);
 
-      updateDisplay(
-        'Ready'
-      );
-
-      setLabel(
-        'CALCULATOR'
-      );
-
-      setStatus(
-        'Calculator cleared.'
-      );
-
+      updateDisplay('Ready');
+      setLabel('CALCULATOR');
+      setStatus('Calculator cleared.');
       return;
     }
 
-    if (
-      value === '='
-    ) {
+    if (value === '=') {
       calculate();
     }
   }
 
   function calculate() {
     ensureScreenOpen();
+    setMode('calculator');
 
-    setMode(
-      'calculator'
-    );
-
-    if (
-      !num1 ||
-      !num2 ||
-      !operator
-    ) {
-      updateDisplay(
-        'Incomplete'
-      );
-
-      setLabel(
-        'CALCULATOR'
-      );
+    if (!num1 || !num2 || !operator) {
+      updateDisplay('Incomplete');
+      setLabel('CALCULATOR');
 
       setStatus(
         'Enter both numbers and select an operator.'
@@ -889,17 +434,12 @@ export default function Main() {
       return;
     }
 
-    const a =
-      Number(num1);
-
-    const b =
-      Number(num2);
+    const a = Number(num1);
+    const b = Number(num2);
 
     let result;
 
-    switch (
-      operator
-    ) {
+    switch (operator) {
       case '+':
         result = a + b;
         break;
@@ -914,13 +454,8 @@ export default function Main() {
 
       case '÷':
         if (b === 0) {
-          updateDisplay(
-            'Error'
-          );
-
-          setLabel(
-            'CALCULATOR'
-          );
+          updateDisplay('Error');
+          setLabel('CALCULATOR');
 
           setStatus(
             'Division by zero is not allowed.'
@@ -930,14 +465,11 @@ export default function Main() {
         }
 
         result = a / b;
-
         break;
 
       case '%':
         if (b === 0) {
-          updateDisplay(
-            'Error'
-          );
+          updateDisplay('Error');
 
           setStatus(
             'Remainder by zero is not allowed.'
@@ -947,75 +479,41 @@ export default function Main() {
         }
 
         result = a % b;
-
         break;
 
       default:
-        updateDisplay(
-          'No sign'
-        );
-
-        setStatus(
-          'Choose an operator.'
-        );
-
+        updateDisplay('No sign');
+        setStatus('Choose an operator.');
         return;
     }
 
-    if (
-      !Number.isFinite(
-        result
-      )
-    ) {
-      updateDisplay(
-        'Overflow'
-      );
-
-      setStatus(
-        'Result is too large.'
-      );
-
+    if (!Number.isFinite(result)) {
+      updateDisplay('Overflow');
+      setStatus('Result is too large.');
       return;
     }
 
     updateDisplay(
       String(
         Number(
-          result.toPrecision(
-            12
-          )
+          result.toPrecision(12)
         )
       )
     );
 
-    setLabel(
-      'RESULT'
-    );
-
-    setStatus(
-      'Calculation complete.'
-    );
+    setLabel('RESULT');
+    setStatus('Calculation complete.');
   }
 
   function openTimer() {
     ensureScreenOpen();
+    stopOtherTools('timer');
 
-    stopOtherTools(
-      'timer'
-    );
-
-    setMode(
-      'timer'
-    );
-
-    setLabel(
-      'TIMER'
-    );
+    setMode('timer');
+    setLabel('TIMER');
 
     updateDisplay(
-      formatTimer(
-        timerSec
-      )
+      formatTimer(timerSec)
     );
 
     setStatus(
@@ -1025,51 +523,28 @@ export default function Main() {
 
   function toggleTimer() {
     ensureScreenOpen();
+    stopOtherTools('timer');
 
-    stopOtherTools(
-      'timer'
-    );
+    setMode('timer');
+    setLabel('TIMER');
 
-    setMode(
-      'timer'
-    );
-
-    setLabel(
-      'TIMER'
-    );
-
-    if (
-      timerRunning
-    ) {
+    if (timerRunning) {
       const remaining =
         timerEnd.current
           ? Math.max(
               0,
               Math.ceil(
-                (
-                  timerEnd.current -
-                  Date.now()
-                ) / 1000
+                (timerEnd.current - Date.now()) /
+                  1000
               )
             )
           : timerSec;
 
-      setTimerSec(
-        remaining
-      );
+      setTimerSec(remaining);
+      updateDisplay(formatTimer(remaining));
 
-      updateDisplay(
-        formatTimer(
-          remaining
-        )
-      );
-
-      setTimerRunning(
-        false
-      );
-
-      timerEnd.current =
-        null;
+      setTimerRunning(false);
+      timerEnd.current = null;
 
       setStatus(
         'Timer paused. Hold Timer to continue.'
@@ -1078,28 +553,20 @@ export default function Main() {
       return;
     }
 
-    if (
-      timerSec <= 0
-    ) {
+    if (timerSec <= 0) {
       setStatus(
         'Add five seconds before starting.'
       );
-
       return;
     }
 
     timerEnd.current =
-      Date.now() +
-      timerSec * 1000;
+      Date.now() + timerSec * 1000;
 
-    setTimerRunning(
-      true
-    );
+    setTimerRunning(true);
 
     updateDisplay(
-      formatTimer(
-        timerSec
-      )
+      formatTimer(timerSec)
     );
 
     setStatus(
@@ -1107,62 +574,41 @@ export default function Main() {
     );
   }
 
-  function changeTimer(
-    amount
-  ) {
+  function changeTimer(amount) {
     ensureScreenOpen();
 
-    let current =
-      timerSec;
+    let current = timerSec;
 
-    if (
-      timerRunning &&
-      timerEnd.current
-    ) {
-      current =
-        Math.max(
-          0,
-          Math.ceil(
-            (
-              timerEnd.current -
-              Date.now()
-            ) / 1000
-          )
-        );
+    if (timerRunning && timerEnd.current) {
+      current = Math.max(
+        0,
+        Math.ceil(
+          (timerEnd.current - Date.now()) /
+            1000
+        )
+      );
     }
 
-    const next =
-      Math.max(
-        0,
-        current + amount
-      );
+    const next = Math.max(
+      0,
+      current + amount
+    );
 
     setTimerSec(next);
-
     setMode('timer');
-
     setLabel('TIMER');
 
     updateDisplay(
       formatTimer(next)
     );
 
-    if (
-      timerRunning
-    ) {
-      if (
-        next === 0
-      ) {
-        setTimerRunning(
-          false
-        );
-
-        timerEnd.current =
-          null;
+    if (timerRunning) {
+      if (next === 0) {
+        setTimerRunning(false);
+        timerEnd.current = null;
       } else {
         timerEnd.current =
-          Date.now() +
-          next * 1000;
+          Date.now() + next * 1000;
       }
     }
 
@@ -1177,21 +623,13 @@ export default function Main() {
 
   function openClock() {
     ensureScreenOpen();
-
     stopOtherTools();
 
-    setMode(
-      'clock'
-    );
-
-    setLabel(
-      'LIVE CLOCK'
-    );
+    setMode('clock');
+    setLabel('LIVE CLOCK');
 
     updateDisplay(
-      formatClock(
-        new Date()
-      )
+      formatClock(new Date())
     );
 
     setStatus(
@@ -1201,71 +639,40 @@ export default function Main() {
 
   function openFullscreenClock() {
     ensureScreenOpen();
-
     stopOtherTools();
 
-    setMode(
-      'clock'
-    );
-
-    setLabel(
-      'LIVE CLOCK'
-    );
+    setMode('clock');
+    setLabel('LIVE CLOCK');
 
     updateDisplay(
-      formatClock(
-        new Date()
-      )
+      formatClock(new Date())
     );
 
-    setSettingsOpen(
-      false
-    );
-
-    setFullscreenClock(
-      true
-    );
+    setSettingsOpen(false);
+    setFullscreenClock(true);
   }
 
   function tapStopwatch() {
     ensureScreenOpen();
 
-    setTimerRunning(
-      false
-    );
+    setTimerRunning(false);
+    timerEnd.current = null;
 
-    timerEnd.current =
-      null;
+    setMode('stopwatch');
+    setLabel('STOPWATCH');
 
-    setMode(
-      'stopwatch'
-    );
-
-    setLabel(
-      'STOPWATCH'
-    );
-
-    if (
-      stopwatchRunning
-    ) {
+    if (stopwatchRunning) {
       const elapsed =
         stopwatchStart.current
           ? Date.now() -
             stopwatchStart.current
           : stopwatchMs;
 
-      setStopwatchMs(
-        elapsed
-      );
-
-      setStopwatchRunning(
-        false
-      );
+      setStopwatchMs(elapsed);
+      setStopwatchRunning(false);
 
       updateDisplay(
-        formatStopwatch(
-          elapsed
-        )
+        formatStopwatch(elapsed)
       );
 
       setStatus(
@@ -1276,79 +683,46 @@ export default function Main() {
     }
 
     stopwatchStart.current =
-      Date.now() -
-      stopwatchMs;
+      Date.now() - stopwatchMs;
 
-    setStopwatchRunning(
-      true
-    );
+    setStopwatchRunning(true);
 
     updateDisplay(
-      formatStopwatch(
-        stopwatchMs
-      )
+      formatStopwatch(stopwatchMs)
     );
 
-    setStatus(
-      'Stopwatch running.'
-    );
+    setStatus('Stopwatch running.');
   }
 
   function resetStopwatch() {
     ensureScreenOpen();
 
-    setTimerRunning(
-      false
-    );
+    setTimerRunning(false);
+    timerEnd.current = null;
 
-    timerEnd.current =
-      null;
-
-    setStopwatchRunning(
-      false
-    );
-
-    stopwatchStart.current =
-      null;
-
+    setStopwatchRunning(false);
+    stopwatchStart.current = null;
     setStopwatchMs(0);
 
-    setMode(
-      'stopwatch'
-    );
+    setMode('stopwatch');
+    setLabel('STOPWATCH');
 
-    setLabel(
-      'STOPWATCH'
-    );
+    updateDisplay('00:00.00');
 
-    updateDisplay(
-      '00:00.00'
-    );
-
-    setStatus(
-      'Stopwatch reset.'
-    );
+    setStatus('Stopwatch reset.');
   }
 
-  function counter(
-    action
-  ) {
+  function counter(action) {
     ensureScreenOpen();
-
     stopOtherTools();
 
-    let next =
-      count;
+    let next = count;
 
-    if (
-      action === 'add'
-    ) {
+    if (action === 'add') {
       next += 1;
     }
 
-    if (
-      action === 'minus'
-    ) {
+    if (action === 'minus') {
       next =
         Math.max(
           0,
@@ -1356,63 +730,40 @@ export default function Main() {
         );
     }
 
-    if (
-      action === 'reset'
-    ) {
+    if (action === 'reset') {
       next = 0;
     }
 
-    if (
-      action === 'random'
-    ) {
+    if (action === 'random') {
       next =
         Math.floor(
-          Math.random() *
-            1000
+          Math.random() * 1000
         ) + 1;
     }
 
     setCount(next);
-
-    setMode(
-      'counter'
-    );
-
-    setLabel(
-      'COUNTER'
-    );
+    setMode('counter');
+    setLabel('COUNTER');
 
     updateDisplay(
       String(next)
     );
 
-    if (
-      action === 'add'
-    ) {
-      setStatus(
-        'Counter increased.'
-      );
+    if (action === 'add') {
+      setStatus('Counter increased.');
     }
 
-    if (
-      action === 'minus'
-    ) {
-      setStatus(
-        'Counter decreased.'
-      );
+    if (action === 'minus') {
+      setStatus('Counter decreased.');
     }
 
-    if (
-      action === 'reset'
-    ) {
+    if (action === 'reset') {
       setStatus(
         'Counter reset to zero.'
       );
     }
 
-    if (
-      action === 'random'
-    ) {
+    if (action === 'random') {
       setStatus(
         'Random number generated.'
       );
@@ -1420,36 +771,26 @@ export default function Main() {
   }
 
   function resultPress() {
-    if (
-      mode ===
-      'calculator'
-    ) {
+    if (mode === 'calculator') {
       calculate();
       return;
     }
 
-    if (
-      mode === 'timer'
-    ) {
+    if (mode === 'timer') {
       setStatus(
         timerRunning
           ? 'Timer is running.'
           : 'Hold Timer to start or resume.'
       );
-
       return;
     }
 
-    if (
-      mode ===
-      'stopwatch'
-    ) {
+    if (mode === 'stopwatch') {
       setStatus(
         stopwatchRunning
           ? 'Stopwatch is running.'
           : 'Tap Stopwatch to start.'
       );
-
       return;
     }
 
@@ -1458,15 +799,11 @@ export default function Main() {
     );
   }
 
-  if (
-    !fontsLoaded ||
-    !loaded
-  ) {
+  if (!fontsLoaded || !loaded) {
     return (
       <View
         style={{
           flex: 1,
-
           backgroundColor:
             colors.body
         }}
@@ -1475,14 +812,12 @@ export default function Main() {
   }
 
   const calcOpen =
-    open ===
-    'calculator';
+    open === 'calculator';
 
   return (
     <View
       style={[
         styles.page,
-
         {
           backgroundColor:
             colors.body
@@ -1506,26 +841,18 @@ export default function Main() {
           }}
           style={[
             styles.top,
-
             {
               paddingTop:
-                insets.top +
-                8
+                insets.top + 8
             },
-
             calcOpen &&
               styles.topCalculator
           ]}
         >
-          <View
-            style={
-              styles.logoArea
-            }
-          >
+          <View style={styles.logoArea}>
             <Text
               style={[
                 styles.logoSub,
-
                 {
                   fontFamily:
                     bold
@@ -1535,16 +862,11 @@ export default function Main() {
               EVERYTHING WITH NUMBERS
             </Text>
 
-            <View
-              style={
-                styles.logoFix
-              }
-            >
+            <View style={styles.logoFix}>
               <Text
                 numberOfLines={1}
                 style={[
                   styles.logo,
-
                   {
                     fontFamily:
                       logoFont
@@ -1560,7 +882,6 @@ export default function Main() {
             <View
               style={[
                 styles.expression,
-
                 {
                   backgroundColor:
                     colors.surface
@@ -1568,9 +889,7 @@ export default function Main() {
               ]}
             >
               <ExpressionBox
-                value={
-                  num1 || '_'
-                }
+                value={num1 || '_'}
                 colors={colors}
                 font={bold}
               />
@@ -1578,7 +897,6 @@ export default function Main() {
               <View
                 style={[
                   styles.operatorBox,
-
                   {
                     backgroundColor:
                       colors.surface2,
@@ -1591,7 +909,6 @@ export default function Main() {
                 <Text
                   style={[
                     styles.expressionText,
-
                     {
                       color:
                         colors.text,
@@ -1601,15 +918,12 @@ export default function Main() {
                     }
                   ]}
                 >
-                  {operator ||
-                    'sign'}
+                  {operator || 'sign'}
                 </Text>
               </View>
 
               <ExpressionBox
-                value={
-                  num2 || '_'
-                }
+                value={num2 || '_'}
                 colors={colors}
                 font={bold}
               />
@@ -1619,7 +933,6 @@ export default function Main() {
           <View
             style={[
               styles.result,
-
               {
                 backgroundColor:
                   dark
@@ -1631,8 +944,7 @@ export default function Main() {
             <Animated.View
               pointerEvents="none"
               style={[
-                styles.glowOne,
-
+                styles.glowA,
                 {
                   opacity:
                     ambient.interpolate({
@@ -1640,7 +952,7 @@ export default function Main() {
                         [0, 1],
 
                       outputRange:
-                        [0.3, 0.76]
+                        [0.28, 0.72]
                     }),
 
                   transform: [
@@ -1664,17 +976,6 @@ export default function Main() {
                           outputRange:
                             [-45, 35]
                         })
-                    },
-
-                    {
-                      scale:
-                        ambient.interpolate({
-                          inputRange:
-                            [0, 1],
-
-                          outputRange:
-                            [1, 1.18]
-                        })
                     }
                   ]
                 }
@@ -1683,9 +984,9 @@ export default function Main() {
               <LinearGradient
                 colors={[
                   'transparent',
+                  `${theme.accentLight}05`,
+                  `${theme.accentLight}2C`,
                   `${theme.accentLight}06`,
-                  `${theme.accentLight}30`,
-                  `${theme.accentLight}08`,
                   'transparent'
                 ]}
                 style={
@@ -1697,8 +998,7 @@ export default function Main() {
             <Animated.View
               pointerEvents="none"
               style={[
-                styles.glowTwo,
-
+                styles.glowB,
                 {
                   opacity:
                     ambient.interpolate({
@@ -1706,7 +1006,7 @@ export default function Main() {
                         [0, 1],
 
                       outputRange:
-                        [0.62, 0.22]
+                        [0.58, 0.20]
                     }),
 
                   transform: [
@@ -1739,8 +1039,8 @@ export default function Main() {
                 colors={[
                   'transparent',
                   `${accent}05`,
-                  `${accent}28`,
-                  `${accent}06`,
+                  `${accent}26`,
+                  `${accent}05`,
                   'transparent'
                 ]}
                 style={
@@ -1749,52 +1049,49 @@ export default function Main() {
               />
             </Animated.View>
 
-            <View
-              style={
-                styles.resultRow
-              }
-            >
-              {mode ===
-                'timer' && (
+            <View style={styles.resultRow}>
+              {mode === 'timer' && (
                 <Animated.View
-                  style={{
-                    opacity:
-                      timerMotion,
+                  style={[
+                    styles.timerLeft,
+                    {
+                      opacity:
+                        timerMotion,
 
-                    transform: [
-                      {
-                        scale:
-                          timerMotion.interpolate({
-                            inputRange:
-                              [0, 1],
+                      transform: [
+                        {
+                          translateX:
+                            timerMotion
+                              .interpolate({
+                                inputRange:
+                                  [0, 1],
 
-                            outputRange:
-                              [0.25, 1]
-                          })
-                      },
+                                outputRange:
+                                  [-18, 0]
+                              })
+                        },
 
-                      {
-                        translateX:
-                          timerMotion.interpolate({
-                            inputRange:
-                              [0, 1],
+                        {
+                          scale:
+                            timerMotion
+                              .interpolate({
+                                inputRange:
+                                  [0, 1],
 
-                            outputRange:
-                              [18, 0]
-                          })
-                      }
-                    ]
-                  }}
+                                outputRange:
+                                  [0.5, 1]
+                              })
+                        }
+                      ]
+                    }
+                  ]}
                 >
                   <MotionPressable
                     onPress={() =>
-                      changeTimer(
-                        -5
-                      )
+                      changeTimer(-5)
                     }
                     style={[
                       styles.timerAdjust,
-
                       {
                         backgroundColor:
                           accent
@@ -1803,8 +1100,7 @@ export default function Main() {
                   >
                     <Text
                       style={[
-                        styles.timerAdjustText,
-
+                        styles.timerText,
                         {
                           fontFamily:
                             regular
@@ -1828,7 +1124,6 @@ export default function Main() {
                 <Text
                   style={[
                     styles.displayLabel,
-
                     {
                       color:
                         dark
@@ -1846,16 +1141,13 @@ export default function Main() {
                 <Animated.Text
                   numberOfLines={1}
                   adjustsFontSizeToFit
-                  minimumFontScale={
-                    0.3
-                  }
+                  minimumFontScale={0.3}
                   style={[
                     styles.display,
-
                     {
                       color:
                         dark
-                          ? '#fff'
+                          ? '#ffffff'
                           : '#152c24',
 
                       fontFamily:
@@ -1867,13 +1159,14 @@ export default function Main() {
                       transform: [
                         {
                           translateY:
-                            displayMotion.interpolate({
-                              inputRange:
-                                [0, 1],
+                            displayMotion
+                              .interpolate({
+                                inputRange:
+                                  [0, 1],
 
-                              outputRange:
-                                [7, 0]
-                            })
+                                outputRange:
+                                  [7, 0]
+                              })
                         }
                       ]
                     }
@@ -1883,37 +1176,41 @@ export default function Main() {
                 </Animated.Text>
               </MotionPressable>
 
-              {mode ===
-                'timer' && (
+              {mode === 'timer' && (
                 <Animated.View
-                  style={{
-                    opacity:
-                      timerMotion,
+                  style={[
+                    styles.timerRight,
+                    {
+                      opacity:
+                        timerMotion,
 
-                    transform: [
-                      {
-                        scale:
-                          timerMotion.interpolate({
-                            inputRange:
-                              [0, 1],
+                      transform: [
+                        {
+                          translateX:
+                            timerMotion
+                              .interpolate({
+                                inputRange:
+                                  [0, 1],
 
-                            outputRange:
-                              [0.25, 1]
-                          })
-                      },
+                                outputRange:
+                                  [18, 0]
+                              })
+                        },
 
-                      {
-                        translateX:
-                          timerMotion.interpolate({
-                            inputRange:
-                              [0, 1],
+                        {
+                          scale:
+                            timerMotion
+                              .interpolate({
+                                inputRange:
+                                  [0, 1],
 
-                            outputRange:
-                              [-18, 0]
-                          })
-                      }
-                    ]
-                  }}
+                                outputRange:
+                                  [0.5, 1]
+                              })
+                        }
+                      ]
+                    }
+                  ]}
                 >
                   <MotionPressable
                     onPress={() =>
@@ -1921,7 +1218,6 @@ export default function Main() {
                     }
                     style={[
                       styles.timerAdjust,
-
                       {
                         backgroundColor:
                           accent
@@ -1930,8 +1226,7 @@ export default function Main() {
                   >
                     <Text
                       style={[
-                        styles.timerAdjustText,
-
+                        styles.timerText,
                         {
                           fontFamily:
                             regular
@@ -1949,7 +1244,6 @@ export default function Main() {
               numberOfLines={1}
               style={[
                 styles.status,
-
                 {
                   color:
                     dark
@@ -1970,28 +1264,22 @@ export default function Main() {
       <View
         style={[
           styles.controls,
-
           {
             top:
-              insets.top +
-              10
+              insets.top + 10
           }
         ]}
       >
         <MotionPressable
           onPress={() => {
-            setSettingsOpen(
-              false
-            );
+            setSettingsOpen(false);
 
             setScreenClosed(
-              value =>
-                !value
+              value => !value
             );
           }}
           style={[
             styles.controlButton,
-
             {
               backgroundColor:
                 accent
@@ -2012,41 +1300,36 @@ export default function Main() {
         <MotionPressable
           onPress={() =>
             setSettingsOpen(
-              true
+              current =>
+                !current
             )
           }
           style={[
             styles.controlButton,
-
             {
               backgroundColor:
                 accent
             }
           ]}
         >
-          <MenuIcon
-            size={21}
+          <AnimatedMenuIcon
+            open={
+              settingsOpen
+            }
             color="#ffffff"
           />
         </MotionPressable>
       </View>
 
       <ScrollView
-        style={
-          styles.scroll
-        }
+        style={styles.scroll}
         contentContainerStyle={[
           styles.content,
 
-          screenClosed && [
-            styles.contentCollapsed,
-
-            {
-              paddingTop:
-                insets.top +
-                70
-            }
-          ]
+          screenClosed && {
+            paddingTop:
+              insets.top + 70
+          }
         ]}
         showsVerticalScrollIndicator={
           false
@@ -2063,47 +1346,16 @@ export default function Main() {
           regular={regular}
           bold={bold}
         >
-          <View
-            style={
-              styles.calculatorGrid
-            }
-          >
+          <View style={styles.calculatorGrid}>
             {[
-              '1',
-              '2',
-              '3',
-              '4',
-              '5',
-
-              '6',
-              '7',
-              '8',
-              '9',
-              '0',
-
-              '+',
-              '−',
-              '×',
-              '÷',
-              '%',
-
-              '.',
-              '±',
-              '⌫',
-              'AC',
-              '='
+              '1','2','3','4','5',
+              '6','7','8','9','0',
+              '+','−','×','÷','%',
+              '.','±','⌫','AC','='
             ].map(key => {
-              const isAccent =
-                [
-                  '+',
-                  '−',
-                  '×',
-                  '÷',
-                  '%',
-                  '='
-                ].includes(
-                  key
-                );
+              const operatorKey =
+                ['+','−','×','÷','%','=']
+                  .includes(key);
 
               const danger =
                 key === 'AC';
@@ -2112,13 +1364,10 @@ export default function Main() {
                 <MotionPressable
                   key={key}
                   onPress={() =>
-                    calculatorKey(
-                      key
-                    )
+                    calculatorKey(key)
                   }
                   style={[
                     styles.calcKey,
-
                     {
                       width:
                         keySize,
@@ -2127,14 +1376,13 @@ export default function Main() {
                         keySize,
 
                       borderRadius:
-                        keySize /
-                        2,
+                        keySize / 2,
 
                       backgroundColor:
                         colors.surface2
                     },
 
-                    isAccent && {
+                    operatorKey && {
                       backgroundColor:
                         accent
                     },
@@ -2150,7 +1398,6 @@ export default function Main() {
                   <Text
                     style={[
                       styles.calcText,
-
                       {
                         color:
                           colors.text,
@@ -2159,7 +1406,7 @@ export default function Main() {
                           bold
                       },
 
-                      isAccent && {
+                      operatorKey && {
                         color:
                           '#ffffff'
                       },
@@ -2189,20 +1436,13 @@ export default function Main() {
           regular={regular}
           bold={bold}
         >
-          <View
-            style={
-              styles.clockGrid
-            }
-          >
+          <View style={styles.clockGrid}>
             <ModeButton
-              Icon={
-                TimerIcon
-              }
+              Icon={TimerIcon}
               title="Timer"
               subtitle="Countdown"
               active={
-                mode ===
-                'timer'
+                mode === 'timer'
               }
               onPress={
                 openTimer
@@ -2217,14 +1457,11 @@ export default function Main() {
             />
 
             <ModeButton
-              Icon={
-                ClockIcon
-              }
+              Icon={ClockIcon}
               title="Clock"
               subtitle="Local time"
               active={
-                mode ===
-                'clock'
+                mode === 'clock'
               }
               onPress={
                 openClock
@@ -2240,12 +1477,10 @@ export default function Main() {
                   }
                   hitSlop={10}
                   style={[
-                    styles.fullscreenButton,
-
+                    styles.fullscreen,
                     {
                       backgroundColor:
-                        mode ===
-                        'clock'
+                        mode === 'clock'
                           ? '#ffffff'
                           : accent
                     }
@@ -2254,8 +1489,7 @@ export default function Main() {
                   <FullscreenIcon
                     size={20}
                     color={
-                      mode ===
-                      'clock'
+                      mode === 'clock'
                         ? accent
                         : '#ffffff'
                     }
@@ -2271,8 +1505,7 @@ export default function Main() {
               title="Stopwatch"
               subtitle="Track time"
               active={
-                mode ===
-                'stopwatch'
+                mode === 'stopwatch'
               }
               onPress={
                 tapStopwatch
@@ -2299,18 +1532,12 @@ export default function Main() {
           regular={regular}
           bold={bold}
         >
-          <View
-            style={
-              styles.counterGrid
-            }
-          >
+          <View style={styles.counterGrid}>
             <CounterButton
               title="Add"
               subtitle="Increase"
               onPress={() =>
-                counter(
-                  'add'
-                )
+                counter('add')
               }
               colors={colors}
               regular={regular}
@@ -2321,9 +1548,7 @@ export default function Main() {
               title="Reset"
               subtitle="Back to zero"
               onPress={() =>
-                counter(
-                  'reset'
-                )
+                counter('reset')
               }
               colors={colors}
               regular={regular}
@@ -2334,9 +1559,7 @@ export default function Main() {
               title="Random"
               subtitle="1 – 1000"
               onPress={() =>
-                counter(
-                  'random'
-                )
+                counter('random')
               }
               colors={colors}
               regular={regular}
@@ -2347,9 +1570,7 @@ export default function Main() {
               title="Minus"
               subtitle="Decrease"
               onPress={() =>
-                counter(
-                  'minus'
-                )
+                counter('minus')
               }
               colors={colors}
               regular={regular}
@@ -2369,23 +1590,13 @@ export default function Main() {
           regular={regular}
           bold={bold}
         >
-          <View
-            style={
-              styles.instructions
-            }
-          >
+          <View style={styles.instructions}>
             {instructions.map(
-              ([
-                title,
-                text
-              ]) => (
+              ([title, text]) => (
                 <View
-                  key={
-                    title
-                  }
+                  key={title}
                   style={[
                     styles.instruction,
-
                     {
                       backgroundColor:
                         colors.surface2
@@ -2395,7 +1606,6 @@ export default function Main() {
                   <Text
                     style={[
                       styles.instructionTitle,
-
                       {
                         color:
                           accent,
@@ -2411,7 +1621,6 @@ export default function Main() {
                   <Text
                     style={[
                       styles.instructionText,
-
                       {
                         color:
                           colors.muted,
@@ -2432,7 +1641,6 @@ export default function Main() {
         <View
           style={[
             styles.contributor,
-
             {
               backgroundColor:
                 colors.surface,
@@ -2445,7 +1653,6 @@ export default function Main() {
           <Text
             style={[
               styles.contributorHeading,
-
               {
                 color:
                   colors.text,
@@ -2461,7 +1668,6 @@ export default function Main() {
           <Text
             style={[
               styles.contributorName,
-
               {
                 color:
                   accent,
@@ -2477,7 +1683,6 @@ export default function Main() {
           <Text
             style={[
               styles.bio,
-
               {
                 color:
                   colors.muted,
@@ -2493,7 +1698,6 @@ export default function Main() {
           <Text
             style={[
               styles.learning,
-
               {
                 color:
                   colors.muted,
@@ -2506,11 +1710,7 @@ export default function Main() {
             Skills
           </Text>
 
-          <View
-            style={
-              styles.chips
-            }
-          >
+          <View style={styles.chips}>
             {[
               'HTML',
               'CSS',
@@ -2535,7 +1735,6 @@ export default function Main() {
           <Text
             style={[
               styles.learning,
-
               {
                 color:
                   colors.muted,
@@ -2548,11 +1747,7 @@ export default function Main() {
             Learning More
           </Text>
 
-          <View
-            style={
-              styles.chips
-            }
-          >
+          <View style={styles.chips}>
             {[
               'Responsive Design',
               'UI / UX',
@@ -2577,10 +1772,7 @@ export default function Main() {
 
         <MotionPressable
           onPress={() => {
-            setSettingsOpen(
-              false
-            );
-
+            setSettingsOpen(false);
             stopOtherTools();
 
             router.push(
@@ -2588,19 +1780,14 @@ export default function Main() {
             );
           }}
           style={[
-            styles.backButton,
-
+            styles.back,
             {
               backgroundColor:
                 accent
             }
           ]}
         >
-          <View
-            style={
-              styles.backIconWrap
-            }
-          >
+          <View style={styles.backIcon}>
             <BackIcon
               size={20}
               color="#ffffff"
@@ -2609,8 +1796,7 @@ export default function Main() {
 
           <Text
             style={[
-              styles.backLabel,
-
+              styles.backText,
               {
                 fontFamily:
                   bold
@@ -2621,15 +1807,10 @@ export default function Main() {
           </Text>
         </MotionPressable>
 
-        <View
-          style={
-            styles.footer
-          }
-        >
+        <View style={styles.footer}>
           <Text
             style={[
-              styles.footerText,
-
+              styles.footerMain,
               {
                 color:
                   colors.muted,
@@ -2645,7 +1826,6 @@ export default function Main() {
           <Text
             style={[
               styles.footerSub,
-
               {
                 color:
                   colors.muted,
@@ -2665,15 +1845,11 @@ export default function Main() {
           settingsOpen
         }
         onClose={() =>
-          setSettingsOpen(
-            false
-          )
+          setSettingsOpen(false)
         }
         dark={dark}
         setDark={setDark}
-        themeName={
-          themeName
-        }
+        themeName={themeName}
         setThemeName={
           setThemeName
         }
@@ -2688,9 +1864,7 @@ export default function Main() {
           fullscreenClock
         }
         onClose={() => {
-          setFullscreenClock(
-            false
-          );
+          setFullscreenClock(false);
 
           setStatus(
             'Returned to NMIX clock.'
@@ -2712,7 +1886,6 @@ function ExpressionBox({
     <View
       style={[
         styles.expressionBox,
-
         {
           backgroundColor:
             colors.surface2,
@@ -2727,7 +1900,6 @@ function ExpressionBox({
         adjustsFontSizeToFit
         style={[
           styles.expressionText,
-
           {
             color:
               colors.text,
@@ -2758,9 +1930,7 @@ function ModeButton({
 }) {
   return (
     <MotionPressable
-      onPress={
-        onPress
-      }
+      onPress={onPress}
       onLongPress={
         onLongPress
       }
@@ -2769,7 +1939,6 @@ function ModeButton({
       }
       style={[
         styles.modeButton,
-
         {
           backgroundColor:
             active
@@ -2781,7 +1950,6 @@ function ModeButton({
       <View
         style={[
           styles.modeIcon,
-
           {
             backgroundColor:
               active
@@ -2800,15 +1968,10 @@ function ModeButton({
         />
       </View>
 
-      <View
-        style={
-          styles.modeCopy
-        }
-      >
+      <View style={styles.modeCopy}>
         <Text
           style={[
             styles.modeTitle,
-
             {
               color:
                 active
@@ -2826,7 +1989,6 @@ function ModeButton({
         <Text
           style={[
             styles.modeSubtitle,
-
             {
               color:
                 active
@@ -2857,12 +2019,9 @@ function CounterButton({
 }) {
   return (
     <MotionPressable
-      onPress={
-        onPress
-      }
+      onPress={onPress}
       style={[
         styles.counterButton,
-
         {
           backgroundColor:
             colors.surface2
@@ -2872,7 +2031,6 @@ function CounterButton({
       <Text
         style={[
           styles.counterTitle,
-
           {
             color:
               colors.text,
@@ -2888,7 +2046,6 @@ function CounterButton({
       <Text
         style={[
           styles.modeSubtitle,
-
           {
             color:
               colors.muted,
@@ -2914,7 +2071,6 @@ function SkillChip({
     <View
       style={[
         styles.chip,
-
         {
           backgroundColor:
             `${accent}20`,
@@ -2927,10 +2083,8 @@ function SkillChip({
       <Text
         style={[
           styles.chipText,
-
           {
             color,
-
             fontFamily:
               bold
           }
@@ -2942,24 +2096,14 @@ function SkillChip({
   );
 }
 
-function formatTimer(
-  seconds
-) {
+function formatTimer(seconds) {
   const min =
-    Math.floor(
-      seconds / 60
-    );
+    Math.floor(seconds / 60);
 
   const sec =
     seconds % 60;
 
-  return `${String(min).padStart(
-    2,
-    '0'
-  )}:${String(sec).padStart(
-    2,
-    '0'
-  )}`;
+  return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 }
 
 function formatClock(date) {
@@ -2969,721 +2113,466 @@ function formatClock(date) {
       {
         hour:
           '2-digit',
-
         minute:
           '2-digit',
-
         second:
           '2-digit'
       }
     );
 }
 
-function formatStopwatch(
-  ms
-) {
+function formatStopwatch(ms) {
   const total =
-    Math.floor(
-      ms / 1000
-    );
+    Math.floor(ms / 1000);
 
   const min =
-    Math.floor(
-      total / 60
-    );
+    Math.floor(total / 60);
 
   const sec =
     total % 60;
 
   const hundredths =
     Math.floor(
-      (
-        ms % 1000
-      ) / 10
+      (ms % 1000) / 10
     );
 
-  return `${String(min).padStart(
-    2,
-    '0'
-  )}:${String(sec).padStart(
-    2,
-    '0'
-  )}.${String(hundredths).padStart(
-    2,
-    '0'
-  )}`;
+  return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${String(hundredths).padStart(2, '0')}`;
 }
 
-const styles =
-  StyleSheet.create({
-    page: {
-      flex: 1
-    },
-
-    top: {
-      height: 330,
-
-      paddingHorizontal: 10,
-
-      paddingBottom: 10,
-
-      borderBottomLeftRadius: 22,
-
-      borderBottomRightRadius: 22
-    },
-
-    topCalculator: {
-      height: 415
-    },
-
-    logoArea: {
-      height: 66,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
-    },
-
-    logoSub: {
-      color:
-        '#ddf8ef',
-
-      fontSize: 8,
-
-      lineHeight: 12,
-
-      letterSpacing: 2,
-
-      textAlign:
-        'center',
-
-      includeFontPadding:
-        false
-    },
-
-    logoFix: {
-      minWidth: 165,
-
-      paddingHorizontal: 15,
-
-      overflow:
-        'visible',
-
-      alignItems:
-        'center'
-    },
-
-    logo: {
-      color:
-        '#ffffff',
-
-      fontSize: 27,
-
-      lineHeight: 38,
-
-      letterSpacing: 4,
-
-      textAlign:
-        'center',
-
-      includeFontPadding:
-        false
-    },
-
-    expression: {
-      height: 76,
-
-      marginBottom: 8,
-
-      padding: 9,
-
-      flexDirection:
-        'row',
-
-      gap: 7,
-
-      borderRadius: 12
-    },
-
-    expressionBox: {
-      flex: 1,
-
-      justifyContent:
-        'center',
-
-      borderWidth: 1,
-
-      borderRadius: 8
-    },
-
-    operatorBox: {
-      width: 60,
-
-      justifyContent:
-        'center',
-
-      borderWidth: 1,
-
-      borderRadius: 8
-    },
-
-    expressionText: {
-      paddingHorizontal: 5,
-
-      fontSize: 18,
-
-      lineHeight: 24,
-
-      textAlign:
-        'center',
-
-      textAlignVertical:
-        'center',
-
-      includeFontPadding:
-        false
-    },
-
-    result: {
-      flex: 1,
-
-      position:
-        'relative',
-
-      overflow:
-        'hidden',
-
-      justifyContent:
-        'center',
-
-      borderRadius: 15
-    },
-
-    glowOne: {
-      position:
-        'absolute',
-
-      width: 370,
-
-      height: 330,
-
-      left: -170,
-
-      top: -145
-    },
-
-    glowTwo: {
-      position:
-        'absolute',
-
-      width: 420,
-
-      height: 370,
-
-      right: -200,
-
-      bottom: -190
-    },
-
-    glowFill: {
-      flex: 1,
-
-      borderRadius: 240
-    },
-
-    resultRow: {
-      flex: 1,
-
-      paddingBottom: 15,
-
-      flexDirection:
-        'row',
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
-    },
-
-    mainDisplay: {
-      flex: 1,
-
-      minWidth: 0,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
-    },
-
-    displayLabel: {
-      fontSize: 9,
-
-      lineHeight: 14,
-
-      letterSpacing: 2.5,
-
-      textAlign:
-        'center'
-    },
-
-    display: {
-      width: '94%',
-
-      fontSize: 40,
-
-      lineHeight: 50,
-
-      textAlign:
-        'center',
-
-      textAlignVertical:
-        'center',
-
-      includeFontPadding:
-        false
-    },
-
-    status: {
-      position:
-        'absolute',
-
-      left: '3%',
-
-      right: '3%',
-
-      bottom: 7,
-
-      fontSize: 10,
-
-      lineHeight: 14,
-
-      textAlign:
-        'center'
-    },
-
-    controls: {
-      position:
-        'absolute',
-
-      zIndex: 1000,
-
-      left: 14,
-
-      right: 14,
-
-      flexDirection:
-        'row',
-
-      justifyContent:
-        'space-between',
-
-      pointerEvents:
-        'box-none'
-    },
-
-    controlButton: {
-      width: 43,
-
-      height: 43,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center',
-
-      borderRadius: 22,
-
-      elevation: 8
-    },
-
-    timerAdjust: {
-      width: 48,
-
-      height: 48,
-
-      marginHorizontal: 7,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center',
-
-      borderRadius: 24
-    },
-
-    timerAdjustText: {
-      width: 48,
-
-      height: 48,
-
-      color:
-        '#ffffff',
-
-      fontSize: 27,
-
-      lineHeight: 48,
-
-      textAlign:
-        'center',
-
-      textAlignVertical:
-        'center',
-
-      includeFontPadding:
-        false
-    },
-
-    scroll: {
-      flex: 1
-    },
-
-    content: {
-      width: '100%',
-
-      maxWidth: 1100,
-
-      alignSelf:
-        'center',
-
-      padding: 10,
-
-      paddingTop: 18,
-
-      paddingBottom: 0,
-
-      gap: 13
-    },
-
-    contentCollapsed: {
-      paddingTop: 76
-    },
-
-    calculatorGrid: {
-      paddingHorizontal: 8,
-
-      paddingVertical: 17,
-
-      flexDirection:
-        'row',
-
-      flexWrap:
-        'wrap',
-
-      justifyContent:
-        'space-evenly',
-
-      gap: 10
-    },
-
-    calcKey: {
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
-    },
-
-    calcText: {
-      width: '100%',
-
-      fontSize: 17,
-
-      lineHeight: 22,
-
-      textAlign:
-        'center',
-
-      textAlignVertical:
-        'center',
-
-      includeFontPadding:
-        false
-    },
-
-    clockGrid: {
-      padding: 14,
-
-      gap: 10
-    },
-
-    modeButton: {
-      position:
-        'relative',
-
-      minHeight: 76,
-
-      padding: 12,
-
-      paddingRight: 54,
-
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      gap: 10,
-
-      borderRadius: 13
-    },
-
-    modeIcon: {
-      width: 40,
-
-      height: 40,
-
-      flexShrink: 0,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center',
-
-      borderRadius: 20
-    },
-
-    modeCopy: {
-      flex: 1,
-
-      justifyContent:
-        'center'
-    },
-
-    modeTitle: {
-      fontSize: 13,
-
-      lineHeight: 18
-    },
-
-    modeSubtitle: {
-      marginTop: 2,
-
-      fontSize: 10,
-
-      lineHeight: 14
-    },
-
-    fullscreenButton: {
-      position:
-        'absolute',
-
-      right: 10,
-
-      top: '50%',
-
-      width: 36,
-
-      height: 36,
-
-      marginTop: -18,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center',
-
-      borderRadius: 9
-    },
-
-    counterGrid: {
-      padding: 14,
-
-      flexDirection:
-        'row',
-
-      flexWrap:
-        'wrap',
-
-      gap: 10
-    },
-
-    counterButton: {
-      width: '48%',
-
-      minHeight: 73,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center',
-
-      borderRadius: 12
-    },
-
-    counterTitle: {
-      fontSize: 13,
-
-      lineHeight: 18,
-
-      textAlign:
-        'center'
-    },
-
-    instructions: {
-      padding: 13,
-
-      gap: 9
-    },
-
-    instruction: {
-      padding: 12,
-
-      borderRadius: 10
-    },
-
-    instructionTitle: {
-      fontSize: 12,
-
-      lineHeight: 17
-    },
-
-    instructionText: {
-      marginTop: 5,
-
-      fontSize: 11,
-
-      lineHeight: 17
-    },
-
-    contributor: {
-      padding: 14,
-
-      borderWidth: 1,
-
-      borderRadius: 16
-    },
-
-    contributorHeading: {
-      fontSize: 14
-    },
-
-    contributorName: {
-      marginTop: 10,
-
-      fontSize: 16,
-
-      lineHeight: 24
-    },
-
-    bio: {
-      marginTop: 7,
-
-      fontSize: 11,
-
-      lineHeight: 17
-    },
-
-    learning: {
-      marginTop: 12,
-
-      fontSize: 10
-    },
-
-    chips: {
-      marginTop: 8,
-
-      flexDirection:
-        'row',
-
-      flexWrap:
-        'wrap',
-
-      gap: 6
-    },
-
-    chip: {
-      paddingHorizontal: 8,
-
-      paddingVertical: 5,
-
-      borderWidth: 1,
-
-      borderRadius: 999
-    },
-
-    chipText: {
-      fontSize: 9
-    },
-
-    backButton: {
-      alignSelf:
-        'center',
-
-      minHeight: 52,
-
-      paddingLeft: 9,
-
-      paddingRight: 18,
-
-      flexDirection:
-        'row',
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center',
-
-      gap: 8,
-
-      borderRadius: 999
-    },
-
-    backIconWrap: {
-      width: 35,
-
-      height: 35,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
-    },
-
-    backLabel: {
-      color:
-        '#ffffff',
-
-      fontSize: 11,
-
-      lineHeight: 16
-    },
-
-    footer: {
-      minHeight: 90,
-
-      paddingTop: 18,
-
-      paddingBottom: 10,
-
-      justifyContent:
-        'flex-end',
-
-      alignItems:
-        'center'
-    },
-
-    footerText: {
-      fontSize: 10
-    },
-
-    footerSub: {
-      marginTop: 2,
-
-      fontSize: 8,
-
-      textAlign:
-        'center'
-    }
-  });
+const styles = StyleSheet.create({
+  page: {
+    flex: 1
+  },
+
+  top: {
+    height: 330,
+    paddingHorizontal: 10,
+    paddingBottom: 10,
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 22
+  },
+
+  topCalculator: {
+    height: 415
+  },
+
+  logoArea: {
+    height: 66,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+
+  logoSub: {
+    color: '#ddf8ef',
+    fontSize: 8,
+    lineHeight: 12,
+    letterSpacing: 2,
+    textAlign: 'center',
+    includeFontPadding: false
+  },
+
+  logoFix: {
+    minWidth: 165,
+    paddingHorizontal: 15,
+    overflow: 'visible',
+    alignItems: 'center'
+  },
+
+  logo: {
+    color: '#fff',
+    fontSize: 27,
+    lineHeight: 38,
+    letterSpacing: 4,
+    textAlign: 'center',
+    includeFontPadding: false
+  },
+
+  expression: {
+    height: 76,
+    marginBottom: 8,
+    padding: 9,
+    flexDirection: 'row',
+    gap: 7,
+    borderRadius: 12
+  },
+
+  expressionBox: {
+    flex: 1,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRadius: 8
+  },
+
+  operatorBox: {
+    width: 60,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRadius: 8
+  },
+
+  expressionText: {
+    paddingHorizontal: 5,
+    fontSize: 18,
+    lineHeight: 24,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false
+  },
+
+  result: {
+    flex: 1,
+    position: 'relative',
+    overflow: 'hidden',
+    justifyContent: 'center',
+    borderRadius: 15
+  },
+
+  glowA: {
+    position: 'absolute',
+    width: 370,
+    height: 330,
+    left: -170,
+    top: -145
+  },
+
+  glowB: {
+    position: 'absolute',
+    width: 420,
+    height: 370,
+    right: -200,
+    bottom: -190
+  },
+
+  glowFill: {
+    flex: 1,
+    borderRadius: 240
+  },
+
+  resultRow: {
+    flex: 1,
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+
+  /*
+   * Timer controls are now anchored
+   * to result screen edges rather
+   * than participating in the time's
+   * center layout.
+   */
+  timerLeft: {
+    position: 'absolute',
+    zIndex: 10,
+    left: 9,
+    top: '50%',
+    marginTop: -24
+  },
+
+  timerRight: {
+    position: 'absolute',
+    zIndex: 10,
+    right: 9,
+    top: '50%',
+    marginTop: -24
+  },
+
+  timerAdjust: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 24
+  },
+
+  timerText: {
+    width: 48,
+    height: 48,
+    color: '#fff',
+    fontSize: 27,
+    lineHeight: 48,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false
+  },
+
+  mainDisplay: {
+    width: '78%',
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+
+  displayLabel: {
+    fontSize: 9,
+    lineHeight: 14,
+    letterSpacing: 2.5,
+    textAlign: 'center'
+  },
+
+  display: {
+    width: '100%',
+    fontSize: 40,
+    lineHeight: 50,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false
+  },
+
+  status: {
+    position: 'absolute',
+    zIndex: 20,
+    left: '3%',
+    right: '3%',
+    bottom: 7,
+    fontSize: 10,
+    lineHeight: 14,
+    textAlign: 'center'
+  },
+
+  controls: {
+    position: 'absolute',
+    zIndex: 1000,
+    left: 14,
+    right: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    pointerEvents: 'box-none'
+  },
+
+  controlButton: {
+    width: 43,
+    height: 43,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 22,
+    elevation: 8
+  },
+
+  scroll: {
+    flex: 1
+  },
+
+  content: {
+    width: '100%',
+    maxWidth: 1100,
+    alignSelf: 'center',
+    padding: 10,
+    paddingTop: 18,
+    paddingBottom: 0,
+    gap: 13
+  },
+
+  calculatorGrid: {
+    paddingHorizontal: 8,
+    paddingVertical: 17,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-evenly',
+    gap: 10
+  },
+
+  calcKey: {
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+
+  calcText: {
+    width: '100%',
+    fontSize: 17,
+    lineHeight: 22,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    includeFontPadding: false
+  },
+
+  clockGrid: {
+    padding: 14,
+    gap: 10
+  },
+
+  modeButton: {
+    position: 'relative',
+    width: '100%',
+    minHeight: 76,
+    padding: 12,
+    paddingRight: 58,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 13
+  },
+
+  modeIcon: {
+    width: 40,
+    height: 40,
+    flexShrink: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20
+  },
+
+  modeCopy: {
+    flex: 1,
+    justifyContent: 'center'
+  },
+
+  modeTitle: {
+    fontSize: 13,
+    lineHeight: 18
+  },
+
+  modeSubtitle: {
+    marginTop: 2,
+    fontSize: 10,
+    lineHeight: 14
+  },
+
+  fullscreen: {
+    position: 'absolute',
+    zIndex: 20,
+    right: 10,
+    top: '50%',
+    width: 38,
+    height: 38,
+    marginTop: -19,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10
+  },
+
+  counterGrid: {
+    padding: 14,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 10
+  },
+
+  /*
+   * MotionPressable now owns this
+   * width, so these remain true 2x2.
+   */
+  counterButton: {
+    width: '48.5%',
+    minHeight: 73,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12
+  },
+
+  counterTitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center'
+  },
+
+  instructions: {
+    padding: 13,
+    gap: 9
+  },
+
+  instruction: {
+    padding: 12,
+    borderRadius: 10
+  },
+
+  instructionTitle: {
+    fontSize: 12,
+    lineHeight: 17
+  },
+
+  instructionText: {
+    marginTop: 5,
+    fontSize: 11,
+    lineHeight: 17
+  },
+
+  contributor: {
+    padding: 14,
+    borderWidth: 1,
+    borderRadius: 16
+  },
+
+  contributorHeading: {
+    fontSize: 14
+  },
+
+  contributorName: {
+    marginTop: 10,
+    fontSize: 16,
+    lineHeight: 24
+  },
+
+  bio: {
+    marginTop: 7,
+    fontSize: 11,
+    lineHeight: 17
+  },
+
+  learning: {
+    marginTop: 12,
+    fontSize: 10
+  },
+
+  chips: {
+    marginTop: 8,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6
+  },
+
+  chip: {
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderRadius: 999
+  },
+
+  chipText: {
+    fontSize: 9
+  },
+
+  back: {
+    alignSelf: 'center',
+    minHeight: 52,
+    paddingLeft: 9,
+    paddingRight: 18,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 999
+  },
+
+  backIcon: {
+    width: 35,
+    height: 35,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+
+  backText: {
+    color: '#fff',
+    fontSize: 11,
+    lineHeight: 16
+  },
+
+  footer: {
+    minHeight: 90,
+    paddingTop: 18,
+    paddingBottom: 10,
+    justifyContent: 'flex-end',
+    alignItems: 'center'
+  },
+
+  footerMain: {
+    fontSize: 10
+  },
+
+  footerSub: {
+    marginTop: 2,
+    fontSize: 8,
+    textAlign: 'center'
+  }
+});
