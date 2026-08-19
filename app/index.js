@@ -13,6 +13,10 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 
+import useNMixFonts, {
+  logoFont
+} from '../src/useNMixFonts';
+
 const ACCENT = '#319b79';
 
 const bios = [
@@ -25,13 +29,15 @@ const bios = [
 ];
 
 export default function Welcome() {
+  const fontsLoaded = useNMixFonts();
+
   const orb1 = useRef(new Animated.Value(0)).current;
   const orb2 = useRef(new Animated.Value(0)).current;
   const shine = useRef(new Animated.Value(0)).current;
   const entrance = useRef(new Animated.Value(0)).current;
+  const bioAnim = useRef(new Animated.Value(1)).current;
 
   const [bioIndex, setBioIndex] = useState(0);
-  const bioAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     Animated.timing(entrance, {
@@ -86,6 +92,7 @@ export default function Welcome() {
         Animated.timing(shine, {
           toValue: 0,
           duration: 4200,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true
         })
       ])
@@ -101,7 +108,7 @@ export default function Welcome() {
         duration: 250,
         useNativeDriver: true
       }).start(() => {
-        setBioIndex(i => (i + 1) % bios.length);
+        setBioIndex(current => (current + 1) % bios.length);
 
         bioAnim.setValue(0);
 
@@ -132,6 +139,17 @@ export default function Welcome() {
     } catch {}
   }
 
+  if (!fontsLoaded) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: '#03140f'
+        }}
+      />
+    );
+  }
+
   return (
     <LinearGradient
       colors={[
@@ -146,7 +164,10 @@ export default function Welcome() {
       end={{ x: 1, y: 1 }}
       style={styles.background}
     >
-      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      <View
+        pointerEvents="none"
+        style={StyleSheet.absoluteFill}
+      >
         <Animated.View
           style={[
             styles.orb,
@@ -214,7 +235,9 @@ export default function Welcome() {
                     outputRange: [-170, 170]
                   })
                 },
-                { rotate: '-18deg' }
+                {
+                  rotate: '-18deg'
+                }
               ]
             }
           ]}
@@ -239,8 +262,13 @@ export default function Welcome() {
           ]}
         >
           <View style={styles.brand}>
-            <Text style={styles.subtitle}>ANYTHING WITH NUMBERS</Text>
-            <Text style={styles.logo}>NMIX</Text>
+            <Text style={styles.subtitle}>
+              ANYTHING WITH NUMBERS
+            </Text>
+
+            <Text style={styles.logo}>
+              NMIX
+            </Text>
           </View>
 
           <View style={styles.actions}>
@@ -251,7 +279,9 @@ export default function Welcome() {
                 pressed && styles.buttonPressed
               ]}
             >
-              <Text style={styles.actionText}>Start</Text>
+              <Text style={styles.actionText}>
+                Start
+              </Text>
             </Pressable>
 
             <Pressable
@@ -261,16 +291,22 @@ export default function Welcome() {
                 pressed && styles.buttonPressed
               ]}
             >
-              <Text style={styles.actionText}>Share</Text>
+              <Text style={styles.actionText}>
+                Share
+              </Text>
             </Pressable>
           </View>
 
           <View style={styles.contributor}>
-            <Text style={styles.heading}>Contributor</Text>
+            <Text style={styles.heading}>
+              Contributor
+            </Text>
 
             <View style={styles.columns}>
               <View style={styles.about}>
-                <Text style={styles.name}>Alex Ravi</Text>
+                <Text style={styles.name}>
+                  Alex Ravi
+                </Text>
 
                 <Animated.Text
                   style={[
@@ -293,17 +329,26 @@ export default function Welcome() {
               </View>
 
               <View style={styles.skillsArea}>
-                <Text style={styles.skillTitle}>Skills</Text>
+                <Text style={styles.skillTitle}>
+                  Skills
+                </Text>
 
                 <View style={styles.chips}>
                   {['HTML', 'CSS', 'JavaScript'].map(item => (
-                    <View key={item} style={styles.chip}>
-                      <Text style={styles.chipText}>{item}</Text>
+                    <View
+                      key={item}
+                      style={styles.chip}
+                    >
+                      <Text style={styles.chipText}>
+                        {item}
+                      </Text>
                     </View>
                   ))}
                 </View>
 
-                <Text style={styles.learning}>Learning More</Text>
+                <Text style={styles.learning}>
+                  Learning More
+                </Text>
 
                 <View style={styles.chips}>
                   {[
@@ -311,8 +356,13 @@ export default function Welcome() {
                     'UI / UX',
                     'Web APIs'
                   ].map(item => (
-                    <View key={item} style={styles.chip}>
-                      <Text style={styles.chipText}>{item}</Text>
+                    <View
+                      key={item}
+                      style={styles.chip}
+                    >
+                      <Text style={styles.chipText}>
+                        {item}
+                      </Text>
                     </View>
                   ))}
                 </View>
@@ -321,23 +371,31 @@ export default function Welcome() {
 
             <View style={styles.contacts}>
               <Pressable
-                onPress={() => Linking.openURL('tel:+919805414723')}
+                onPress={() =>
+                  Linking.openURL('tel:+919805414723')
+                }
                 style={({ pressed }) => [
                   styles.contactButton,
                   pressed && styles.buttonPressed
                 ]}
               >
-                <Text style={styles.contactText}>Contact</Text>
+                <Text style={styles.contactText}>
+                  Contact
+                </Text>
               </Pressable>
 
               <Pressable
-                onPress={() => Linking.openURL('mailto:lxzrvi@gmail.com')}
+                onPress={() =>
+                  Linking.openURL('mailto:lxzrvi@gmail.com')
+                }
                 style={({ pressed }) => [
                   styles.contactButton,
                   pressed && styles.buttonPressed
                 ]}
               >
-                <Text style={styles.contactText}>Go to Mail</Text>
+                <Text style={styles.contactText}>
+                  Go to Mail
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -346,13 +404,18 @@ export default function Welcome() {
         <Animated.View
           style={[
             styles.footer,
-            { opacity: entrance }
+            {
+              opacity: entrance
+            }
           ]}
         >
           <Text style={styles.footerText}>
             © {new Date().getFullYear()} Alex Ravi
           </Text>
-          <Text style={styles.footerSmall}>All Rights Reserved</Text>
+
+          <Text style={styles.footerSmall}>
+            All Rights Reserved
+          </Text>
         </Animated.View>
       </SafeAreaView>
     </LinearGradient>
@@ -415,20 +478,23 @@ const styles = StyleSheet.create({
 
   subtitle: {
     color: '#ddf8ef',
+    fontFamily: 'Poppins-Bold',
     fontSize: 10,
-    fontWeight: '600',
     letterSpacing: 3
   },
 
   logo: {
     marginTop: 2,
     color: '#ffffff',
+    fontFamily: logoFont,
     fontSize: 46,
-    lineHeight: 55,
-    fontWeight: '900',
+    lineHeight: 58,
     letterSpacing: 6,
     textShadowColor: 'rgba(0,0,0,0.3)',
-    textShadowOffset: { width: 0, height: 7 },
+    textShadowOffset: {
+      width: 0,
+      height: 7
+    },
     textShadowRadius: 20
   },
 
@@ -450,7 +516,8 @@ const styles = StyleSheet.create({
 
   actionText: {
     color: '#174c3b',
-    fontWeight: '600'
+    fontFamily: 'Poppins-Bold',
+    fontSize: 14
   },
 
   buttonPressed: {
@@ -474,8 +541,8 @@ const styles = StyleSheet.create({
   heading: {
     marginBottom: 10,
     color: '#202321',
-    fontSize: 14,
-    fontWeight: '700'
+    fontFamily: 'Poppins-Bold',
+    fontSize: 14
   },
 
   columns: {
@@ -494,13 +561,14 @@ const styles = StyleSheet.create({
 
   name: {
     color: ACCENT,
-    fontSize: 16,
-    fontWeight: '800'
+    fontFamily: logoFont,
+    fontSize: 16
   },
 
   bio: {
     marginTop: 8,
     color: '#66706c',
+    fontFamily: 'Poppins-Regular',
     fontSize: 11,
     lineHeight: 17
   },
@@ -512,15 +580,15 @@ const styles = StyleSheet.create({
 
   skillTitle: {
     color: '#202321',
-    fontSize: 12,
-    fontWeight: '700'
+    fontFamily: 'Poppins-Bold',
+    fontSize: 12
   },
 
   learning: {
     marginTop: 10,
     color: '#66706c',
-    fontSize: 10,
-    fontWeight: '600'
+    fontFamily: 'Poppins-Bold',
+    fontSize: 10
   },
 
   chips: {
@@ -541,8 +609,8 @@ const styles = StyleSheet.create({
 
   chipText: {
     color: '#216e56',
-    fontSize: 9,
-    fontWeight: '600'
+    fontFamily: 'Poppins-Bold',
+    fontSize: 9
   },
 
   contacts: {
@@ -561,9 +629,9 @@ const styles = StyleSheet.create({
   },
 
   contactText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '600'
+    color: '#ffffff',
+    fontFamily: 'Poppins-Bold',
+    fontSize: 10
   },
 
   footer: {
@@ -576,12 +644,14 @@ const styles = StyleSheet.create({
 
   footerText: {
     color: 'rgba(255,255,255,0.72)',
+    fontFamily: 'Poppins-Regular',
     fontSize: 10
   },
 
   footerSmall: {
     marginTop: 1,
     color: 'rgba(255,255,255,0.55)',
+    fontFamily: 'Poppins-Regular',
     fontSize: 8
   }
 });
