@@ -3,12 +3,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   AppState,
+  Easing,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
-  View
+  View,
+  useWindowDimensions
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import SettingsPanel from '../src/SettingsPanel';
 import AnimatedSection from '../src/AnimatedSection';
+import FullscreenClock from '../src/FullscreenClock';
 
 import useNMixSettings from '../src/useNMixSettings';
 
@@ -28,54 +30,22 @@ import useNMixFonts, {
 const HOLD = 520;
 
 const instructions = [
-  [
-    'Calculator',
-    'Open Calculator and use the NMIX keypad.'
-  ],
-  [
-    'Operators',
-    'Choose +, −, ×, ÷ or %. Then enter the second number.'
-  ],
-  [
-    'Editing',
-    'Use decimal, ±, ⌫ and AC to edit or clear calculations.'
-  ],
-  [
-    'Result',
-    'Press = or tap the large NMIX display when the expression is ready.'
-  ],
-  [
-    'Timer',
-    'Tap Timer to open it. Use − / + for five seconds and hold Timer to start or pause.'
-  ],
-  [
-    'Clock',
-    'Tap Clock to view your local time.'
-  ],
-  [
-    'Stopwatch',
-    'Tap to start or pause. Hold Stopwatch to reset.'
-  ],
-  [
-    'Counters',
-    'Add and Minus change the value by one.'
-  ],
-  [
-    'Random',
-    'Random generates a number from 1 to 1000.'
-  ],
-  [
-    'Top Screen',
-    'Use the top-left arrow to hide or show the NMIX screen.'
-  ],
-  [
-    'Settings',
-    'Use the hamburger for dark mode, five colors and five fonts.'
-  ]
+  ['Calculator', 'Open Calculator and use the NMIX keypad.'],
+  ['Operators', 'Choose +, −, ×, ÷ or %. Then enter the second number.'],
+  ['Editing', 'Use decimal, ±, ⌫ and AC to edit or clear calculations.'],
+  ['Result', 'Press = or tap the large NMIX display when the expression is ready.'],
+  ['Timer', 'Tap Timer to open it. Use − / + for five seconds and hold Timer to start or pause.'],
+  ['Clock', 'Tap Clock for local time. Use ⛶ for full screen.'],
+  ['Stopwatch', 'Tap to start or pause. Hold Stopwatch to reset.'],
+  ['Counters', 'Add and Minus change the value by one.'],
+  ['Random', 'Random generates a number from 1 to 1000.'],
+  ['Top Screen', 'Use the top-left arrow to hide or show the NMIX screen.'],
+  ['Settings', 'Use the hamburger for dark mode, five colors and five fonts.']
 ];
 
 export default function Main() {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const fontsLoaded = useNMixFonts();
 
   const {
@@ -92,6 +62,7 @@ export default function Main() {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [screenClosed, setScreenClosed] = useState(false);
+  const [fullscreenClock, setFullscreenClock] = useState(false);
   const [open, setOpen] = useState(null);
 
   const [num1, setNum1] = useState('');
@@ -100,197 +71,165 @@ export default function Main() {
   const [target, setTarget] = useState(1);
 
   const [mode, setMode] = useState('idle');
-
-  const [display, setDisplay] = useState('Ready');
-
+  const [display, setDisplayState] = useState('Ready');
   const [label, setLabel] = useState('NMIX LIVE');
-
-  const [status, setStatus] = useState(
-    'Choose a tool below.'
-  );
+  const [status, setStatus] = useState('Choose a tool below.');
 
   const [timerSec, setTimerSec] = useState(10);
-
-  const [timerRunning, setTimerRunning] =
-    useState(false);
-
+  const [timerRunning, setTimerRunning] = useState(false);
   const timerEnd = useRef(null);
 
-  const [stopwatchMs, setStopwatchMs] =
-    useState(0);
-
-  const [stopwatchRunning, setStopwatchRunning] =
-    useState(false);
-
+  const [stopwatchMs, setStopwatchMs] = useState(0);
+  const [stopwatchRunning, setStopwatchRunning] = useState(false);
   const stopwatchStart = useRef(null);
 
   const [count, setCount] = useState(0);
 
-  const pulse = useRef(
-    new Animated.Value(0)
-  ).current;
-
-  const scan = useRef(
-    new Animated.Value(0)
-  ).current;
+  const glow = useRef(new Animated.Value(0)).current;
+  const scan = useRef(new Animated.Value(0)).current;
+  const timerControls = useRef(new Animated.Value(0)).current;
+  const displayMotion = useRef(new Animated.Value(1)).current;
 
   const accent = theme.accent;
   const regular = fontFamily(font);
   const bold = fontFamily(font, true);
 
+  const contentWidth = Math.min(width, 1100) - 20;
+  const availableKeysWidth = contentWidth - 16;
+  const keySize = Math.max(
+    42,
+    Math.min(60, (availableKeysWidth - 44) / 5)
+  );
+
+  function setDisplay(value, animate = true) {
+    setDisplayState(String(value));
+
+    if (!animate) return;
+
+    displayMotion.stopAnimation();
+    displayMotion.setValue(0);
+
+    Animated.timing(displayMotion, {
+      toValue: 1,
+      duration: 280,
+      easing: Easing.bezier(0.22, 1, 0.36, 1),
+      useNativeDriver: true
+    }).start();
+  }
+
   useEffect(() => {
-    const pulseAnimation = Animated.loop(
+    const glowLoop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, {
+        Animated.timing(glow, {
           toValue: 1,
-          duration: 4300,
+          duration: 6500,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true
         }),
-
-        Animated.timing(pulse, {
+        Animated.timing(glow, {
           toValue: 0,
-          duration: 4300,
+          duration: 6500,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true
         })
       ])
     );
 
-    const scanAnimation = Animated.loop(
+    const scanLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(scan, {
           toValue: 1,
-          duration: 4700,
+          duration: 5000,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true
         }),
-
         Animated.timing(scan, {
           toValue: 0,
-          duration: 800,
+          duration: 700,
           useNativeDriver: true
         })
       ])
     );
 
-    pulseAnimation.start();
-    scanAnimation.start();
+    glowLoop.start();
+    scanLoop.start();
 
     return () => {
-      pulseAnimation.stop();
-      scanAnimation.stop();
+      glowLoop.stop();
+      scanLoop.stop();
     };
   }, []);
 
   useEffect(() => {
+    Animated.spring(timerControls, {
+      toValue: mode === 'timer' ? 1 : 0,
+      friction: 7,
+      tension: 70,
+      useNativeDriver: true
+    }).start();
+  }, [mode]);
+
+  useEffect(() => {
     const id = setInterval(() => {
       if (mode === 'clock') {
-        setDisplay(formatClock(new Date()));
+        setDisplayState(formatClock(new Date()));
       }
 
-      if (
-        timerRunning &&
-        timerEnd.current
-      ) {
+      if (timerRunning && timerEnd.current) {
         const remaining = Math.max(
           0,
-          Math.ceil(
-            (timerEnd.current - Date.now()) /
-              1000
-          )
+          Math.ceil((timerEnd.current - Date.now()) / 1000)
         );
 
         setTimerSec(remaining);
-        setDisplay(formatTimer(remaining));
+        setDisplayState(formatTimer(remaining));
 
         if (remaining <= 0) {
           setTimerRunning(false);
           timerEnd.current = null;
-
           setStatus("Time's up!");
         }
       }
 
-      if (
-        stopwatchRunning &&
-        stopwatchStart.current
-      ) {
-        const elapsed =
-          Date.now() -
-          stopwatchStart.current;
+      if (stopwatchRunning && stopwatchStart.current) {
+        const elapsed = Date.now() - stopwatchStart.current;
 
         setStopwatchMs(elapsed);
-
-        setDisplay(
-          formatStopwatch(elapsed)
-        );
+        setDisplayState(formatStopwatch(elapsed));
       }
     }, 50);
 
     return () => clearInterval(id);
-  }, [
-    mode,
-    timerRunning,
-    stopwatchRunning
-  ]);
+  }, [mode, timerRunning, stopwatchRunning]);
 
   useEffect(() => {
-    const subscription =
-      AppState.addEventListener(
-        'change',
-        state => {
-          if (state !== 'active') {
-            return;
-          }
+    const subscription = AppState.addEventListener('change', state => {
+      if (state !== 'active') return;
 
-          if (mode === 'clock') {
-            setDisplay(
-              formatClock(new Date())
-            );
-          }
+      if (mode === 'clock') {
+        setDisplayState(formatClock(new Date()));
+      }
 
-          if (
-            timerRunning &&
-            timerEnd.current
-          ) {
-            const remaining = Math.max(
-              0,
-              Math.ceil(
-                (
-                  timerEnd.current -
-                  Date.now()
-                ) / 1000
-              )
-            );
+      if (timerRunning && timerEnd.current) {
+        const remaining = Math.max(
+          0,
+          Math.ceil((timerEnd.current - Date.now()) / 1000)
+        );
 
-            setTimerSec(remaining);
+        setTimerSec(remaining);
+        setDisplayState(formatTimer(remaining));
+      }
 
-            setDisplay(
-              formatTimer(remaining)
-            );
-          }
+      if (stopwatchRunning && stopwatchStart.current) {
+        const elapsed = Date.now() - stopwatchStart.current;
 
-          if (
-            stopwatchRunning &&
-            stopwatchStart.current
-          ) {
-            const elapsed =
-              Date.now() -
-              stopwatchStart.current;
-
-            setStopwatchMs(elapsed);
-
-            setDisplay(
-              formatStopwatch(elapsed)
-            );
-          }
-        }
-      );
+        setStopwatchMs(elapsed);
+        setDisplayState(formatStopwatch(elapsed));
+      }
+    });
 
     return () => subscription.remove();
-  }, [
-    mode,
-    timerRunning,
-    stopwatchRunning
-  ]);
+  }, [mode, timerRunning, stopwatchRunning]);
 
   function ensureScreenOpen() {
     setScreenClosed(false);
@@ -298,12 +237,7 @@ export default function Main() {
 
   function toggleSection(name) {
     ensureScreenOpen();
-
-    setOpen(current =>
-      current === name
-        ? null
-        : name
-    );
+    setOpen(current => current === name ? null : name);
   }
 
   function stopOtherTools(except) {
@@ -320,39 +254,27 @@ export default function Main() {
   function calculatorKey(value) {
     ensureScreenOpen();
     stopOtherTools();
-
     setMode('calculator');
 
     if (/^\d$/.test(value)) {
       if (target === 1) {
         if (num1.length >= 18) {
-          setStatus(
-            'Maximum number length reached.'
-          );
-
+          setStatus('Maximum number length reached.');
           return;
         }
 
         const next = num1 + value;
-
         setNum1(next);
         setDisplay(next);
         setLabel('FIRST NUMBER');
-
-        setStatus(
-          'Choose an operator.'
-        );
+        setStatus('Choose an operator.');
       } else {
         if (num2.length >= 18) {
-          setStatus(
-            'Maximum number length reached.'
-          );
-
+          setStatus('Maximum number length reached.');
           return;
         }
 
         const next = num2 + value;
-
         setNum2(next);
         setDisplay(next);
         setLabel('SECOND NUMBER');
@@ -367,20 +289,9 @@ export default function Main() {
       return;
     }
 
-    if (
-      [
-        '+',
-        '−',
-        '×',
-        '÷',
-        '%'
-      ].includes(value)
-    ) {
+    if (['+', '−', '×', '÷', '%'].includes(value)) {
       if (!num1) {
-        setStatus(
-          'Enter the first number before selecting an operator.'
-        );
-
+        setStatus('Enter the first number before selecting an operator.');
         return;
       }
 
@@ -388,113 +299,63 @@ export default function Main() {
       setTarget(2);
       setDisplay(value);
       setLabel('OPERATOR');
-
-      setStatus(
-        `${value} selected. Enter the second number.`
-      );
-
+      setStatus(`${value} selected. Enter the second number.`);
       return;
     }
 
     if (value === '.') {
-      const current =
-        target === 1
-          ? num1
-          : num2;
+      const current = target === 1 ? num1 : num2;
 
       if (current.includes('.')) {
-        setStatus(
-          'This number already contains a decimal.'
-        );
-
+        setStatus('This number already contains a decimal.');
         return;
       }
 
-      const next =
-        current
-          ? `${current}.`
-          : '0.';
+      const next = current ? `${current}.` : '0.';
 
-      if (target === 1) {
-        setNum1(next);
-      } else {
-        setNum2(next);
-      }
+      if (target === 1) setNum1(next);
+      else setNum2(next);
 
       setDisplay(next);
       setLabel('DECIMAL');
-
       return;
     }
 
     if (value === '±') {
-      const current =
-        target === 1
-          ? num1
-          : num2;
+      const current = target === 1 ? num1 : num2;
 
       if (!current) {
-        setStatus(
-          'Enter a number before using ±.'
-        );
-
+        setStatus('Enter a number before using ±.');
         return;
       }
 
-      const next = String(
-        -Number(current)
-      );
+      const next = String(-Number(current));
 
-      if (target === 1) {
-        setNum1(next);
-      } else {
-        setNum2(next);
-      }
+      if (target === 1) setNum1(next);
+      else setNum2(next);
 
       setDisplay(next);
       setLabel('SIGN CHANGED');
-
       return;
     }
 
     if (value === '⌫') {
-      if (
-        target === 2 &&
-        !num2 &&
-        operator
-      ) {
+      if (target === 2 && !num2 && operator) {
         setOperator('');
         setTarget(1);
-
-        setDisplay(
-          num1 || 'Ready'
-        );
-
+        setDisplay(num1 || 'Ready');
         setLabel('EDITING');
-
         return;
       }
 
-      const current =
-        target === 1
-          ? num1
-          : num2;
+      const current = target === 1 ? num1 : num2;
+      const next = current.slice(0, -1);
 
-      const next =
-        current.slice(0, -1);
+      if (target === 1) setNum1(next);
+      else setNum2(next);
 
-      if (target === 1) {
-        setNum1(next);
-      } else {
-        setNum2(next);
-      }
-
-      setDisplay(
-        next || '0'
-      );
-
+      setDisplay(next || '0');
       setLabel('EDITING');
-
       return;
     }
 
@@ -503,46 +364,28 @@ export default function Main() {
       setNum2('');
       setOperator('');
       setTarget(1);
-
       setDisplay('Ready');
       setLabel('CALCULATOR');
-
-      setStatus(
-        'Calculator cleared.'
-      );
-
+      setStatus('Calculator cleared.');
       return;
     }
 
-    if (value === '=') {
-      calculate();
-    }
+    if (value === '=') calculate();
   }
 
   function calculate() {
     ensureScreenOpen();
-
     setMode('calculator');
 
-    if (
-      !num1 ||
-      !num2 ||
-      !operator
-    ) {
+    if (!num1 || !num2 || !operator) {
       setDisplay('Incomplete');
-
       setLabel('CALCULATOR');
-
-      setStatus(
-        'Enter both numbers and select an operator.'
-      );
-
+      setStatus('Enter both numbers and select an operator.');
       return;
     }
 
     const a = Number(num1);
     const b = Number(num2);
-
     let result;
 
     switch (operator) {
@@ -561,15 +404,8 @@ export default function Main() {
       case '÷':
         if (b === 0) {
           setDisplay('Error');
-
-          setLabel(
-            'CALCULATOR'
-          );
-
-          setStatus(
-            'Division by zero is not allowed.'
-          );
-
+          setLabel('CALCULATOR');
+          setStatus('Division by zero is not allowed.');
           return;
         }
 
@@ -579,11 +415,7 @@ export default function Main() {
       case '%':
         if (b === 0) {
           setDisplay('Error');
-
-          setStatus(
-            'Remainder by zero is not allowed.'
-          );
-
+          setStatus('Remainder by zero is not allowed.');
           return;
         }
 
@@ -592,116 +424,64 @@ export default function Main() {
 
       default:
         setDisplay('No sign');
-
-        setStatus(
-          'Choose an operator.'
-        );
-
+        setStatus('Choose an operator.');
         return;
     }
 
     if (!Number.isFinite(result)) {
       setDisplay('Overflow');
-
-      setStatus(
-        'Result is too large.'
-      );
-
+      setStatus('Result is too large.');
       return;
     }
 
-    setDisplay(
-      String(
-        Number(
-          result.toPrecision(12)
-        )
-      )
-    );
-
+    setDisplay(String(Number(result.toPrecision(12))));
     setLabel('RESULT');
-
-    setStatus(
-      'Calculation complete.'
-    );
+    setStatus('Calculation complete.');
   }
 
   function openTimer() {
     ensureScreenOpen();
-
     stopOtherTools('timer');
 
     setMode('timer');
     setLabel('TIMER');
-
-    setDisplay(
-      formatTimer(timerSec)
-    );
-
-    setStatus(
-      'Use − / + for five seconds. Hold Timer to start.'
-    );
+    setDisplay(formatTimer(timerSec));
+    setStatus('Use − / + for five seconds. Hold Timer to start.');
   }
 
   function toggleTimer() {
     ensureScreenOpen();
-
     stopOtherTools('timer');
 
     setMode('timer');
     setLabel('TIMER');
 
     if (timerRunning) {
-      const remaining =
-        timerEnd.current
-          ? Math.max(
-              0,
-              Math.ceil(
-                (
-                  timerEnd.current -
-                  Date.now()
-                ) / 1000
-              )
-            )
-          : timerSec;
+      const remaining = timerEnd.current
+        ? Math.max(
+            0,
+            Math.ceil((timerEnd.current - Date.now()) / 1000)
+          )
+        : timerSec;
 
       setTimerSec(remaining);
-
-      setDisplay(
-        formatTimer(remaining)
-      );
-
+      setDisplay(formatTimer(remaining));
       setTimerRunning(false);
-
       timerEnd.current = null;
-
-      setStatus(
-        'Timer paused. Hold Timer to continue.'
-      );
-
+      setStatus('Timer paused. Hold Timer to continue.');
       return;
     }
 
     if (timerSec <= 0) {
-      setStatus(
-        'Add five seconds before starting.'
-      );
-
+      setStatus('Add five seconds before starting.');
       return;
     }
 
-    timerEnd.current =
-      Date.now() +
-      timerSec * 1000;
+    timerEnd.current = Date.now() + timerSec * 1000;
 
     setTimerRunning(true);
-
-    setDisplay(
-      formatTimer(timerSec)
-    );
-
-    setStatus(
-      'Timer running. Hold Timer to pause.'
-    );
+    setDisplay(formatTimer(timerSec));
+    setStatus('Timer running. Hold Timer to pause.');
   }
 
   function changeTimer(amount) {
@@ -709,44 +489,26 @@ export default function Main() {
 
     let current = timerSec;
 
-    if (
-      timerRunning &&
-      timerEnd.current
-    ) {
+    if (timerRunning && timerEnd.current) {
       current = Math.max(
         0,
-        Math.ceil(
-          (
-            timerEnd.current -
-            Date.now()
-          ) / 1000
-        )
+        Math.ceil((timerEnd.current - Date.now()) / 1000)
       );
     }
 
-    const next = Math.max(
-      0,
-      current + amount
-    );
+    const next = Math.max(0, current + amount);
 
     setTimerSec(next);
-
     setMode('timer');
     setLabel('TIMER');
-
-    setDisplay(
-      formatTimer(next)
-    );
+    setDisplay(formatTimer(next));
 
     if (timerRunning) {
-      if (next <= 0) {
+      if (next === 0) {
         setTimerRunning(false);
-
         timerEnd.current = null;
       } else {
-        timerEnd.current =
-          Date.now() +
-          next * 1000;
+        timerEnd.current = Date.now() + next * 1000;
       }
     }
 
@@ -761,151 +523,92 @@ export default function Main() {
 
   function openClock() {
     ensureScreenOpen();
-
     stopOtherTools();
 
     setMode('clock');
     setLabel('LIVE CLOCK');
+    setDisplay(formatClock(new Date()));
+    setStatus('Live clock is active.');
+  }
 
-    setDisplay(
-      formatClock(new Date())
-    );
+  function openFullscreenClock() {
+    ensureScreenOpen();
+    stopOtherTools();
 
-    setStatus(
-      'Live clock is active.'
-    );
+    setMode('clock');
+    setLabel('LIVE CLOCK');
+    setDisplay(formatClock(new Date()));
+
+    setSettingsOpen(false);
+    setFullscreenClock(true);
   }
 
   function tapStopwatch() {
     ensureScreenOpen();
 
     setTimerRunning(false);
-
     timerEnd.current = null;
 
     setMode('stopwatch');
-
     setLabel('STOPWATCH');
 
     if (stopwatchRunning) {
-      const elapsed =
-        stopwatchStart.current
-          ? Date.now() -
-            stopwatchStart.current
-          : stopwatchMs;
+      const elapsed = stopwatchStart.current
+        ? Date.now() - stopwatchStart.current
+        : stopwatchMs;
 
       setStopwatchMs(elapsed);
-
       setStopwatchRunning(false);
-
-      setDisplay(
-        formatStopwatch(elapsed)
-      );
-
-      setStatus(
-        'Stopwatch paused. Tap again to continue.'
-      );
-
+      setDisplay(formatStopwatch(elapsed));
+      setStatus('Stopwatch paused. Tap again to continue.');
       return;
     }
 
-    stopwatchStart.current =
-      Date.now() -
-      stopwatchMs;
-
+    stopwatchStart.current = Date.now() - stopwatchMs;
     setStopwatchRunning(true);
-
-    setDisplay(
-      formatStopwatch(stopwatchMs)
-    );
-
-    setStatus(
-      'Stopwatch running.'
-    );
+    setDisplay(formatStopwatch(stopwatchMs));
+    setStatus('Stopwatch running.');
   }
 
   function resetStopwatch() {
     ensureScreenOpen();
 
     setTimerRunning(false);
-
     timerEnd.current = null;
 
     setStopwatchRunning(false);
-
     stopwatchStart.current = null;
-
     setStopwatchMs(0);
 
     setMode('stopwatch');
     setLabel('STOPWATCH');
-
     setDisplay('00:00.00');
-
-    setStatus(
-      'Stopwatch reset.'
-    );
+    setStatus('Stopwatch reset.');
   }
 
   function counter(action) {
     ensureScreenOpen();
-
     stopOtherTools();
 
     let next = count;
 
-    if (action === 'add') {
-      next += 1;
-    }
-
-    if (action === 'minus') {
-      next = Math.max(
-        0,
-        next - 1
-      );
-    }
-
-    if (action === 'reset') {
-      next = 0;
-    }
+    if (action === 'add') next += 1;
+    if (action === 'minus') next = Math.max(0, next - 1);
+    if (action === 'reset') next = 0;
 
     if (action === 'random') {
-      next =
-        Math.floor(
-          Math.random() * 1000
-        ) + 1;
+      next = Math.floor(Math.random() * 1000) + 1;
     }
 
     setCount(next);
-
     setMode('counter');
     setLabel('COUNTER');
-
     setDisplay(String(next));
 
-    if (action === 'add') {
-      setStatus(
-        'Counter increased.'
-      );
-    }
-
-    if (action === 'minus') {
-      setStatus(
-        'Counter decreased.'
-      );
-    }
-
-    if (action === 'reset') {
-      setStatus(
-        'Counter reset to zero.'
-      );
-    }
-
-    if (action === 'random') {
-      setStatus(
-        'Random number generated.'
-      );
-    }
+    if (action === 'add') setStatus('Counter increased.');
+    if (action === 'minus') setStatus('Counter decreased.');
+    if (action === 'reset') setStatus('Counter reset to zero.');
+    if (action === 'random') setStatus('Random number generated.');
   }
 
   function resultPress() {
@@ -920,7 +623,6 @@ export default function Main() {
           ? 'Timer is running.'
           : 'Hold Timer to start or resume.'
       );
-
       return;
     }
 
@@ -930,1068 +632,847 @@ export default function Main() {
           ? 'Stopwatch is running.'
           : 'Tap Stopwatch to start.'
       );
-
       return;
     }
 
-    setStatus(
-      'Choose a tool below.'
-    );
+    setStatus('Choose a tool below.');
   }
 
-  if (
-    !fontsLoaded ||
-    !loaded
-  ) {
+  if (!fontsLoaded || !loaded) {
     return (
       <View
         style={{
           flex: 1,
-          backgroundColor:
-            colors.body
+          backgroundColor: colors.body
         }}
       />
     );
   }
 
-  const calcOpen =
-    open === 'calculator';
+  const calcOpen = open === 'calculator';
 
   return (
     <View
       style={[
         styles.page,
         {
-          backgroundColor:
-            colors.body
+          backgroundColor: colors.body
         }
       ]}
     >
-      <SafeAreaView style={styles.safe}>
-        <View
+      {!screenClosed && (
+        <LinearGradient
+          colors={[
+            theme.topOne,
+            theme.topTwo,
+            theme.topThree
+          ]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={[
-            styles.controls,
+            styles.top,
             {
-              top:
-                insets.top + 10
-            }
+              paddingTop: insets.top + 8
+            },
+            calcOpen && styles.topCalculator
           ]}
         >
-          <Pressable
-            onPress={() => {
-              setSettingsOpen(false);
+          <View style={styles.logoArea}>
+            <Text
+              style={[
+                styles.logoSub,
+                { fontFamily: bold }
+              ]}
+            >
+              ANYTHING WITH NUMBERS
+            </Text>
 
-              setScreenClosed(
-                value => !value
-              );
-            }}
-            style={({ pressed }) => [
-              styles.controlButton,
-              {
-                backgroundColor:
-                  accent
-              },
-              pressed &&
-                styles.pressed
-            ]}
-          >
+            <Text
+              style={[
+                styles.logo,
+                { fontFamily: logoFont }
+              ]}
+            >
+              NMIX
+            </Text>
+          </View>
+
+          {calcOpen && (
             <View
               style={[
-                styles.chevron,
-                screenClosed &&
-                  styles.chevronClosed
+                styles.expression,
+                {
+                  backgroundColor: colors.surface
+                }
               ]}
-            />
-          </Pressable>
-
-          <Pressable
-            onPress={() =>
-              setSettingsOpen(true)
-            }
-            style={({ pressed }) => [
-              styles.controlButton,
-              {
-                backgroundColor:
-                  accent
-              },
-              pressed &&
-                styles.pressed
-            ]}
-          >
-            <View
-              style={
-                styles.hamburger
-              }
             >
-              <View
-                style={
-                  styles.hamburgerLine
-                }
+              <ExpressionBox
+                value={num1 || '_'}
+                colors={colors}
+                font={bold}
               />
 
               <View
-                style={
-                  styles.hamburgerLine
-                }
-              />
-
-              <View
-                style={
-                  styles.hamburgerLine
-                }
-              />
-            </View>
-          </Pressable>
-        </View>
-
-        {!screenClosed && (
-          <LinearGradient
-            colors={[
-              theme.topOne,
-              theme.topTwo,
-              theme.topThree
-            ]}
-            start={{
-              x: 0,
-              y: 0
-            }}
-            end={{
-              x: 1,
-              y: 1
-            }}
-            style={[
-              styles.top,
-              calcOpen &&
-                styles.topCalculator
-            ]}
-          >
-            <View
-              style={
-                styles.logoArea
-              }
-            >
-              <Text
                 style={[
-                  styles.logoSub,
+                  styles.operatorBox,
                   {
-                    fontFamily:
-                      bold
+                    backgroundColor: colors.surface2,
+                    borderColor: colors.border
                   }
                 ]}
               >
-                ANYTHING WITH NUMBERS
-              </Text>
-
-              <Text
-                style={[
-                  styles.logo,
-                  {
-                    fontFamily:
-                      logoFont
-                  }
-                ]}
-              >
-                NMIX
-              </Text>
-            </View>
-
-            {calcOpen && (
-              <View
-                style={[
-                  styles.expression,
-                  {
-                    backgroundColor:
-                      colors.surface
-                  }
-                ]}
-              >
-                <ExpressionBox
-                  value={
-                    num1 || '_'
-                  }
-                  colors={colors}
-                  font={bold}
-                />
-
-                <View
+                <Text
                   style={[
-                    styles.operatorBox,
+                    styles.expressionText,
                     {
-                      backgroundColor:
-                        colors.surface2,
-
-                      borderColor:
-                        colors.border
+                      color: colors.text,
+                      fontFamily: bold
                     }
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.expressionText,
-                      {
-                        color:
-                          colors.text,
-
-                        fontFamily:
-                          bold
-                      }
-                    ]}
-                  >
-                    {operator ||
-                      'sign'}
-                  </Text>
-                </View>
-
-                <ExpressionBox
-                  value={
-                    num2 || '_'
-                  }
-                  colors={colors}
-                  font={bold}
-                />
+                  {operator || 'sign'}
+                </Text>
               </View>
-            )}
 
-            <View
+              <ExpressionBox
+                value={num2 || '_'}
+                colors={colors}
+                font={bold}
+              />
+            </View>
+          )}
+
+          <View
+            style={[
+              styles.result,
+              {
+                backgroundColor: dark
+                  ? '#121916'
+                  : '#e6ebe8'
+              }
+            ]}
+          >
+            <Animated.View
+              pointerEvents="none"
               style={[
-                styles.result,
+                styles.softGlowA,
                 {
-                  backgroundColor:
-                    dark
-                      ? '#151c19'
-                      : '#e4eae7'
+                  opacity: glow.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.35, 0.8]
+                  }),
+                  transform: [
+                    {
+                      translateX: glow.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-90, 80]
+                      })
+                    },
+                    {
+                      translateY: glow.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-40, 35]
+                      })
+                    },
+                    {
+                      scale: glow.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [1, 1.18]
+                      })
+                    }
+                  ]
                 }
               ]}
             >
-              <Animated.View
-                pointerEvents="none"
-                style={[
-                  styles.glowA,
-                  {
-                    opacity:
-                      pulse.interpolate({
-                        inputRange:
-                          [0, 1],
-
-                        outputRange:
-                          [0.42, 0.76]
-                      }),
-
-                    transform: [
-                      {
-                        translateX:
-                          pulse.interpolate({
-                            inputRange:
-                              [0, 1],
-
-                            outputRange:
-                              [-80, 80]
-                          })
-                      },
-
-                      {
-                        translateY:
-                          pulse.interpolate({
-                            inputRange:
-                              [0, 1],
-
-                            outputRange:
-                              [-35, 30]
-                          })
-                      }
-                    ]
-                  }
+              <LinearGradient
+                colors={[
+                  'transparent',
+                  `${theme.accentLight}08`,
+                  `${theme.accentLight}32`,
+                  `${theme.accentLight}08`,
+                  'transparent'
                 ]}
-              >
-                <LinearGradient
-                  colors={[
-                    'transparent',
-                    `${theme.accentLight}10`,
-                    `${theme.accentLight}38`,
-                    `${theme.accentLight}08`,
-                    'transparent'
-                  ]}
-                  style={
-                    styles.glowGradient
-                  }
-                />
-              </Animated.View>
-
-              <Animated.View
-                pointerEvents="none"
-                style={[
-                  styles.glowB,
-                  {
-                    opacity:
-                      pulse.interpolate({
-                        inputRange:
-                          [0, 1],
-
-                        outputRange:
-                          [0.68, 0.35]
-                      }),
-
-                    transform: [
-                      {
-                        translateX:
-                          pulse.interpolate({
-                            inputRange:
-                              [0, 1],
-
-                            outputRange:
-                              [80, -85]
-                          })
-                      },
-
-                      {
-                        translateY:
-                          pulse.interpolate({
-                            inputRange:
-                              [0, 1],
-
-                            outputRange:
-                              [30, -25]
-                          })
-                      }
-                    ]
-                  }
-                ]}
-              >
-                <LinearGradient
-                  colors={[
-                    'transparent',
-                    `${accent}08`,
-                    `${accent}30`,
-                    `${accent}08`,
-                    'transparent'
-                  ]}
-                  style={
-                    styles.glowGradient
-                  }
-                />
-              </Animated.View>
-
-              <Animated.View
-                pointerEvents="none"
-                style={[
-                  styles.scan,
-                  {
-                    transform: [
-                      {
-                        translateX:
-                          scan.interpolate({
-                            inputRange:
-                              [0, 1],
-
-                            outputRange:
-                              [-300, 600]
-                          })
-                      },
-
-                      {
-                        rotate:
-                          '-18deg'
-                      }
-                    ]
-                  }
-                ]}
+                style={styles.glowGradient}
               />
+            </Animated.View>
 
-              <View
-                style={
-                  styles.resultRow
-                }
-              >
-                {mode ===
-                  'timer' && (
-                  <Pressable
-                    onPress={() =>
-                      changeTimer(-5)
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.softGlowB,
+                {
+                  opacity: glow.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.65, 0.25]
+                  }),
+                  transform: [
+                    {
+                      translateX: glow.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [70, -90]
+                      })
+                    },
+                    {
+                      translateY: glow.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [35, -25]
+                      })
                     }
-                    style={({
-                      pressed
-                    }) => [
-                      styles.timerAdjust,
-                      {
-                        backgroundColor:
-                          accent
-                      },
+                  ]
+                }
+              ]}
+            >
+              <LinearGradient
+                colors={[
+                  'transparent',
+                  `${accent}08`,
+                  `${accent}28`,
+                  `${accent}06`,
+                  'transparent'
+                ]}
+                style={styles.glowGradient}
+              />
+            </Animated.View>
 
-                      pressed &&
-                        styles.pressed
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.scan,
+                {
+                  transform: [
+                    {
+                      translateX: scan.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-320, 650]
+                      })
+                    },
+                    { rotate: '-18deg' }
+                  ]
+                }
+              ]}
+            />
+
+            <View style={styles.resultRow}>
+              {mode === 'timer' && (
+                <Animated.View
+                  style={{
+                    opacity: timerControls,
+                    transform: [
+                      {
+                        scale: timerControls.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.25, 1]
+                        })
+                      },
+                      {
+                        translateX: timerControls.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [20, 0]
+                        })
+                      }
+                    ]
+                  }}
+                >
+                  <Pressable
+                    onPress={() => changeTimer(-5)}
+                    style={({ pressed }) => [
+                      styles.timerAdjust,
+                      { backgroundColor: accent },
+                      pressed && styles.pressed
                     ]}
                   >
                     <Text
                       style={[
                         styles.timerAdjustText,
-                        {
-                          fontFamily:
-                            regular
-                        }
+                        { fontFamily: regular }
                       ]}
                     >
                       −
                     </Text>
                   </Pressable>
-                )}
+                </Animated.View>
+              )}
 
-                <Pressable
-                  onPress={
-                    resultPress
-                  }
-                  style={
-                    styles.mainDisplay
-                  }
-                >
-                  <Text
-                    style={[
-                      styles.displayLabel,
-                      {
-                        color:
-                          dark
-                            ? theme.accentLight
-                            : theme.accentDark,
-
-                        fontFamily:
-                          bold
-                      }
-                    ]}
-                  >
-                    {label}
-                  </Text>
-
-                  <Text
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    style={[
-                      styles.display,
-                      {
-                        color:
-                          dark
-                            ? '#ffffff'
-                            : '#152c24',
-
-                        fontFamily:
-                          bold
-                      }
-                    ]}
-                  >
-                    {display}
-                  </Text>
-                </Pressable>
-
-                {mode ===
-                  'timer' && (
-                  <Pressable
-                    onPress={() =>
-                      changeTimer(5)
+              <Pressable
+                onPress={resultPress}
+                style={styles.mainDisplay}
+              >
+                <Text
+                  style={[
+                    styles.displayLabel,
+                    {
+                      color: dark
+                        ? theme.accentLight
+                        : theme.accentDark,
+                      fontFamily: bold
                     }
-                    style={({
-                      pressed
-                    }) => [
-                      styles.timerAdjust,
-                      {
-                        backgroundColor:
-                          accent
-                      },
+                  ]}
+                >
+                  {label}
+                </Text>
 
-                      pressed &&
-                        styles.pressed
+                <Animated.Text
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.3}
+                  style={[
+                    styles.display,
+                    {
+                      color: dark ? '#fff' : '#152c24',
+                      fontFamily: bold,
+                      opacity: displayMotion,
+                      transform: [
+                        {
+                          translateY: displayMotion.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [7, 0]
+                          })
+                        }
+                      ]
+                    }
+                  ]}
+                >
+                  {display}
+                </Animated.Text>
+              </Pressable>
+
+              {mode === 'timer' && (
+                <Animated.View
+                  style={{
+                    opacity: timerControls,
+                    transform: [
+                      {
+                        scale: timerControls.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0.25, 1]
+                        })
+                      },
+                      {
+                        translateX: timerControls.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-20, 0]
+                        })
+                      }
+                    ]
+                  }}
+                >
+                  <Pressable
+                    onPress={() => changeTimer(5)}
+                    style={({ pressed }) => [
+                      styles.timerAdjust,
+                      { backgroundColor: accent },
+                      pressed && styles.pressed
                     ]}
                   >
                     <Text
                       style={[
                         styles.timerAdjustText,
-                        {
-                          fontFamily:
-                            regular
-                        }
+                        { fontFamily: regular }
                       ]}
                     >
                       +
                     </Text>
                   </Pressable>
-                )}
-              </View>
-
-              <Text
-                numberOfLines={1}
-                style={[
-                  styles.status,
-                  {
-                    color:
-                      dark
-                        ? theme.accentLight
-                        : theme.accentDark,
-
-                    fontFamily:
-                      regular
-                  }
-                ]}
-              >
-                {status}
-              </Text>
+                </Animated.View>
+              )}
             </View>
-          </LinearGradient>
-        )}
 
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[
-            styles.content,
-
-            screenClosed &&
-              styles.contentCollapsed
-          ]}
-          showsVerticalScrollIndicator={
-            false
-          }
-        >
-          <AnimatedSection
-            icon="÷"
-            title="Calculator"
-            subtitle="Numbers and operations"
-            name="calculator"
-            open={open}
-            toggle={toggleSection}
-            colors={colors}
-            accent={accent}
-            regular={regular}
-            bold={bold}
-          >
-            <View
-              style={
-                styles.calculatorGrid
-              }
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.status,
+                {
+                  color: dark
+                    ? theme.accentLight
+                    : theme.accentDark,
+                  fontFamily: regular
+                }
+              ]}
             >
-              {[
-                '1',
-                '2',
-                '3',
-                '4',
-                '5',
-                '6',
-                '7',
-                '8',
-                '9',
-                '0',
-                '+',
-                '−',
-                '×',
-                '÷',
-                '%',
-                '.',
-                '±',
-                '⌫',
-                'AC',
-                '='
-              ].map(key => {
-                const isAccent =
-                  [
-                    '+',
-                    '−',
-                    '×',
-                    '÷',
-                    '%',
-                    '='
-                  ].includes(key);
+              {status}
+            </Text>
+          </View>
+        </LinearGradient>
+      )}
 
-                const danger =
-                  key === 'AC';
+      <View
+        style={[
+          styles.controls,
+          {
+            top: insets.top + 10
+          }
+        ]}
+      >
+        <Pressable
+          onPress={() => {
+            setSettingsOpen(false);
+            setScreenClosed(value => !value);
+          }}
+          style={({ pressed }) => [
+            styles.controlButton,
+            { backgroundColor: accent },
+            pressed && styles.pressed
+          ]}
+        >
+          <View
+            style={[
+              styles.chevron,
+              screenClosed && styles.chevronClosed
+            ]}
+          />
+        </Pressable>
 
-                return (
-                  <Pressable
-                    key={key}
-                    onPress={() =>
-                      calculatorKey(
-                        key
-                      )
-                    }
-                    style={({
-                      pressed
-                    }) => [
-                      styles.calcKey,
+        <Pressable
+          onPress={() => setSettingsOpen(true)}
+          style={({ pressed }) => [
+            styles.controlButton,
+            { backgroundColor: accent },
+            pressed && styles.pressed
+          ]}
+        >
+          <View style={styles.hamburger}>
+            <View style={styles.hamburgerLine} />
+            <View style={styles.hamburgerLine} />
+            <View style={styles.hamburgerLine} />
+          </View>
+        </Pressable>
+      </View>
 
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.content,
+          screenClosed && [
+            styles.contentCollapsed,
+            {
+              paddingTop: insets.top + 70
+            }
+          ]
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <AnimatedSection
+          icon="÷"
+          title="Calculator"
+          subtitle="Numbers and operations"
+          name="calculator"
+          open={open}
+          toggle={toggleSection}
+          colors={colors}
+          accent={accent}
+          regular={regular}
+          bold={bold}
+        >
+          <View style={styles.calculatorGrid}>
+            {[
+              '1','2','3','4','5',
+              '6','7','8','9','0',
+              '+','−','×','÷','%',
+              '.','±','⌫','AC','='
+            ].map(key => {
+              const isAccent =
+                ['+','−','×','÷','%','='].includes(key);
+
+              const danger = key === 'AC';
+
+              return (
+                <Pressable
+                  key={key}
+                  onPress={() => calculatorKey(key)}
+                  style={({ pressed }) => [
+                    styles.calcKey,
+                    {
+                      width: keySize,
+                      height: keySize,
+                      borderRadius: keySize / 2,
+                      backgroundColor: colors.surface2
+                    },
+                    isAccent && {
+                      backgroundColor: accent
+                    },
+                    danger && {
+                      backgroundColor: dark
+                        ? '#472225'
+                        : '#f1d5d5'
+                    },
+                    pressed && styles.pressed
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.calcText,
                       {
-                        backgroundColor:
-                          colors.surface2
+                        color: colors.text,
+                        fontFamily: bold
                       },
-
-                      isAccent && {
-                        backgroundColor:
-                          accent
-                      },
-
-                      danger && {
-                        backgroundColor:
-                          dark
-                            ? '#472225'
-                            : '#f1d5d5'
-                      },
-
-                      pressed &&
-                        styles.pressed
+                      isAccent && { color: '#fff' },
+                      danger && { color: '#d83939' }
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.calcText,
+                    {key}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </AnimatedSection>
 
-                        {
-                          color:
-                            colors.text,
+        <AnimatedSection
+          icon="◷"
+          title="Clock"
+          subtitle="Timer, clock and stopwatch"
+          name="clock"
+          open={open}
+          toggle={toggleSection}
+          colors={colors}
+          accent={accent}
+          regular={regular}
+          bold={bold}
+        >
+          <View style={styles.clockGrid}>
+            <ModeButton
+              icon="◴"
+              title="Timer"
+              subtitle="Countdown"
+              active={mode === 'timer'}
+              onPress={openTimer}
+              onLongPress={toggleTimer}
+              colors={colors}
+              accent={accent}
+              regular={regular}
+              bold={bold}
+            />
 
-                          fontFamily:
-                            bold
-                        },
-
-                        isAccent && {
-                          color:
-                            '#fff'
-                        },
-
-                        danger && {
-                          color:
-                            '#d83939'
-                        }
-                      ]}
-                    >
-                      {key}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </AnimatedSection>
-
-          <AnimatedSection
-            icon="◷"
-            title="Clock"
-            subtitle="Timer, clock and stopwatch"
-            name="clock"
-            open={open}
-            toggle={toggleSection}
-            colors={colors}
-            accent={accent}
-            regular={regular}
-            bold={bold}
-          >
-            <View
-              style={
-                styles.clockGrid
-              }
-            >
-              <ModeButton
-                icon="◴"
-                title="Timer"
-                subtitle="Countdown"
-                active={
-                  mode === 'timer'
-                }
-                onPress={openTimer}
-                onLongPress={
-                  toggleTimer
-                }
-                colors={colors}
-                accent={accent}
-                regular={regular}
-                bold={bold}
-              />
-
-              <ModeButton
-                icon="◷"
-                title="Clock"
-                subtitle="Local time"
-                active={
-                  mode === 'clock'
-                }
-                onPress={openClock}
-                colors={colors}
-                accent={accent}
-                regular={regular}
-                bold={bold}
-              />
-
-              <ModeButton
-                icon="◉"
-                title="Stopwatch"
-                subtitle="Track time"
-                active={
-                  mode ===
-                  'stopwatch'
-                }
-                onPress={
-                  tapStopwatch
-                }
-                onLongPress={
-                  resetStopwatch
-                }
-                colors={colors}
-                accent={accent}
-                regular={regular}
-                bold={bold}
-              />
-            </View>
-          </AnimatedSection>
-
-          <AnimatedSection
-            icon="+"
-            title="Counters"
-            subtitle="Count and generate"
-            name="counter"
-            open={open}
-            toggle={toggleSection}
-            colors={colors}
-            accent={accent}
-            regular={regular}
-            bold={bold}
-          >
-            <View
-              style={
-                styles.counterGrid
-              }
-            >
-              <CounterButton
-                title="Add"
-                subtitle="Increase"
-                onPress={() =>
-                  counter('add')
-                }
-                colors={colors}
-                regular={regular}
-                bold={bold}
-              />
-
-              <CounterButton
-                title="Reset"
-                subtitle="Back to zero"
-                onPress={() =>
-                  counter('reset')
-                }
-                colors={colors}
-                regular={regular}
-                bold={bold}
-              />
-
-              <CounterButton
-                title="Random"
-                subtitle="1 – 1000"
-                onPress={() =>
-                  counter('random')
-                }
-                colors={colors}
-                regular={regular}
-                bold={bold}
-              />
-
-              <CounterButton
-                title="Minus"
-                subtitle="Decrease"
-                onPress={() =>
-                  counter('minus')
-                }
-                colors={colors}
-                regular={regular}
-                bold={bold}
-              />
-            </View>
-          </AnimatedSection>
-
-          <AnimatedSection
-            icon="?"
-            title="How to use NMIX"
-            subtitle="Instructions and controls"
-            name="instructions"
-            open={open}
-            toggle={toggleSection}
-            colors={colors}
-            accent={accent}
-            regular={regular}
-            bold={bold}
-          >
-            <View
-              style={
-                styles.instructions
-              }
-            >
-              {instructions.map(
-                ([
-                  title,
-                  text
-                ]) => (
-                  <View
-                    key={title}
+            <ModeButton
+              icon="◷"
+              title="Clock"
+              subtitle="Local time"
+              active={mode === 'clock'}
+              onPress={openClock}
+              colors={colors}
+              accent={accent}
+              regular={regular}
+              bold={bold}
+              extra={
+                <Pressable
+                  onPress={openFullscreenClock}
+                  hitSlop={10}
+                  style={({ pressed }) => [
+                    styles.fullscreenButton,
+                    {
+                      backgroundColor: mode === 'clock'
+                        ? '#fff'
+                        : accent
+                    },
+                    pressed && styles.pressed
+                  ]}
+                >
+                  <Text
                     style={[
-                      styles.instruction,
+                      styles.fullscreenText,
                       {
-                        backgroundColor:
-                          colors.surface2
+                        color: mode === 'clock'
+                          ? accent
+                          : '#fff'
                       }
                     ]}
                   >
-                    <Text
-                      style={[
-                        styles.instructionTitle,
-                        {
-                          color:
-                            accent,
-
-                          fontFamily:
-                            bold
-                        }
-                      ]}
-                    >
-                      {title}
-                    </Text>
-
-                    <Text
-                      style={[
-                        styles.instructionText,
-                        {
-                          color:
-                            colors.muted,
-
-                          fontFamily:
-                            regular
-                        }
-                      ]}
-                    >
-                      {text}
-                    </Text>
-                  </View>
-                )
-              )}
-            </View>
-          </AnimatedSection>
-
-          <View
-            style={[
-              styles.contributor,
-              {
-                backgroundColor:
-                  colors.surface,
-
-                borderColor:
-                  colors.border
-              }
-            ]}
-          >
-            <Text
-              style={[
-                styles.contributorHeading,
-                {
-                  color:
-                    colors.text,
-
-                  fontFamily:
-                    bold
-                }
-              ]}
-            >
-              Contributor
-            </Text>
-
-            <Text
-              style={[
-                styles.contributorName,
-                {
-                  color: accent,
-
-                  fontFamily:
-                    logoFont
-                }
-              ]}
-            >
-              Alex Ravi
-            </Text>
-
-            <Text
-              style={[
-                styles.bio,
-                {
-                  color:
-                    colors.muted,
-
-                  fontFamily:
-                    regular
-                }
-              ]}
-            >
-              I'm currently doing a
-              diploma in web
-              development and
-              building my skills
-              step by step.
-            </Text>
-
-            <Text
-              style={[
-                styles.learning,
-                {
-                  color:
-                    colors.muted,
-
-                  fontFamily:
-                    bold
-                }
-              ]}
-            >
-              Skills
-            </Text>
-
-            <View
-              style={
-                styles.chips
-              }
-            >
-              {[
-                'HTML',
-                'CSS',
-                'JavaScript'
-              ].map(item => (
-                <SkillChip
-                  key={item}
-                  item={item}
-                  accent={accent}
-                  color={
-                    dark
-                      ? theme.accentLight
-                      : theme.accentDark
-                  }
-                  bold={bold}
-                />
-              ))}
-            </View>
-
-            <Text
-              style={[
-                styles.learning,
-                {
-                  color:
-                    colors.muted,
-
-                  fontFamily:
-                    bold
-                }
-              ]}
-            >
-              Learning More
-            </Text>
-
-            <View
-              style={
-                styles.chips
-              }
-            >
-              {[
-                'Responsive Design',
-                'UI / UX',
-                'Web APIs'
-              ].map(item => (
-                <SkillChip
-                  key={item}
-                  item={item}
-                  accent={accent}
-                  color={
-                    dark
-                      ? theme.accentLight
-                      : theme.accentDark
-                  }
-                  bold={bold}
-                />
-              ))}
-            </View>
-          </View>
-
-          <Pressable
-            onPress={() => {
-              stopOtherTools();
-
-              router.replace(
-                '/main'
-              );
-            }}
-            style={({
-              pressed
-            }) => [
-              styles.back,
-
-              {
-                backgroundColor:
-                  accent
-              },
-
-              pressed &&
-                styles.pressed
-            ]}
-          >
-            <View
-              style={
-                styles.backArrow
+                    ⛶
+                  </Text>
+                </Pressable>
               }
             />
-          </Pressable>
 
-          <View
-            style={
-              styles.footer
-            }
-          >
-            <Text
-              style={[
-                styles.footerText,
-                {
-                  color:
-                    colors.muted,
-
-                  fontFamily:
-                    regular
-                }
-              ]}
-            >
-              ©{' '}
-              {new Date().getFullYear()}{' '}
-              Alex Ravi
-            </Text>
-
-            <Text
-              style={[
-                styles.footerSmall,
-                {
-                  color:
-                    colors.muted,
-
-                  fontFamily:
-                    regular
-                }
-              ]}
-            >
-              All Rights Reserved ·
-              NMIX · anything with
-              numbers
-            </Text>
+            <ModeButton
+              icon="◉"
+              title="Stopwatch"
+              subtitle="Track time"
+              active={mode === 'stopwatch'}
+              onPress={tapStopwatch}
+              onLongPress={resetStopwatch}
+              colors={colors}
+              accent={accent}
+              regular={regular}
+              bold={bold}
+            />
           </View>
-        </ScrollView>
+        </AnimatedSection>
 
-        <SettingsPanel
-          visible={
-            settingsOpen
-          }
-          onClose={() =>
-            setSettingsOpen(false)
-          }
-          dark={dark}
-          setDark={setDark}
-          themeName={themeName}
-          setThemeName={
-            setThemeName
-          }
-          font={font}
-          setFont={setFont}
+        <AnimatedSection
+          icon="+"
+          title="Counters"
+          subtitle="Count and generate"
+          name="counter"
+          open={open}
+          toggle={toggleSection}
           colors={colors}
           accent={accent}
-        />
-      </SafeAreaView>
+          regular={regular}
+          bold={bold}
+        >
+          <View style={styles.counterGrid}>
+            <CounterButton
+              title="Add"
+              subtitle="Increase"
+              onPress={() => counter('add')}
+              colors={colors}
+              regular={regular}
+              bold={bold}
+            />
+
+            <CounterButton
+              title="Reset"
+              subtitle="Back to zero"
+              onPress={() => counter('reset')}
+              colors={colors}
+              regular={regular}
+              bold={bold}
+            />
+
+            <CounterButton
+              title="Random"
+              subtitle="1 – 1000"
+              onPress={() => counter('random')}
+              colors={colors}
+              regular={regular}
+              bold={bold}
+            />
+
+            <CounterButton
+              title="Minus"
+              subtitle="Decrease"
+              onPress={() => counter('minus')}
+              colors={colors}
+              regular={regular}
+              bold={bold}
+            />
+          </View>
+        </AnimatedSection>
+
+        <AnimatedSection
+          icon="?"
+          title="How to use NMIX"
+          subtitle="Instructions and controls"
+          name="instructions"
+          open={open}
+          toggle={toggleSection}
+          colors={colors}
+          accent={accent}
+          regular={regular}
+          bold={bold}
+        >
+          <View style={styles.instructions}>
+            {instructions.map(([title, text]) => (
+              <View
+                key={title}
+                style={[
+                  styles.instruction,
+                  {
+                    backgroundColor: colors.surface2
+                  }
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.instructionTitle,
+                    {
+                      color: accent,
+                      fontFamily: bold
+                    }
+                  ]}
+                >
+                  {title}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.instructionText,
+                    {
+                      color: colors.muted,
+                      fontFamily: regular
+                    }
+                  ]}
+                >
+                  {text}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </AnimatedSection>
+
+        <View
+          style={[
+            styles.contributor,
+            {
+              backgroundColor: colors.surface,
+              borderColor: colors.border
+            }
+          ]}
+        >
+          <Text
+            style={[
+              styles.contributorHeading,
+              {
+                color: colors.text,
+                fontFamily: bold
+              }
+            ]}
+          >
+            Contributor
+          </Text>
+
+          <Text
+            style={[
+              styles.contributorName,
+              {
+                color: accent,
+                fontFamily: logoFont
+              }
+            ]}
+          >
+            Alex Ravi
+          </Text>
+
+          <Text
+            style={[
+              styles.bio,
+              {
+                color: colors.muted,
+                fontFamily: regular
+              }
+            ]}
+          >
+            I'm currently doing a diploma in web development and building
+            my skills step by step.
+          </Text>
+
+          <Text
+            style={[
+              styles.learning,
+              {
+                color: colors.muted,
+                fontFamily: bold
+              }
+            ]}
+          >
+            Skills
+          </Text>
+
+          <View style={styles.chips}>
+            {['HTML', 'CSS', 'JavaScript'].map(item => (
+              <SkillChip
+                key={item}
+                item={item}
+                accent={accent}
+                color={
+                  dark
+                    ? theme.accentLight
+                    : theme.accentDark
+                }
+                bold={bold}
+              />
+            ))}
+          </View>
+
+          <Text
+            style={[
+              styles.learning,
+              {
+                color: colors.muted,
+                fontFamily: bold
+              }
+            ]}
+          >
+            Learning More
+          </Text>
+
+          <View style={styles.chips}>
+            {[
+              'Responsive Design',
+              'UI / UX',
+              'Web APIs'
+            ].map(item => (
+              <SkillChip
+                key={item}
+                item={item}
+                accent={accent}
+                color={
+                  dark
+                    ? theme.accentLight
+                    : theme.accentDark
+                }
+                bold={bold}
+              />
+            ))}
+          </View>
+        </View>
+
+        <Pressable
+          onPress={() => {
+            setSettingsOpen(false);
+            stopOtherTools();
+            router.push('/welcome');
+          }}
+          style={({ pressed }) => [
+            styles.back,
+            {
+              backgroundColor: accent
+            },
+            pressed && styles.pressed
+          ]}
+        >
+          <View style={styles.backArrow} />
+        </Pressable>
+
+        <View style={styles.footer}>
+          <Text
+            style={[
+              styles.footerText,
+              {
+                color: colors.muted,
+                fontFamily: regular
+              }
+            ]}
+          >
+            © {new Date().getFullYear()} Alex Ravi
+          </Text>
+
+          <Text
+            style={[
+              styles.footerSmall,
+              {
+                color: colors.muted,
+                fontFamily: regular
+              }
+            ]}
+          >
+            All Rights Reserved · NMIX · anything with numbers
+          </Text>
+        </View>
+      </ScrollView>
+
+      <SettingsPanel
+        visible={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        dark={dark}
+        setDark={setDark}
+        themeName={themeName}
+        setThemeName={setThemeName}
+        font={font}
+        setFont={setFont}
+        colors={colors}
+        accent={accent}
+      />
+
+      <FullscreenClock
+        visible={fullscreenClock}
+        onClose={() => {
+          setFullscreenClock(false);
+          setStatus('Returned to NMIX clock.');
+        }}
+        theme={theme}
+        font={font}
+      />
     </View>
   );
 }
@@ -2005,13 +1486,9 @@ function ExpressionBox({
     <View
       style={[
         styles.expressionBox,
-
         {
-          backgroundColor:
-            colors.surface2,
-
-          borderColor:
-            colors.border
+          backgroundColor: colors.surface2,
+          borderColor: colors.border
         }
       ]}
     >
@@ -2020,13 +1497,9 @@ function ExpressionBox({
         adjustsFontSizeToFit
         style={[
           styles.expressionText,
-
           {
-            color:
-              colors.text,
-
-            fontFamily:
-              font
+            color: colors.text,
+            fontFamily: font
           }
         ]}
       >
@@ -2046,53 +1519,42 @@ function ModeButton({
   colors,
   accent,
   regular,
-  bold
+  bold,
+  extra
 }) {
   return (
     <Pressable
       onPress={onPress}
-      onLongPress={
-        onLongPress
-      }
+      onLongPress={onLongPress}
       delayLongPress={HOLD}
       style={({ pressed }) => [
         styles.modeButton,
-
         {
-          backgroundColor:
-            active
-              ? accent
-              : colors.surface2
+          backgroundColor: active
+            ? accent
+            : colors.surface2
         },
-
-        pressed &&
-          styles.pressed
+        pressed && styles.pressed
       ]}
     >
       <View
         style={[
           styles.modeIcon,
-
           {
-            backgroundColor:
-              active
-                ? '#fff'
-                : accent
+            backgroundColor: active
+              ? '#fff'
+              : accent
           }
         ]}
       >
         <Text
           style={[
             styles.modeIconText,
-
             {
-              color:
-                active
-                  ? accent
-                  : '#fff',
-
-              fontFamily:
-                bold
+              color: active
+                ? accent
+                : '#fff',
+              fontFamily: bold
             }
           ]}
         >
@@ -2100,23 +1562,15 @@ function ModeButton({
         </Text>
       </View>
 
-      <View
-        style={
-          styles.modeCopy
-        }
-      >
+      <View style={styles.modeCopy}>
         <Text
           style={[
             styles.modeTitle,
-
             {
-              color:
-                active
-                  ? '#fff'
-                  : colors.text,
-
-              fontFamily:
-                bold
+              color: active
+                ? '#fff'
+                : colors.text,
+              fontFamily: bold
             }
           ]}
         >
@@ -2126,21 +1580,19 @@ function ModeButton({
         <Text
           style={[
             styles.modeSubtitle,
-
             {
-              color:
-                active
-                  ? 'rgba(255,255,255,.8)'
-                  : colors.muted,
-
-              fontFamily:
-                regular
+              color: active
+                ? 'rgba(255,255,255,.8)'
+                : colors.muted,
+              fontFamily: regular
             }
           ]}
         >
           {subtitle}
         </Text>
       </View>
+
+      {extra}
     </Pressable>
   );
 }
@@ -2158,26 +1610,18 @@ function CounterButton({
       onPress={onPress}
       style={({ pressed }) => [
         styles.counterButton,
-
         {
-          backgroundColor:
-            colors.surface2
+          backgroundColor: colors.surface2
         },
-
-        pressed &&
-          styles.pressed
+        pressed && styles.pressed
       ]}
     >
       <Text
         style={[
           styles.counterTitle,
-
           {
-            color:
-              colors.text,
-
-            fontFamily:
-              bold
+            color: colors.text,
+            fontFamily: bold
           }
         ]}
       >
@@ -2187,13 +1631,9 @@ function CounterButton({
       <Text
         style={[
           styles.modeSubtitle,
-
           {
-            color:
-              colors.muted,
-
-            fontFamily:
-              regular
+            color: colors.muted,
+            fontFamily: regular
           }
         ]}
       >
@@ -2213,24 +1653,18 @@ function SkillChip({
     <View
       style={[
         styles.chip,
-
         {
-          backgroundColor:
-            `${accent}20`,
-
-          borderColor:
-            `${accent}45`
+          backgroundColor: `${accent}20`,
+          borderColor: `${accent}45`
         }
       ]}
     >
       <Text
         style={[
           styles.chipText,
-
           {
             color,
-            fontFamily:
-              bold
+            fontFamily: bold
           }
         ]}
       >
@@ -2241,63 +1675,27 @@ function SkillChip({
 }
 
 function formatTimer(seconds) {
-  const min =
-    Math.floor(
-      seconds / 60
-    );
+  const min = Math.floor(seconds / 60);
+  const sec = seconds % 60;
 
-  const sec =
-    seconds % 60;
-
-  return `${String(min).padStart(
-    2,
-    '0'
-  )}:${String(sec).padStart(
-    2,
-    '0'
-  )}`;
+  return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 }
 
 function formatClock(date) {
-  return date.toLocaleTimeString(
-    [],
-    {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    }
-  );
+  return date.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
 }
 
 function formatStopwatch(ms) {
-  const total =
-    Math.floor(
-      ms / 1000
-    );
+  const total = Math.floor(ms / 1000);
+  const min = Math.floor(total / 60);
+  const sec = total % 60;
+  const hundredths = Math.floor((ms % 1000) / 10);
 
-  const min =
-    Math.floor(
-      total / 60
-    );
-
-  const sec =
-    total % 60;
-
-  const hundredths =
-    Math.floor(
-      (ms % 1000) / 10
-    );
-
-  return `${String(min).padStart(
-    2,
-    '0'
-  )}:${String(sec).padStart(
-    2,
-    '0'
-  )}.${String(hundredths).padStart(
-    2,
-    '0'
-  )}`;
+  return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}.${String(hundredths).padStart(2, '0')}`;
 }
 
 const styles = StyleSheet.create({
@@ -2305,96 +1703,22 @@ const styles = StyleSheet.create({
     flex: 1
   },
 
-  safe: {
-    flex: 1
-  },
-
-  controls: {
-    position: 'absolute',
-    zIndex: 1000,
-    left: 14,
-    right: 14,
-    flexDirection: 'row',
-    justifyContent:
-      'space-between',
-    pointerEvents:
-      'box-none'
-  },
-
-  controlButton: {
-    width: 43,
-    height: 43,
-    justifyContent:
-      'center',
-    alignItems:
-      'center',
-    borderRadius: 22,
-    elevation: 8
-  },
-
-  chevron: {
-    width: 13,
-    height: 13,
-    borderTopWidth: 3,
-    borderLeftWidth: 3,
-    borderColor: '#fff',
-    borderRadius: 2,
-    transform: [
-      {
-        translateY: 3
-      },
-      {
-        rotate: '45deg'
-      }
-    ]
-  },
-
-  chevronClosed: {
-    transform: [
-      {
-        translateY: -3
-      },
-      {
-        rotate: '225deg'
-      }
-    ]
-  },
-
-  hamburger: {
-    width: 18,
-    height: 18,
-    justifyContent:
-      'center',
-    alignItems:
-      'center',
-    gap: 4
-  },
-
-  hamburgerLine: {
-    width: 17,
-    height: 2,
-    borderRadius: 4,
-    backgroundColor:
-      '#fff'
-  },
-
   top: {
-    height: 280,
+    height: 330,
     paddingHorizontal: 10,
-    paddingTop: 8,
     paddingBottom: 10,
     borderBottomLeftRadius: 22,
     borderBottomRightRadius: 22
   },
 
   topCalculator: {
-    height: 346
+    height: 405
   },
 
   logoArea: {
-    height: 64,
-    alignItems: 'center',
-    justifyContent: 'center'
+    height: 66,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
 
   logoSub: {
@@ -2406,8 +1730,8 @@ const styles = StyleSheet.create({
 
   logo: {
     color: '#fff',
-    fontSize: 26,
-    lineHeight: 34,
+    fontSize: 27,
+    lineHeight: 36,
     letterSpacing: 5,
     textAlign: 'center'
   },
@@ -2423,58 +1747,54 @@ const styles = StyleSheet.create({
 
   expressionBox: {
     flex: 1,
-    justifyContent:
-      'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderRadius: 8
   },
 
   operatorBox: {
     width: 60,
-    justifyContent:
-      'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderRadius: 8
   },
 
   expressionText: {
     paddingHorizontal: 5,
+    fontSize: 18,
+    lineHeight: 24,
     textAlign: 'center',
-    textAlignVertical:
-      'center',
-    includeFontPadding:
-      false,
-    fontSize: 18
+    textAlignVertical: 'center',
+    includeFontPadding: false
   },
 
   result: {
     flex: 1,
     position: 'relative',
     overflow: 'hidden',
-    justifyContent:
-      'center',
+    justifyContent: 'center',
     borderRadius: 15
   },
 
-  glowA: {
+  softGlowA: {
     position: 'absolute',
-    width: 350,
-    height: 300,
-    left: -155,
-    top: -120
+    width: 370,
+    height: 330,
+    left: -170,
+    top: -145
   },
 
-  glowB: {
+  softGlowB: {
     position: 'absolute',
-    width: 390,
-    height: 340,
-    right: -185,
-    bottom: -170
+    width: 420,
+    height: 370,
+    right: -200,
+    bottom: -190
   },
 
   glowGradient: {
     flex: 1,
-    borderRadius: 220
+    borderRadius: 240
   },
 
   scan: {
@@ -2482,25 +1802,22 @@ const styles = StyleSheet.create({
     top: -50,
     bottom: -50,
     width: 55,
-    backgroundColor:
-      'rgba(255,255,255,.12)'
+    backgroundColor: 'rgba(255,255,255,.1)'
   },
 
   resultRow: {
     flex: 1,
-    paddingBottom: 14,
+    paddingBottom: 15,
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent:
-      'center'
+    justifyContent: 'center',
+    alignItems: 'center'
   },
 
   mainDisplay: {
     flex: 1,
     minWidth: 0,
-    alignItems: 'center',
-    justifyContent:
-      'center'
+    justifyContent: 'center',
+    alignItems: 'center'
   },
 
   displayLabel: {
@@ -2510,14 +1827,12 @@ const styles = StyleSheet.create({
   },
 
   display: {
-    width: '95%',
+    width: '94%',
     fontSize: 40,
     lineHeight: 50,
     textAlign: 'center',
-    textAlignVertical:
-      'center',
-    includeFontPadding:
-      false
+    textAlignVertical: 'center',
+    includeFontPadding: false
   },
 
   status: {
@@ -2529,27 +1844,78 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   },
 
+  controls: {
+    position: 'absolute',
+    zIndex: 1000,
+    left: 14,
+    right: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    pointerEvents: 'box-none'
+  },
+
+  controlButton: {
+    width: 43,
+    height: 43,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 22,
+    elevation: 8
+  },
+
+  chevron: {
+    width: 13,
+    height: 13,
+    borderTopWidth: 3,
+    borderLeftWidth: 3,
+    borderColor: '#fff',
+    borderRadius: 2,
+    transform: [
+      { translateY: 3 },
+      { rotate: '45deg' }
+    ]
+  },
+
+  chevronClosed: {
+    transform: [
+      { translateY: -3 },
+      { rotate: '225deg' }
+    ]
+  },
+
+  hamburger: {
+    width: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 4
+  },
+
+  hamburgerLine: {
+    width: 17,
+    height: 2,
+    borderRadius: 5,
+    backgroundColor: '#fff'
+  },
+
   timerAdjust: {
     width: 48,
     height: 48,
     marginHorizontal: 7,
-    justifyContent:
-      'center',
-    alignItems:
-      'center',
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 24
   },
 
   timerAdjustText: {
     width: 48,
+    height: 48,
     color: '#fff',
     fontSize: 27,
-    lineHeight: 34,
+    lineHeight: 48,
     textAlign: 'center',
-    textAlignVertical:
-      'center',
-    includeFontPadding:
-      false
+    textAlignVertical: 'center',
+    includeFontPadding: false
   },
 
   scroll: {
@@ -2557,6 +1923,9 @@ const styles = StyleSheet.create({
   },
 
   content: {
+    width: '100%',
+    maxWidth: 1100,
+    alignSelf: 'center',
     padding: 10,
     paddingTop: 18,
     paddingBottom: 30,
@@ -2572,19 +1941,13 @@ const styles = StyleSheet.create({
     paddingVertical: 17,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent:
-      'space-evenly',
+    justifyContent: 'space-evenly',
     gap: 10
   },
 
   calcKey: {
-    width: '16.5%',
-    aspectRatio: 1,
-    justifyContent:
-      'center',
-    alignItems:
-      'center',
-    borderRadius: 999
+    justifyContent: 'center',
+    alignItems: 'center'
   },
 
   calcText: {
@@ -2592,10 +1955,8 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 22,
     textAlign: 'center',
-    textAlignVertical:
-      'center',
-    includeFontPadding:
-      false
+    textAlignVertical: 'center',
+    includeFontPadding: false
   },
 
   clockGrid: {
@@ -2604,8 +1965,10 @@ const styles = StyleSheet.create({
   },
 
   modeButton: {
+    position: 'relative',
     minHeight: 76,
     padding: 12,
+    paddingRight: 54,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
@@ -2616,28 +1979,24 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     flexShrink: 0,
-    justifyContent:
-      'center',
-    alignItems:
-      'center',
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 20
   },
 
   modeIconText: {
-    width: '100%',
+    width: 40,
+    height: 40,
     fontSize: 17,
-    lineHeight: 22,
+    lineHeight: 40,
     textAlign: 'center',
-    textAlignVertical:
-      'center',
-    includeFontPadding:
-      false
+    textAlignVertical: 'center',
+    includeFontPadding: false
   },
 
   modeCopy: {
     flex: 1,
-    justifyContent:
-      'center'
+    justifyContent: 'center'
   },
 
   modeTitle: {
@@ -2651,6 +2010,24 @@ const styles = StyleSheet.create({
     lineHeight: 14
   },
 
+  fullscreenButton: {
+    position: 'absolute',
+    right: 10,
+    top: '50%',
+    width: 35,
+    height: 35,
+    marginTop: -17.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 9
+  },
+
+  fullscreenText: {
+    fontSize: 18,
+    lineHeight: 24,
+    includeFontPadding: false
+  },
+
   counterGrid: {
     padding: 14,
     flexDirection: 'row',
@@ -2661,10 +2038,8 @@ const styles = StyleSheet.create({
   counterButton: {
     width: '48%',
     minHeight: 73,
-    justifyContent:
-      'center',
-    alignItems:
-      'center',
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 12
   },
 
@@ -2742,10 +2117,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: 56,
     height: 56,
-    justifyContent:
-      'center',
-    alignItems:
-      'center',
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 28
   },
 
@@ -2756,9 +2129,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 3,
     borderColor: '#fff',
     transform: [
-      {
-        rotate: '45deg'
-      }
+      { rotate: '45deg' }
     ]
   },
 
@@ -2780,9 +2151,7 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.8,
     transform: [
-      {
-        scale: 0.92
-      }
+      { scale: 0.92 }
     ]
   }
 });
