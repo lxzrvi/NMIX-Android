@@ -7,8 +7,7 @@ import React, {
 import {
   Animated,
   Easing,
-  Modal,
-  Pressable,
+  Image,
   StatusBar,
   StyleSheet,
   Text,
@@ -16,7 +15,25 @@ import {
   View
 } from 'react-native';
 
-import { LinearGradient } from 'expo-linear-gradient';
+import {
+  LinearGradient
+} from 'expo-linear-gradient';
+
+import * as ScreenOrientation
+  from 'expo-screen-orientation';
+
+import {
+  RotateIcon,
+  WallpaperIcon
+} from './icons';
+
+import MotionPressable
+  from './MotionPressable';
+
+import ClockWallpaperPicker, {
+  BUILTIN_WALLPAPERS,
+  loadClockWallpaper
+} from './ClockWallpaperPicker';
 
 import {
   fontFamily,
@@ -29,11 +46,29 @@ export default function FullscreenClock({
   theme,
   font
 }) {
-  const { width, height } = useWindowDimensions();
+  const {
+    width,
+    height
+  } = useWindowDimensions();
 
-  const landscape = width > height;
+  const landscape =
+    width > height;
 
-  const [now, setNow] = useState(new Date());
+  const [now, setNow] =
+    useState(new Date());
+
+  const [
+    wallpaperPicker,
+    setWallpaperPicker
+  ] = useState(false);
+
+  const [
+    wallpaper,
+    setWallpaper
+  ] = useState({
+    type: 'builtin',
+    id: 'midnight'
+  });
 
   const entrance = useRef(
     new Animated.Value(0)
@@ -44,357 +79,487 @@ export default function FullscreenClock({
   ).current;
 
   useEffect(() => {
-    if (!visible) return;
+    loadClockWallpaper()
+      .then(setWallpaper)
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
 
     setNow(new Date());
 
     entrance.setValue(0);
 
-    Animated.timing(entrance, {
-      toValue: 1,
-      duration: 650,
-      easing: Easing.bezier(
-        0.22,
-        1,
-        0.36,
-        1
-      ),
-      useNativeDriver: true
-    }).start();
+    Animated.timing(
+      entrance,
+      {
+        toValue: 1,
+        duration: 650,
+        easing:
+          Easing.bezier(
+            0.22,
+            1,
+            0.36,
+            1
+          ),
+        useNativeDriver:
+          true
+      }
+    ).start();
 
-    const ambientLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(ambient, {
-          toValue: 1,
-          duration: 8000,
-          easing:
-            Easing.inOut(
-              Easing.ease
-            ),
-          useNativeDriver: true
-        }),
+    const ambientLoop =
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(
+            ambient,
+            {
+              toValue: 1,
+              duration: 8500,
+              easing:
+                Easing.inOut(
+                  Easing.ease
+                ),
+              useNativeDriver:
+                true
+            }
+          ),
 
-        Animated.timing(ambient, {
-          toValue: 0,
-          duration: 8000,
-          easing:
-            Easing.inOut(
-              Easing.ease
-            ),
-          useNativeDriver: true
-        })
-      ])
-    );
+          Animated.timing(
+            ambient,
+            {
+              toValue: 0,
+              duration: 8500,
+              easing:
+                Easing.inOut(
+                  Easing.ease
+                ),
+              useNativeDriver:
+                true
+            }
+          )
+        ])
+      );
 
     ambientLoop.start();
 
-    const clock = setInterval(
-      () => setNow(new Date()),
-      1000
-    );
+    const clock =
+      setInterval(
+        () =>
+          setNow(
+            new Date()
+          ),
+        1000
+      );
 
     return () => {
-      clearInterval(clock);
+      clearInterval(
+        clock
+      );
+
       ambientLoop.stop();
     };
   }, [visible]);
 
-  const regular = fontFamily(font);
-  const bold = fontFamily(font, true);
+  const regular =
+    fontFamily(font);
+
+  const bold =
+    fontFamily(
+      font,
+      true
+    );
+
+  const builtin =
+    wallpaper.type ===
+      'builtin'
+      ? (
+          BUILTIN_WALLPAPERS[
+            wallpaper.id
+          ] ||
+          BUILTIN_WALLPAPERS
+            .midnight
+        )
+      : null;
+
+  async function rotateScreen() {
+    try {
+      if (landscape) {
+        await ScreenOrientation
+          .lockAsync(
+            ScreenOrientation
+              .OrientationLock
+              .PORTRAIT_UP
+          );
+      } else {
+        await ScreenOrientation
+          .lockAsync(
+            ScreenOrientation
+              .OrientationLock
+              .LANDSCAPE_RIGHT
+          );
+      }
+    } catch {}
+  }
+
+  async function exitClock() {
+    try {
+      await ScreenOrientation
+        .unlockAsync();
+    } catch {}
+
+    onClose();
+  }
+
+  if (!visible) {
+    return null;
+  }
 
   return (
-    <Modal
-      visible={visible}
-      animationType="none"
-      statusBarTranslucent
-      navigationBarTranslucent
-      supportedOrientations={[
-        'portrait',
-        'portrait-upside-down',
-        'landscape-left',
-        'landscape-right'
-      ]}
-      onRequestClose={onClose}
+    <View
+      style={
+        styles.fullscreenRoot
+      }
     >
       <StatusBar hidden />
 
+      {wallpaper.type ===
+        'custom' &&
+      wallpaper.uri ? (
+        <Image
+          source={{
+            uri: wallpaper.uri
+          }}
+          resizeMode="cover"
+          style={
+            StyleSheet.absoluteFill
+          }
+        />
+      ) : (
+        <LinearGradient
+          colors={
+            builtin.colors
+          }
+          locations={[
+            0,
+            0.32,
+            0.68,
+            1
+          ]}
+          start={{
+            x: 0,
+            y: 0
+          }}
+          end={{
+            x: 1,
+            y: 1
+          }}
+          style={
+            StyleSheet.absoluteFill
+          }
+        />
+      )}
+
       <LinearGradient
+        pointerEvents="none"
         colors={[
-          '#030806',
-          theme.topOne,
-          '#091612',
-          theme.topThree,
-          '#020604'
+          'rgba(1,5,4,.18)',
+          'rgba(2,8,6,.28)',
+          'rgba(1,5,4,.48)'
         ]}
-        locations={[
-          0,
-          0.28,
-          0.51,
-          0.78,
-          1
-        ]}
-        start={{
-          x: 0,
-          y: 0
-        }}
-        end={{
-          x: 1,
-          y: 1
-        }}
-        style={styles.page}
+        style={
+          StyleSheet.absoluteFill
+        }
+      />
+
+      <View
+        pointerEvents="none"
+        style={
+          StyleSheet.absoluteFill
+        }
       >
-        <View
-          pointerEvents="none"
-          style={StyleSheet.absoluteFill}
-        >
-          <Animated.View
-            style={[
-              styles.glowOne,
-              {
-                opacity:
-                  ambient.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [
-                      0.35,
-                      0.85
-                    ]
-                  }),
-
-                transform: [
-                  {
-                    translateX:
-                      ambient.interpolate({
-                        inputRange:
-                          [0, 1],
-                        outputRange:
-                          [-100, 140]
-                      })
-                  },
-
-                  {
-                    translateY:
-                      ambient.interpolate({
-                        inputRange:
-                          [0, 1],
-                        outputRange:
-                          [-60, 90]
-                      })
-                  },
-
-                  {
-                    scale:
-                      ambient.interpolate({
-                        inputRange:
-                          [0, 1],
-                        outputRange:
-                          [1, 1.25]
-                      })
-                  }
-                ]
-              }
-            ]}
-          >
-            <LinearGradient
-              colors={[
-                'transparent',
-                `${theme.accentLight}05`,
-                `${theme.accent}2F`,
-                `${theme.accentLight}0B`,
-                'transparent'
-              ]}
-              style={styles.glowFill}
-            />
-          </Animated.View>
-
-          <Animated.View
-            style={[
-              styles.glowTwo,
-              {
-                opacity:
-                  ambient.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [
-                      0.7,
-                      0.28
-                    ]
-                  }),
-
-                transform: [
-                  {
-                    translateX:
-                      ambient.interpolate({
-                        inputRange:
-                          [0, 1],
-                        outputRange:
-                          [120, -100]
-                      })
-                  },
-
-                  {
-                    translateY:
-                      ambient.interpolate({
-                        inputRange:
-                          [0, 1],
-                        outputRange:
-                          [70, -70]
-                      })
-                  }
-                ]
-              }
-            ]}
-          >
-            <LinearGradient
-              colors={[
-                'transparent',
-                `${theme.accent}04`,
-                `${theme.accent}26`,
-                'transparent'
-              ]}
-              style={styles.glowFill}
-            />
-          </Animated.View>
-        </View>
-
         <Animated.View
           style={[
-            styles.brand,
-            landscape &&
-              styles.brandLandscape,
+            styles.glowOne,
             {
-              opacity: entrance,
+              opacity:
+                ambient.interpolate({
+                  inputRange:
+                    [0, 1],
+                  outputRange:
+                    [0.18, 0.46]
+                }),
 
               transform: [
+                {
+                  translateX:
+                    ambient.interpolate({
+                      inputRange:
+                        [0, 1],
+                      outputRange:
+                        [-110, 130]
+                    })
+                },
+
                 {
                   translateY:
-                    entrance.interpolate({
+                    ambient.interpolate({
                       inputRange:
                         [0, 1],
                       outputRange:
-                        [-12, 0]
+                        [-70, 85]
                     })
-                }
-              ]
-            }
-          ]}
-        >
-          <Text
-            style={[
-              styles.brandSub,
-              {
-                fontFamily: bold,
-                color:
-                  theme.accentLight
-              }
-            ]}
-          >
-            EVERYTHING WITH NUMBERS
-          </Text>
+                },
 
-          <View style={styles.brandClipFix}>
-            <Text
-              numberOfLines={1}
-              style={[
-                styles.brandTitle,
-                {
-                  fontFamily: logoFont
-                }
-              ]}
-            >
-              NMIX
-            </Text>
-          </View>
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            styles.center,
-
-            landscape &&
-              styles.centerLandscape,
-
-            {
-              opacity: entrance,
-
-              transform: [
                 {
                   scale:
-                    entrance.interpolate({
+                    ambient.interpolate({
                       inputRange:
                         [0, 1],
                       outputRange:
-                        [0.94, 1]
+                        [1, 1.24]
                     })
                 }
               ]
             }
           ]}
         >
-          <Text
-            style={[
-              styles.live,
-              {
-                color:
-                  theme.accentLight,
-                fontFamily: bold
-              }
+          <LinearGradient
+            colors={[
+              'transparent',
+              `${theme.accent}06`,
+              `${theme.accent}2B`,
+              `${theme.accentLight}08`,
+              'transparent'
             ]}
-          >
-            NMIX • LOCAL TIME
-          </Text>
-
-          <Text
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.35}
-            style={[
-              styles.time,
-
-              landscape &&
-                styles.timeLandscape,
-
-              {
-                fontFamily: bold
-              }
-            ]}
-          >
-            {formatTime(now)}
-          </Text>
-
-          <Text
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            style={[
-              styles.date,
-
-              landscape &&
-                styles.dateLandscape,
-
-              {
-                fontFamily: regular
-              }
-            ]}
-          >
-            {formatDate(now)}
-          </Text>
+            style={
+              styles.glowFill
+            }
+          />
         </Animated.View>
+      </View>
 
-        <Pressable
-          onPress={onClose}
-          style={({ pressed }) => [
-            styles.exit,
+      <Animated.View
+        style={[
+          styles.brand,
+
+          landscape &&
+            styles.brandLandscape,
+
+          {
+            opacity:
+              entrance,
+
+            transform: [
+              {
+                translateY:
+                  entrance.interpolate({
+                    inputRange:
+                      [0, 1],
+                    outputRange:
+                      [-12, 0]
+                  })
+              }
+            ]
+          }
+        ]}
+      >
+        <Text
+          style={[
+            styles.brandSub,
+            {
+              color:
+                theme.accentLight,
+
+              fontFamily:
+                bold
+            }
+          ]}
+        >
+          EVERYTHING WITH NUMBERS
+        </Text>
+
+        <View
+          style={
+            styles.brandFix
+          }
+        >
+          <Text
+            numberOfLines={1}
+            style={[
+              styles.brandTitle,
+              {
+                fontFamily:
+                  logoFont
+              }
+            ]}
+          >
+            NMIX
+          </Text>
+        </View>
+      </Animated.View>
+
+      <Animated.View
+        style={[
+          styles.center,
+
+          landscape &&
+            styles.centerLandscape,
+
+          {
+            opacity:
+              entrance,
+
+            transform: [
+              {
+                scale:
+                  entrance.interpolate({
+                    inputRange:
+                      [0, 1],
+                    outputRange:
+                      [0.94, 1]
+                  })
+              }
+            ]
+          }
+        ]}
+      >
+        <Text
+          style={[
+            styles.live,
+            {
+              color:
+                theme.accentLight,
+
+              fontFamily:
+                bold
+            }
+          ]}
+        >
+          NMIX • LOCAL TIME
+        </Text>
+
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={
+            0.3
+          }
+          style={[
+            styles.time,
 
             landscape &&
-              styles.exitLandscape,
+              styles.timeLandscape,
 
-            pressed &&
-              styles.pressed
+            {
+              fontFamily:
+                bold
+            }
           ]}
+        >
+          {formatTime(now)}
+        </Text>
+
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={
+            0.6
+          }
+          style={[
+            styles.date,
+
+            landscape &&
+              styles.dateLandscape,
+
+            {
+              fontFamily:
+                regular
+            }
+          ]}
+        >
+          {formatDate(now)}
+        </Text>
+      </Animated.View>
+
+      <View
+        style={[
+          styles.controls,
+
+          landscape &&
+            styles.controlsLandscape
+        ]}
+      >
+        <MotionPressable
+          onPress={
+            rotateScreen
+          }
+          style={
+            styles.control
+          }
+        >
+          <RotateIcon
+            size={19}
+            color="#ffffff"
+          />
+
+          <Text
+            style={[
+              styles.controlLabel,
+              {
+                fontFamily:
+                  regular
+              }
+            ]}
+          >
+            Rotate
+          </Text>
+        </MotionPressable>
+
+        <MotionPressable
+          onPress={() =>
+            setWallpaperPicker(
+              true
+            )
+          }
+          style={
+            styles.control
+          }
+        >
+          <WallpaperIcon
+            size={19}
+            color="#ffffff"
+          />
+
+          <Text
+            style={[
+              styles.controlLabel,
+              {
+                fontFamily:
+                  regular
+              }
+            ]}
+          >
+            Wallpaper
+          </Text>
+        </MotionPressable>
+
+        <MotionPressable
+          onPress={
+            exitClock
+          }
+          style={
+            styles.exitControl
+          }
         >
           <Text
             style={[
               styles.exitX,
               {
-                fontFamily: regular
+                fontFamily:
+                  regular
               }
             ]}
           >
@@ -403,185 +568,251 @@ export default function FullscreenClock({
 
           <Text
             style={[
-              styles.exitText,
+              styles.controlLabel,
               {
-                fontFamily: regular
+                fontFamily:
+                  regular
               }
             ]}
           >
             Exit
           </Text>
-        </Pressable>
-      </LinearGradient>
-    </Modal>
+        </MotionPressable>
+      </View>
+
+      <ClockWallpaperPicker
+        visible={
+          wallpaperPicker
+        }
+        onClose={() =>
+          setWallpaperPicker(
+            false
+          )
+        }
+        current={
+          wallpaper
+        }
+        onChange={
+          setWallpaper
+        }
+        theme={theme}
+        font={font}
+      />
+    </View>
   );
 }
 
 function formatTime(date) {
-  return date.toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  });
+  return date
+    .toLocaleTimeString(
+      [],
+      {
+        hour:
+          '2-digit',
+        minute:
+          '2-digit',
+        second:
+          '2-digit'
+      }
+    );
 }
 
 function formatDate(date) {
-  return date.toLocaleDateString([], {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
+  return date
+    .toLocaleDateString(
+      [],
+      {
+        weekday:
+          'long',
+        day:
+          'numeric',
+        month:
+          'long',
+        year:
+          'numeric'
+      }
+    );
 }
 
-const styles = StyleSheet.create({
-  page: {
-    flex: 1,
-    overflow: 'hidden'
-  },
+const styles =
+  StyleSheet.create({
+    fullscreenRoot: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 5000,
+      overflow:
+        'hidden',
+      backgroundColor:
+        '#030806'
+    },
 
-  glowOne: {
-    position: 'absolute',
-    width: 720,
-    height: 720,
-    left: -340,
-    top: -330
-  },
+    glowOne: {
+      position:
+        'absolute',
+      width: 700,
+      height: 700,
+      left: -330,
+      top: -320
+    },
 
-  glowTwo: {
-    position: 'absolute',
-    width: 760,
-    height: 760,
-    right: -390,
-    bottom: -390
-  },
+    glowFill: {
+      flex: 1,
+      borderRadius: 360
+    },
 
-  glowFill: {
-    flex: 1,
-    borderRadius: 400
-  },
+    brand: {
+      position:
+        'absolute',
+      zIndex: 20,
+      top: 22,
+      left: 22,
+      alignItems:
+        'flex-start'
+    },
 
-  brand: {
-    position: 'absolute',
-    zIndex: 10,
-    top: 22,
-    left: 22,
-    alignItems: 'flex-start'
-  },
+    brandLandscape: {
+      top: 15,
+      left: 20
+    },
 
-  brandLandscape: {
-    top: 16,
-    left: 20
-  },
+    brandSub: {
+      fontSize: 6,
+      lineHeight: 9,
+      letterSpacing: 1.4
+    },
 
-  brandSub: {
-    fontSize: 6,
-    letterSpacing: 1.5
-  },
+    brandFix: {
+      minWidth: 135,
+      paddingRight: 10,
+      overflow:
+        'visible'
+    },
 
-  brandClipFix: {
-    minWidth: 125,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    overflow: 'visible'
-  },
+    brandTitle: {
+      color: '#fff',
+      fontSize: 23,
+      lineHeight: 33,
+      letterSpacing: 4,
+      includeFontPadding:
+        false
+    },
 
-  brandTitle: {
-    color: '#ffffff',
-    fontSize: 23,
-    lineHeight: 32,
-    letterSpacing: 4,
-    includeFontPadding: false
-  },
+    center: {
+      flex: 1,
+      paddingHorizontal: 22,
+      justifyContent:
+        'center',
+      alignItems:
+        'center'
+    },
 
-  center: {
-    flex: 1,
-    paddingHorizontal: 22,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
+    centerLandscape: {
+      paddingHorizontal: 80
+    },
 
-  centerLandscape: {
-    paddingHorizontal: 80
-  },
+    live: {
+      marginBottom: 5,
+      fontSize: 10,
+      letterSpacing: 3,
+      textAlign:
+        'center'
+    },
 
-  live: {
-    marginBottom: 5,
-    fontSize: 10,
-    letterSpacing: 3,
-    textAlign: 'center'
-  },
+    time: {
+      width: '100%',
+      color: '#fff',
+      fontSize: 82,
+      lineHeight: 105,
+      textAlign:
+        'center',
+      textAlignVertical:
+        'center',
+      includeFontPadding:
+        false
+    },
 
-  time: {
-    width: '100%',
-    color: '#ffffff',
-    fontSize: 82,
-    lineHeight: 105,
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    includeFontPadding: false
-  },
+    timeLandscape: {
+      fontSize: 116,
+      lineHeight: 135
+    },
 
-  timeLandscape: {
-    fontSize: 118,
-    lineHeight: 138
-  },
+    date: {
+      width: '94%',
+      marginTop: 10,
+      color:
+        'rgba(255,255,255,.72)',
+      fontSize: 14,
+      lineHeight: 21,
+      textAlign:
+        'center'
+    },
 
-  date: {
-    width: '95%',
-    marginTop: 12,
-    color:
-      'rgba(255,255,255,.68)',
-    fontSize: 14,
-    lineHeight: 21,
-    textAlign: 'center'
-  },
+    dateLandscape: {
+      marginTop: 1,
+      fontSize: 15
+    },
 
-  dateLandscape: {
-    marginTop: 3,
-    fontSize: 15
-  },
+    controls: {
+      position:
+        'absolute',
+      zIndex: 30,
+      right: 17,
+      bottom: 20,
+      flexDirection:
+        'row',
+      alignItems:
+        'center',
+      gap: 8
+    },
 
-  exit: {
-    position: 'absolute',
-    right: 18,
-    bottom: 22,
-    height: 43,
-    paddingHorizontal: 15,
-    flexDirection: 'row',
-    gap: 7,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor:
-      'rgba(255,255,255,.13)',
-    borderRadius: 999,
-    backgroundColor:
-      'rgba(255,255,255,.09)'
-  },
+    controlsLandscape: {
+      right: 18,
+      bottom: 14
+    },
 
-  exitLandscape: {
-    right: 20,
-    bottom: 16
-  },
+    control: {
+      minHeight: 42,
+      paddingHorizontal: 12,
+      flexDirection:
+        'row',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
+      gap: 7,
+      borderWidth: 1,
+      borderColor:
+        'rgba(255,255,255,.13)',
+      borderRadius: 999,
+      backgroundColor:
+        'rgba(255,255,255,.09)'
+    },
 
-  exitX: {
-    color: '#ffffff',
-    fontSize: 20,
-    lineHeight: 22
-  },
+    exitControl: {
+      minHeight: 42,
+      paddingHorizontal: 13,
+      flexDirection:
+        'row',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
+      gap: 7,
+      borderWidth: 1,
+      borderColor:
+        'rgba(255,255,255,.16)',
+      borderRadius: 999,
+      backgroundColor:
+        'rgba(255,255,255,.12)'
+    },
 
-  exitText: {
-    color: '#ffffff',
-    fontSize: 12
-  },
+    controlLabel: {
+      color: '#fff',
+      fontSize: 10
+    },
 
-  pressed: {
-    opacity: 0.7,
-    transform: [
-      {
-        scale: 0.94
-      }
-    ]
-  }
-});
+    exitX: {
+      color: '#fff',
+      fontSize: 19,
+      lineHeight: 21
+    }
+  });
