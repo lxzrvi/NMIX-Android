@@ -2,69 +2,50 @@
 
 <div align="center">
 
-<img src="assets/nmix-splash-v2.png" width="100%">
+<img src="assets/nmix-icon-v2.png" width="120">
 
-### Anything with numbers
+### 🔢 Anything with numbers
 
-A modern number utility app built with React Native and Expo.
+A simple number utility app built with React Native + Expo.
 
-<br>
+[⬇️ Download APK](https://github.com/lxzrvi/NMIX-Android/releases)
 
-<a href="https://github.com/lxzrvi/NMIX-Android/releases">
-<img src="https://img.shields.io/badge/Download-APK-319b79?style=for-the-badge&logo=android">
-</a>
-
-<img src="https://img.shields.io/badge/React%20Native-blue?style=for-the-badge&logo=react">
-<img src="https://img.shields.io/badge/Expo-black?style=for-the-badge&logo=expo">
-<img src="https://img.shields.io/badge/JavaScript-yellow?style=for-the-badge&logo=javascript">
+<img src="https://img.shields.io/badge/React%20Native-20232A?style=flat&logo=react">
+<img src="https://img.shields.io/badge/Expo-000020?style=flat&logo=expo">
+<img src="https://img.shields.io/badge/JavaScript-yellow?style=flat&logo=javascript">
 
 </div>
 
 ---
 
-## About
+## ✨ Features
 
-**NMIX** is a lightweight number utility application that brings calculations, time tools, counters, and customization into one simple interface.
-
-Built with React Native and Expo for a smooth Android experience.
-
----
-
-## Features
-
-◆ Calculator  
-Basic arithmetic with a custom interface.
-
-◆ Clock Tools  
-Real-time clock, timer, and stopwatch.
-
-◆ Counters  
-Fast counting tools with random number generation.
-
-◆ Personalization  
-Custom themes, fonts, and interface settings.
+🔢 **Calculator** — Fast and simple calculations  
+⏰ **Clock** — Timer, stopwatch & live clock  
+➕ **Counters** — Count, reset & random values  
+🎨 **Customize** — Themes, fonts & settings  
 
 ---
 
-## Tech Stack
+## ⚙️ Built With
 
-- React Native
-- Expo
-- JavaScript
-- Expo Router
+• React Native  
+• Expo  
+• JavaScript  
+• Expo Router  
 
 ---
 
-## Developer
+## 👨‍💻 Developer
 
 **Alex Ravi**
 
-Web & App Development Learner
+Made with ❤️ using React Native
 
 ---
 
 <div align="center">
 
-© Alex Ravi · NMIX
+© NMIX
 
 </div>
