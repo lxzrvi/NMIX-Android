@@ -9,6 +9,7 @@ import {
   Easing,
   Image,
   Modal,
+  Pressable,
   StatusBar,
   StyleSheet,
   Text,
@@ -16,7 +17,13 @@ import {
   View
 } from 'react-native';
 
-import { LinearGradient } from 'expo-linear-gradient';
+import {
+  LinearGradient
+} from 'expo-linear-gradient';
+
+import {
+  useSafeAreaInsets
+} from 'react-native-safe-area-context';
 
 import * as ScreenOrientation
   from 'expo-screen-orientation';
@@ -26,7 +33,8 @@ import {
   WallpaperIcon
 } from './icons';
 
-import MotionPressable from './MotionPressable';
+import MotionPressable
+  from './MotionPressable';
 
 import ClockWallpaperPicker, {
   BUILTIN_WALLPAPERS,
@@ -44,14 +52,23 @@ export default function FullscreenClock({
   theme,
   font
 }) {
-  const { width, height } =
-    useWindowDimensions();
+  const {
+    width,
+    height
+  } = useWindowDimensions();
+
+  const insets =
+    useSafeAreaInsets();
 
   const landscape =
     width > height;
 
-  const [now, setNow] =
-    useState(new Date());
+  const [
+    now,
+    setNow
+  ] = useState(
+    new Date()
+  );
 
   const [
     wallpaperPicker,
@@ -66,25 +83,50 @@ export default function FullscreenClock({
     id: 'midnight'
   });
 
-  const entrance = useRef(
-    new Animated.Value(0)
-  ).current;
+  const [
+    chromeVisible,
+    setChromeVisible
+  ] = useState(true);
 
-  const ambient = useRef(
-    new Animated.Value(0)
-  ).current;
+  const entrance =
+    useRef(
+      new Animated.Value(0)
+    ).current;
+
+  const ambient =
+    useRef(
+      new Animated.Value(0)
+    ).current;
+
+  const chrome =
+    useRef(
+      new Animated.Value(1)
+    ).current;
 
   useEffect(() => {
     loadClockWallpaper()
-      .then(setWallpaper)
-      .catch(() => {});
+      .then(
+        setWallpaper
+      )
+      .catch(
+        () => {}
+      );
   }, []);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible) {
+      return;
+    }
 
-    setNow(new Date());
+    setNow(
+      new Date()
+    );
 
+    setChromeVisible(
+      true
+    );
+
+    chrome.setValue(1);
     entrance.setValue(0);
 
     Animated.timing(
@@ -92,6 +134,7 @@ export default function FullscreenClock({
       {
         toValue: 1,
         duration: 680,
+
         easing:
           Easing.bezier(
             0.22,
@@ -99,7 +142,9 @@ export default function FullscreenClock({
             0.36,
             1
           ),
-        useNativeDriver: true
+
+        useNativeDriver:
+          true
       }
     ).start();
 
@@ -110,12 +155,16 @@ export default function FullscreenClock({
             ambient,
             {
               toValue: 1,
-              duration: 8500,
+
+              duration: 9000,
+
               easing:
                 Easing.inOut(
                   Easing.ease
                 ),
-              useNativeDriver: true
+
+              useNativeDriver:
+                true
             }
           ),
 
@@ -123,12 +172,16 @@ export default function FullscreenClock({
             ambient,
             {
               toValue: 0,
-              duration: 8500,
+
+              duration: 9000,
+
               easing:
                 Easing.inOut(
                   Easing.ease
                 ),
-              useNativeDriver: true
+
+              useNativeDriver:
+                true
             }
           )
         ])
@@ -146,10 +199,38 @@ export default function FullscreenClock({
       );
 
     return () => {
-      clearInterval(clock);
+      clearInterval(
+        clock
+      );
+
       ambientLoop.stop();
     };
   }, [visible]);
+
+  useEffect(() => {
+    Animated.timing(
+      chrome,
+      {
+        toValue:
+          chromeVisible
+            ? 1
+            : 0,
+
+        duration: 480,
+
+        easing:
+          Easing.bezier(
+            0.22,
+            1,
+            0.36,
+            1
+          ),
+
+        useNativeDriver:
+          true
+      }
+    ).start();
+  }, [chromeVisible]);
 
   const regular =
     fontFamily(font);
@@ -161,14 +242,29 @@ export default function FullscreenClock({
     );
 
   const builtin =
-    wallpaper.type === 'builtin'
+    wallpaper.type ===
+      'builtin'
       ? (
           BUILTIN_WALLPAPERS[
             wallpaper.id
           ] ||
-          BUILTIN_WALLPAPERS.midnight
+          BUILTIN_WALLPAPERS
+            .midnight
         )
       : null;
+
+  function toggleChrome() {
+    if (
+      wallpaperPicker
+    ) {
+      return;
+    }
+
+    setChromeVisible(
+      current =>
+        !current
+    );
+  }
 
   async function rotateScreen() {
     try {
@@ -191,7 +287,9 @@ export default function FullscreenClock({
   }
 
   async function exitClock() {
-    setWallpaperPicker(false);
+    setWallpaperPicker(
+      false
+    );
 
     try {
       await ScreenOrientation
@@ -219,13 +317,21 @@ export default function FullscreenClock({
     >
       <StatusBar hidden />
 
-      <View style={styles.page}>
+      <View
+        style={
+          styles.page
+        }
+      >
         {wallpaper.type ===
           'custom' &&
         wallpaper.uri ? (
           <Image
+            key={
+              wallpaper.uri
+            }
             source={{
-              uri: wallpaper.uri
+              uri:
+                wallpaper.uri
             }}
             resizeMode="cover"
             style={
@@ -257,12 +363,22 @@ export default function FullscreenClock({
           />
         )}
 
+        {/*
+          Readability layer.
+          UI does not depend on theme
+          color, so any wallpaper works.
+        */}
         <LinearGradient
           pointerEvents="none"
           colors={[
-            'rgba(1,5,4,.14)',
-            'rgba(2,8,6,.24)',
-            'rgba(1,5,4,.50)'
+            'rgba(0,0,0,.20)',
+            'rgba(0,0,0,.24)',
+            'rgba(0,0,0,.48)'
+          ]}
+          locations={[
+            0,
+            0.52,
+            1
           ]}
           style={
             StyleSheet.absoluteFill
@@ -277,14 +393,15 @@ export default function FullscreenClock({
         >
           <Animated.View
             style={[
-              styles.glowOne,
+              styles.ambient,
               {
                 opacity:
                   ambient.interpolate({
                     inputRange:
                       [0, 1],
+
                     outputRange:
-                      [0.16, 0.44]
+                      [0.10, 0.26]
                   }),
 
                 transform: [
@@ -293,8 +410,9 @@ export default function FullscreenClock({
                       ambient.interpolate({
                         inputRange:
                           [0, 1],
+
                         outputRange:
-                          [-120, 140]
+                          [-110, 130]
                       })
                   },
 
@@ -303,6 +421,7 @@ export default function FullscreenClock({
                       ambient.interpolate({
                         inputRange:
                           [0, 1],
+
                         outputRange:
                           [-80, 95]
                       })
@@ -313,8 +432,9 @@ export default function FullscreenClock({
                       ambient.interpolate({
                         inputRange:
                           [0, 1],
+
                         outputRange:
-                          [1, 1.25]
+                          [1, 1.24]
                       })
                   }
                 ]
@@ -324,19 +444,38 @@ export default function FullscreenClock({
             <LinearGradient
               colors={[
                 'transparent',
-                `${theme.accent}05`,
-                `${theme.accent}2C`,
-                `${theme.accentLight}08`,
+                'rgba(255,255,255,.04)',
+                'rgba(255,255,255,.16)',
+                'rgba(255,255,255,.03)',
                 'transparent'
               ]}
               style={
-                styles.glowFill
+                styles.ambientFill
               }
             />
           </Animated.View>
         </View>
 
+        {/*
+          This transparent layer makes
+          almost the entire clock
+          tappable for cinema mode.
+        */}
+        <Pressable
+          style={
+            StyleSheet.absoluteFill
+          }
+          onPress={
+            toggleChrome
+          }
+        />
+
         <Animated.View
+          pointerEvents={
+            chromeVisible
+              ? 'auto'
+              : 'none'
+          }
           style={[
             styles.brand,
 
@@ -344,17 +483,34 @@ export default function FullscreenClock({
               styles.brandLandscape,
 
             {
+              top:
+                landscape
+                  ? Math.max(
+                      14,
+                      insets.top +
+                      6
+                    )
+                  : Math.max(
+                      20,
+                      insets.top +
+                      10
+                    ),
+
               opacity:
-                entrance,
+                Animated.multiply(
+                  entrance,
+                  chrome
+                ),
 
               transform: [
                 {
                   translateY:
-                    entrance.interpolate({
+                    chrome.interpolate({
                       inputRange:
                         [0, 1],
+
                       outputRange:
-                        [-13, 0]
+                        [-18, 0]
                     })
                 }
               ]
@@ -365,9 +521,6 @@ export default function FullscreenClock({
             style={[
               styles.brandSub,
               {
-                color:
-                  theme.accentLight,
-
                 fontFamily:
                   bold
               }
@@ -397,6 +550,7 @@ export default function FullscreenClock({
         </Animated.View>
 
         <Animated.View
+          pointerEvents="none"
           style={[
             styles.center,
 
@@ -413,28 +567,29 @@ export default function FullscreenClock({
                     entrance.interpolate({
                       inputRange:
                         [0, 1],
+
                       outputRange:
-                        [0.94, 1]
+                        [0.95, 1]
                     })
                 }
               ]
             }
           ]}
         >
-          <Text
+          <Animated.Text
             style={[
               styles.live,
               {
-                color:
-                  theme.accentLight,
-
                 fontFamily:
-                  bold
+                  bold,
+
+                opacity:
+                  chrome
               }
             ]}
           >
             NMIX • LOCAL TIME
-          </Text>
+          </Animated.Text>
 
           <Text
             numberOfLines={1}
@@ -454,7 +609,9 @@ export default function FullscreenClock({
               }
             ]}
           >
-            {formatTime(now)}
+            {formatTime(
+              now
+            )}
           </Text>
 
           <Text
@@ -475,11 +632,18 @@ export default function FullscreenClock({
               }
             ]}
           >
-            {formatDate(now)}
+            {formatDate(
+              now
+            )}
           </Text>
         </Animated.View>
 
         <Animated.View
+          pointerEvents={
+            chromeVisible
+              ? 'auto'
+              : 'none'
+          }
           style={[
             styles.controls,
 
@@ -487,17 +651,35 @@ export default function FullscreenClock({
               styles.controlsLandscape,
 
             {
+              right:
+                Math.max(
+                  17,
+                  insets.right +
+                  12
+                ),
+
+              bottom:
+                Math.max(
+                  landscape
+                    ? 14
+                    : 20,
+
+                  insets.bottom +
+                  10
+                ),
+
               opacity:
-                entrance,
+                chrome,
 
               transform: [
                 {
                   translateY:
-                    entrance.interpolate({
+                    chrome.interpolate({
                       inputRange:
                         [0, 1],
+
                       outputRange:
-                        [16, 0]
+                        [22, 0]
                     })
                 }
               ]
@@ -615,7 +797,9 @@ export default function FullscreenClock({
   );
 }
 
-function formatTime(date) {
+function formatTime(
+  date
+) {
   return date
     .toLocaleTimeString(
       [],
@@ -632,7 +816,9 @@ function formatTime(date) {
     );
 }
 
-function formatDate(date) {
+function formatDate(
+  date
+) {
   return date
     .toLocaleDateString(
       [],
@@ -662,84 +848,62 @@ const styles =
         '#030806'
     },
 
-    glowOne: {
+    ambient: {
       position:
         'absolute',
-
       width: 720,
-
       height: 720,
-
       left: -345,
-
       top: -335
     },
 
-    glowFill: {
+    ambientFill: {
       flex: 1,
-
       borderRadius: 370
     },
 
     brand: {
       position:
         'absolute',
-
       zIndex: 20,
-
-      top: 22,
-
       left: 22,
-
       alignItems:
         'flex-start'
     },
 
     brandLandscape: {
-      top: 15,
-
       left: 20
     },
 
     brandSub: {
+      color:
+        'rgba(255,255,255,.70)',
       fontSize: 6,
-
       lineHeight: 9,
-
       letterSpacing: 1.4
     },
 
     brandFix: {
       minWidth: 140,
-
       paddingRight: 12,
-
       overflow:
         'visible'
     },
 
     brandTitle: {
-      color:
-        '#ffffff',
-
+      color: '#fff',
       fontSize: 23,
-
       lineHeight: 34,
-
       letterSpacing: 4,
-
       includeFontPadding:
         false
     },
 
     center: {
       flex: 1,
-
       paddingHorizontal: 22,
-
       justifyContent:
         'center',
-
       alignItems:
         'center'
     },
@@ -750,161 +914,114 @@ const styles =
 
     live: {
       marginBottom: 5,
-
+      color:
+        'rgba(255,255,255,.70)',
       fontSize: 10,
-
       lineHeight: 15,
-
       letterSpacing: 3,
-
       textAlign:
         'center'
     },
 
     time: {
       width: '100%',
-
-      color:
-        '#ffffff',
-
+      color: '#ffffff',
       fontSize: 82,
-
       lineHeight: 105,
-
       textAlign:
         'center',
-
       textAlignVertical:
         'center',
-
       includeFontPadding:
-        false
+        false,
+      textShadowColor:
+        'rgba(0,0,0,.35)',
+      textShadowRadius: 15
     },
 
     timeLandscape: {
       fontSize: 116,
-
       lineHeight: 136
     },
 
     date: {
       width: '94%',
-
       marginTop: 10,
-
       color:
-        'rgba(255,255,255,.72)',
-
+        'rgba(255,255,255,.78)',
       fontSize: 14,
-
       lineHeight: 21,
-
       textAlign:
-        'center'
+        'center',
+      textShadowColor:
+        'rgba(0,0,0,.35)',
+      textShadowRadius: 9
     },
 
     dateLandscape: {
       marginTop: 1,
-
       fontSize: 15
     },
 
     controls: {
       position:
         'absolute',
-
       zIndex: 30,
-
-      right: 17,
-
-      bottom: 20,
-
       flexDirection:
         'row',
-
       alignItems:
         'center',
-
       gap: 8
     },
 
-    controlsLandscape: {
-      right: 18,
-
-      bottom: 14
-    },
+    controlsLandscape: {},
 
     control: {
       minHeight: 42,
-
       paddingHorizontal: 12,
-
       flexDirection:
         'row',
-
       justifyContent:
         'center',
-
       alignItems:
         'center',
-
       gap: 7,
-
       borderWidth: 1,
-
       borderColor:
-        'rgba(255,255,255,.13)',
-
+        'rgba(255,255,255,.16)',
       borderRadius: 999,
-
       backgroundColor:
-        'rgba(255,255,255,.09)'
+        'rgba(0,0,0,.30)'
     },
 
     exitControl: {
       minHeight: 42,
-
       paddingHorizontal: 13,
-
       flexDirection:
         'row',
-
       justifyContent:
         'center',
-
       alignItems:
         'center',
-
       gap: 7,
-
       borderWidth: 1,
-
       borderColor:
-        'rgba(255,255,255,.16)',
-
+        'rgba(255,255,255,.20)',
       borderRadius: 999,
-
       backgroundColor:
-        'rgba(255,255,255,.12)'
+        'rgba(0,0,0,.38)'
     },
 
     controlText: {
-      color:
-        '#ffffff',
-
+      color: '#fff',
       fontSize: 10,
-
       lineHeight: 14
     },
 
     exitX: {
-      color:
-        '#ffffff',
-
+      color: '#fff',
       fontSize: 19,
-
       lineHeight: 21,
-
       includeFontPadding:
         false
     }
