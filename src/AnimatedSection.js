@@ -20,6 +20,9 @@ import {
   HelpIcon
 } from './icons';
 
+import useNMixSounds
+  from './useNMixSounds';
+
 const ICONS = {
   calculator:
     CalculatorIcon,
@@ -34,9 +37,6 @@ const ICONS = {
     HelpIcon
 };
 
-/*
- * CSS-transition-like easing.
- */
 const EASE =
   Easing.bezier(
     0.22,
@@ -65,69 +65,46 @@ export default function AnimatedSection({
     setContentHeight
   ] = useState(0);
 
-  /*
-   * IMPORTANT:
-   *
-   * Website behavior:
-   * before = +180deg
-   * after  = -180deg
-   *
-   * Rotation stays on native driver.
-   */
   const rotation =
     useRef(
       new Animated.Value(
-        active
-          ? 1
-          : 0
+        active ? 1 : 0
       )
     ).current;
 
-  /*
-   * Border radius cannot use native driver.
-   * Separate value avoids the previous
-   * native/JS Animated node crash.
-   */
   const morph =
     useRef(
       new Animated.Value(
-        active
-          ? 1
-          : 0
+        active ? 1 : 0
       )
     ).current;
 
-  /*
-   * Accordion height.
-   */
   const panel =
     useRef(
       new Animated.Value(
-        active
-          ? 1
-          : 0
+        active ? 1 : 0
       )
     ).current;
 
-  /*
-   * Content fade/slide.
-   */
   const reveal =
     useRef(
       new Animated.Value(
-        active
-          ? 1
-          : 0
+        active ? 1 : 0
       )
     ).current;
 
-  /*
-   * Tap feedback.
-   */
   const pressScale =
     useRef(
       new Animated.Value(1)
     ).current;
+
+  const {
+    open:
+      playOpen,
+
+    close:
+      playClose
+  } = useNMixSounds();
 
   useEffect(() => {
     rotation.stopAnimation();
@@ -142,10 +119,6 @@ export default function AnimatedSection({
               ? 1
               : 0,
 
-          /*
-           * Long enough to actually see the
-           * same soothing website transition.
-           */
           duration: 580,
 
           easing:
@@ -178,8 +151,7 @@ export default function AnimatedSection({
 
   useEffect(() => {
     if (
-      contentHeight <=
-      0
+      contentHeight <= 0
     ) {
       return;
     }
@@ -283,13 +255,27 @@ export default function AnimatedSection({
     ).start();
   }
 
+  function handleToggle() {
+    /*
+     * active describes the state BEFORE
+     * toggle(), so choose the sound using
+     * the destination state.
+     */
+    if (active) {
+      playClose();
+    } else {
+      playOpen();
+    }
+
+    toggle(
+      name
+    );
+  }
+
   const Icon =
     ICONS[name] ||
     HelpIcon;
 
-  /*
-   * Exact website directions.
-   */
   const outerRotate =
     rotation.interpolate({
       inputRange:
@@ -312,10 +298,6 @@ export default function AnimatedSection({
       ]
     });
 
-  /*
-   * Website:
-   * scale(1.04)
-   */
   const outerScale =
     rotation.interpolate({
       inputRange:
@@ -338,9 +320,6 @@ export default function AnimatedSection({
       ]
     });
 
-  /*
-   * Rounded square -> circle.
-   */
   const outerRadius =
     morph.interpolate({
       inputRange:
@@ -414,10 +393,8 @@ export default function AnimatedSection({
         ]}
       >
         <Pressable
-          onPress={() =>
-            toggle(
-              name
-            )
+          onPress={
+            handleToggle
           }
 
           onPressIn={
@@ -437,11 +414,6 @@ export default function AnimatedSection({
               styles.iconStage
             }
           >
-            {/*
-             * Website ::before equivalent.
-             *
-             * Native rotating parent.
-             */}
             <Animated.View
               pointerEvents="none"
 
@@ -463,11 +435,6 @@ export default function AnimatedSection({
                 }
               ]}
             >
-              {/*
-               * JS-driven shape morph.
-               *
-               * The shape itself changes to circle.
-               */}
               <Animated.View
                 style={[
                   styles.outerShape,
@@ -483,11 +450,6 @@ export default function AnimatedSection({
               />
             </Animated.View>
 
-            {/*
-             * Website ::after equivalent.
-             *
-             * Counter-clockwise.
-             */}
             <Animated.View
               pointerEvents="none"
 
@@ -516,9 +478,6 @@ export default function AnimatedSection({
               />
             </Animated.View>
 
-            {/*
-             * Center SVG remains stationary.
-             */}
             <View
               pointerEvents="none"
 
@@ -620,8 +579,7 @@ export default function AnimatedSection({
                 .height;
 
             if (
-              height >
-                0 &&
+              height > 0 &&
               height !==
                 contentHeight
             ) {
@@ -702,9 +660,11 @@ export default function AnimatedSection({
 const styles =
   StyleSheet.create({
     section: {
-      position: 'relative',
+      position:
+        'relative',
 
-      overflow: 'hidden',
+      overflow:
+        'hidden',
 
       borderWidth: 1,
 
@@ -722,13 +682,16 @@ const styles =
 
       paddingVertical: 11,
 
-      flexDirection: 'row',
+      flexDirection:
+        'row',
 
-      alignItems: 'center'
+      alignItems:
+        'center'
     },
 
     iconStage: {
-      position: 'relative',
+      position:
+        'relative',
 
       width: 46,
 
@@ -736,21 +699,26 @@ const styles =
 
       flexShrink: 0,
 
-      justifyContent: 'center',
+      justifyContent:
+        'center',
 
-      alignItems: 'center'
+      alignItems:
+        'center'
     },
 
     outerRotator: {
-      position: 'absolute',
+      position:
+        'absolute',
 
       width: 42,
 
       height: 42,
 
-      justifyContent: 'center',
+      justifyContent:
+        'center',
 
-      alignItems: 'center'
+      alignItems:
+        'center'
     },
 
     outerShape: {
@@ -759,20 +727,19 @@ const styles =
       height: 42
     },
 
-    /*
-     * Close to the outer shape just like
-     * the website ::after layer.
-     */
     innerRotator: {
-      position: 'absolute',
+      position:
+        'absolute',
 
       width: 37,
 
       height: 37,
 
-      justifyContent: 'center',
+      justifyContent:
+        'center',
 
-      alignItems: 'center'
+      alignItems:
+        'center'
     },
 
     innerShape: {
@@ -787,7 +754,8 @@ const styles =
     },
 
     iconContent: {
-      position: 'absolute',
+      position:
+        'absolute',
 
       zIndex: 20,
 
@@ -795,9 +763,11 @@ const styles =
 
       height: 46,
 
-      justifyContent: 'center',
+      justifyContent:
+        'center',
 
-      alignItems: 'center'
+      alignItems:
+        'center'
     },
 
     copy: {
@@ -807,7 +777,8 @@ const styles =
 
       paddingHorizontal: 12,
 
-      justifyContent: 'center'
+      justifyContent:
+        'center'
     },
 
     title: {
@@ -831,9 +802,11 @@ const styles =
 
       flexShrink: 0,
 
-      justifyContent: 'center',
+      justifyContent:
+        'center',
 
-      alignItems: 'center'
+      alignItems:
+        'center'
     },
 
     arrow: {
@@ -854,7 +827,8 @@ const styles =
     },
 
     measure: {
-      position: 'absolute',
+      position:
+        'absolute',
 
       left: 0,
 
@@ -876,7 +850,8 @@ const styles =
     panel: {
       width: '100%',
 
-      overflow: 'hidden'
+      overflow:
+        'hidden'
     },
 
     body: {
