@@ -7,6 +7,9 @@ import {
   Pressable
 } from 'react-native';
 
+import useNMixSounds
+  from './useNMixSounds';
+
 const AnimatedPressable =
   Animated.createAnimatedComponent(
     Pressable
@@ -21,24 +24,42 @@ export default function MotionPressable({
   disabled = false,
   hitSlop,
   onPressIn,
-  onPressOut
+  onPressOut,
+
+  /*
+   * Special controls can disable the
+   * automatic global tap sound and play
+   * their own select/open/result sound.
+   */
+  sound = true
 }) {
-  const scale = useRef(
-    new Animated.Value(1)
-  ).current;
+  const scale =
+    useRef(
+      new Animated.Value(1)
+    ).current;
 
-  const opacity = useRef(
-    new Animated.Value(1)
-  ).current;
+  const opacity =
+    useRef(
+      new Animated.Value(1)
+    ).current;
 
-  function pressIn(event) {
+  const {
+    tap
+  } = useNMixSounds();
+
+  function pressIn(
+    event
+  ) {
     Animated.parallel([
       Animated.timing(
         scale,
         {
           toValue: 0.955,
+
           duration: 150,
-          useNativeDriver: true
+
+          useNativeDriver:
+            true
         }
       ),
 
@@ -46,24 +67,35 @@ export default function MotionPressable({
         opacity,
         {
           toValue: 0.86,
+
           duration: 150,
-          useNativeDriver: true
+
+          useNativeDriver:
+            true
         }
       )
     ]).start();
 
-    onPressIn?.(event);
+    onPressIn?.(
+      event
+    );
   }
 
-  function pressOut(event) {
+  function pressOut(
+    event
+  ) {
     Animated.parallel([
       Animated.spring(
         scale,
         {
           toValue: 1,
+
           friction: 7,
+
           tension: 85,
-          useNativeDriver: true
+
+          useNativeDriver:
+            true
         }
       ),
 
@@ -71,28 +103,74 @@ export default function MotionPressable({
         opacity,
         {
           toValue: 1,
+
           duration: 220,
-          useNativeDriver: true
+
+          useNativeDriver:
+            true
         }
       )
     ]).start();
 
-    onPressOut?.(event);
+    onPressOut?.(
+      event
+    );
+  }
+
+  function handlePress(
+    event
+  ) {
+    if (
+      disabled
+    ) {
+      return;
+    }
+
+    if (sound) {
+      tap();
+    }
+
+    onPress?.(
+      event
+    );
   }
 
   return (
     <AnimatedPressable
-      disabled={disabled}
-      hitSlop={hitSlop}
-      delayLongPress={delayLongPress}
-      onPress={onPress}
-      onLongPress={onLongPress}
-      onPressIn={pressIn}
-      onPressOut={pressOut}
+      disabled={
+        disabled
+      }
+
+      hitSlop={
+        hitSlop
+      }
+
+      delayLongPress={
+        delayLongPress
+      }
+
+      onPress={
+        handlePress
+      }
+
+      onLongPress={
+        onLongPress
+      }
+
+      onPressIn={
+        pressIn
+      }
+
+      onPressOut={
+        pressOut
+      }
+
       style={[
         style,
+
         {
           opacity,
+
           transform: [
             {
               scale
