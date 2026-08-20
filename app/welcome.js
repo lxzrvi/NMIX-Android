@@ -17,7 +17,7 @@ import { useNMixSettings } from '../src/useNMixSettings';
 import { getThemeColors } from '../src/theme';
 import { GithubIcon, AppLogoIcon } from '../src/icons';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -33,54 +33,67 @@ export default function WelcomeScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Smooth Fade-in on load
+    // 1. Fade-in Screen Animation
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 800 * animSpeed,
+      duration: 600 * (animSpeed || 1),
       useNativeDriver: true,
     }).start();
 
-    // Continuous floating ambient pulses (Fixed Easing functions)
-    Animated.loop(
+    // 2. Loop 1 with explicit cleanup reference
+    const loop1 = Animated.loop(
       Animated.sequence([
         Animated.timing(floatAnim1, {
           toValue: 1,
-          duration: 7000 * animSpeed,
-          easing: Easing.inOut(Easing.quad),
+          duration: 6000 * (animSpeed || 1),
+          easing: Easing.linear,
           useNativeDriver: true,
         }),
         Animated.timing(floatAnim1, {
           toValue: 0,
-          duration: 7000 * animSpeed,
-          easing: Easing.inOut(Easing.quad),
+          duration: 6000 * (animSpeed || 1),
+          easing: Easing.linear,
           useNativeDriver: true,
         }),
       ])
-    ).start();
+    );
 
-    Animated.loop(
+    // 3. Loop 2 with explicit cleanup reference
+    const loop2 = Animated.loop(
       Animated.sequence([
         Animated.timing(floatAnim2, {
           toValue: 1,
-          duration: 9000 * animSpeed,
-          easing: Easing.inOut(Easing.quad),
+          duration: 8000 * (animSpeed || 1),
+          easing: Easing.linear,
           useNativeDriver: true,
         }),
         Animated.timing(floatAnim2, {
           toValue: 0,
-          duration: 9000 * animSpeed,
-          easing: Easing.inOut(Easing.quad),
+          duration: 8000 * (animSpeed || 1),
+          easing: Easing.linear,
           useNativeDriver: true,
         }),
       ])
-    ).start();
+    );
+
+    loop1.start();
+    loop2.start();
+
+    // Cleanup animations on unmount to PREVENT APP AUTO-CLOSE/CRASH
+    return () => {
+      loop1.stop();
+      loop2.stop();
+    };
   }, [animSpeed]);
 
   const handleStart = async () => {
-    await AsyncStorage.setItem('nmix-welcome-seen', '1');
+    try {
+      await AsyncStorage.setItem('nmix-welcome-seen', '1');
+    } catch (e) {}
+
     Animated.timing(fadeAnim, {
       toValue: 0,
-      duration: 400 * animSpeed,
+      duration: 300 * (animSpeed || 1),
       useNativeDriver: true,
     }).start(() => {
       router.replace('/main');
@@ -89,26 +102,26 @@ export default function WelcomeScreen() {
 
   const orb1TranslateY = floatAnim1.interpolate({
     inputRange: [0, 1],
-    outputRange: [-30, 40],
+    outputRange: [-25, 35],
   });
 
   const orb2TranslateY = floatAnim2.interpolate({
     inputRange: [0, 1],
-    outputRange: [30, -50],
+    outputRange: [25, -40],
   });
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bg, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-      {/* Dynamic Ambient Background Blobs */}
+      {/* Background Blobs */}
       <Animated.View
         style={[
           styles.ambientOrb,
           {
             backgroundColor: theme.accent,
-            opacity: isDarkMode ? 0.25 : 0.15,
-            top: '10%',
-            left: -50,
-            transform: [{ translateY: orb1TranslateY }, { scale: 1.2 }],
+            opacity: isDarkMode ? 0.22 : 0.12,
+            top: '12%',
+            left: -40,
+            transform: [{ translateY: orb1TranslateY }],
           },
         ]}
       />
@@ -117,36 +130,36 @@ export default function WelcomeScreen() {
           styles.ambientOrb,
           {
             backgroundColor: theme.accent,
-            opacity: isDarkMode ? 0.2 : 0.12,
+            opacity: isDarkMode ? 0.18 : 0.1,
             bottom: '15%',
-            right: -60,
-            transform: [{ translateY: orb2TranslateY }, { scale: 1.4 }],
+            right: -50,
+            transform: [{ translateY: orb2TranslateY }],
           },
         ]}
       />
 
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-        {/* Title / Branding */}
+        {/* Branding Area */}
         <View style={styles.headerArea}>
           <View style={styles.logoWrap}>
-            <AppLogoIcon color={theme.accent} size={64} />
+            <AppLogoIcon color={theme.accent} size={60} />
             <Text style={[styles.appTitle, { color: theme.text, fontFamily: 'CinzelDecorative-Bold' }]}>
               NMIX
             </Text>
           </View>
-          <Text style={[styles.tagline, { color: theme.subText, fontFamily: `${selectedFont}-Bold` }]}>
+          <Text style={[styles.tagline, { color: theme.subText, fontFamily: `${selectedFont || 'Poppins'}-Bold` }]}>
             EVERYTHING WITH NUMBERS
           </Text>
         </View>
 
-        {/* Action Buttons */}
+        {/* Buttons */}
         <View style={styles.actionArea}>
           <TouchableOpacity
-            activeOpacity={0.85}
+            activeOpacity={0.8}
             style={[styles.primaryBtn, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF', borderColor: theme.accent }]}
             onPress={handleStart}
           >
-            <Text style={[styles.primaryBtnText, { color: theme.accent, fontFamily: `${selectedFont}-Bold` }]}>
+            <Text style={[styles.primaryBtnText, { color: theme.accent, fontFamily: `${selectedFont || 'Poppins'}-Bold` }]}>
               START
             </Text>
           </TouchableOpacity>
@@ -156,7 +169,7 @@ export default function WelcomeScreen() {
             style={[styles.secondaryBtn, { backgroundColor: theme.cardBg }]}
             onPress={() => setShowMoreInfo(!showMoreInfo)}
           >
-            <Text style={[styles.secondaryBtnText, { color: theme.text, fontFamily: `${selectedFont}-Regular` }]}>
+            <Text style={[styles.secondaryBtnText, { color: theme.text, fontFamily: `${selectedFont || 'Poppins'}-Regular` }]}>
               {showMoreInfo ? 'Hide Details' : 'More Info'}
             </Text>
           </TouchableOpacity>
@@ -166,8 +179,8 @@ export default function WelcomeScreen() {
         {showMoreInfo && (
           <ScrollView style={styles.moreInfoScroll} showsVerticalScrollIndicator={false}>
             <View style={[styles.infoCard, { backgroundColor: theme.cardBg }]}>
-              <Text style={[styles.cardTitle, { color: theme.accent, fontFamily: `${selectedFont}-Bold` }]}>About NMIX</Text>
-              <Text style={[styles.cardBody, { color: theme.text, fontFamily: `${selectedFont}-Regular` }]}>
+              <Text style={[styles.cardTitle, { color: theme.accent, fontFamily: `${selectedFont || 'Poppins'}-Bold` }]}>About NMIX</Text>
+              <Text style={[styles.cardBody, { color: theme.text, fontFamily: `${selectedFont || 'Poppins'}-Regular` }]}>
                 NMIX is an all-in-one suite designed to offer effortless numerical utility tools right at your fingertips with zero webview wrappers or delay.
               </Text>
               <View style={styles.chipRow}>
@@ -180,7 +193,7 @@ export default function WelcomeScreen() {
             </View>
 
             <View style={[styles.infoCard, { backgroundColor: theme.cardBg, marginBottom: 15 }]}>
-              <Text style={[styles.cardTitle, { color: theme.accent, fontFamily: `${selectedFont}-Bold` }]}>App Details</Text>
+              <Text style={[styles.cardTitle, { color: theme.accent, fontFamily: `${selectedFont || 'Poppins'}-Bold` }]}>App Details</Text>
               <View style={styles.chipRow}>
                 {['Android', 'Offline Tools', 'Native UI'].map((feat) => (
                   <View key={feat} style={[styles.chip, { backgroundColor: theme.accent + '22' }]}>
@@ -194,7 +207,7 @@ export default function WelcomeScreen() {
                 onPress={() => Linking.openURL('https://github.com/lxzrvi')}
               >
                 <GithubIcon color={theme.accent} size={20} />
-                <Text style={[styles.githubBtnText, { color: theme.accent, fontFamily: `${selectedFont}-Bold` }]}>
+                <Text style={[styles.githubBtnText, { color: theme.accent, fontFamily: `${selectedFont || 'Poppins'}-Bold` }]}>
                   GitHub Repository
                 </Text>
               </TouchableOpacity>
@@ -214,9 +227,9 @@ const styles = StyleSheet.create({
   },
   ambientOrb: {
     position: 'absolute',
-    width: 260,
-    height: 260,
-    borderRadius: 130,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
   },
   content: {
     flex: 1,
@@ -224,7 +237,7 @@ const styles = StyleSheet.create({
   },
   headerArea: {
     alignItems: 'center',
-    marginVertical: 40,
+    marginVertical: 30,
   },
   logoWrap: {
     flexDirection: 'row',
@@ -232,66 +245,66 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   appTitle: {
-    fontSize: 48,
+    fontSize: 44,
     includeFontPadding: false,
   },
   tagline: {
-    fontSize: 12,
-    letterSpacing: 3,
-    marginTop: 10,
+    fontSize: 11,
+    letterSpacing: 2.5,
+    marginTop: 8,
   },
   actionArea: {
-    gap: 14,
-    marginVertical: 20,
+    gap: 12,
+    marginVertical: 16,
   },
   primaryBtn: {
-    height: 56,
-    borderRadius: 28,
+    height: 54,
+    borderRadius: 27,
     borderWidth: 2,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
+    elevation: 3,
   },
   primaryBtnText: {
-    fontSize: 18,
+    fontSize: 17,
     letterSpacing: 2,
   },
   secondaryBtn: {
-    height: 50,
-    borderRadius: 25,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
   secondaryBtnText: {
-    fontSize: 15,
+    fontSize: 14,
   },
   moreInfoScroll: {
-    maxHeight: 260,
-    marginTop: 10,
+    maxHeight: 240,
+    marginTop: 8,
   },
   infoCard: {
-    padding: 16,
+    padding: 14,
     borderRadius: 16,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   cardTitle: {
-    fontSize: 16,
+    fontSize: 15,
     marginBottom: 6,
   },
   cardBody: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 10,
+    fontSize: 12,
+    lineHeight: 17,
+    marginBottom: 8,
   },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
   chip: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 10,
   },
   chipText: {
     fontSize: 11,
@@ -301,10 +314,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginTop: 14,
+    marginTop: 12,
     alignSelf: 'flex-start',
   },
   githubBtnText: {
-    fontSize: 13,
+    fontSize: 12,
   },
 });
