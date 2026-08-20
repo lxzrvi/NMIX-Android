@@ -23,7 +23,7 @@
         {
           "backgroundColor": "#07110f",
           "image": "./assets/nmix-splash-v2.png",
-          "imageWidth": 180,
+          "imageWidth": 200,
           "resizeMode": "contain"
         }
       ]
