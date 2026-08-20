@@ -74,13 +74,13 @@ const CLOCK_STYLES = [
   'Hybrid'
 ];
 
-const THEME_NAMES = {
-  green: 'EMERALD',
-  blue: 'OCEAN',
-  purple: 'VIOLET',
-  orange: 'SUNSET',
-  rose: 'ROSE'
-};
+const FOREGROUND = '#F4F7F6';
+const FOREGROUND_SOFT =
+  'rgba(244,247,246,.74)';
+const FOREGROUND_MUTED =
+  'rgba(244,247,246,.52)';
+const FOREGROUND_FAINT =
+  'rgba(244,247,246,.36)';
 
 export default function FullscreenClock({
   visible,
@@ -100,8 +100,12 @@ export default function FullscreenClock({
   const landscape =
     width > height;
 
-  const [now, setNow] =
-    useState(new Date());
+  const [
+    now,
+    setNow
+  ] = useState(
+    new Date()
+  );
 
   const [
     wallpaperPicker,
@@ -162,14 +166,14 @@ export default function FullscreenClock({
         const [
           savedWallpaper,
           savedStyle
-        ] = await Promise.all([
-          loadClockWallpaper(),
+        ] =
+          await Promise.all([
+            loadClockWallpaper(),
 
-          AsyncStorage
-            .getItem(
+            AsyncStorage.getItem(
               STYLE_KEY
             )
-        ]);
+          ]);
 
         setWallpaper(
           savedWallpaper
@@ -211,9 +215,13 @@ export default function FullscreenClock({
       true
     );
 
-    chrome.setValue(1);
+    chrome.setValue(
+      1
+    );
 
-    entrance.setValue(0);
+    entrance.setValue(
+      0
+    );
 
     Animated.timing(
       entrance,
@@ -314,7 +322,7 @@ export default function FullscreenClock({
             ? 1
             : 0,
 
-        duration: 450,
+        duration: 480,
 
         easing:
           Easing.bezier(
@@ -445,15 +453,14 @@ export default function FullscreenClock({
       ) %
       CLOCK_STYLES.length;
 
-    styleMotion.stopAnimation();
+    styleMotion
+      .stopAnimation();
 
     Animated.timing(
       styleMotion,
       {
         toValue: 0,
-
         duration: 140,
-
         useNativeDriver:
           true
       }
@@ -471,9 +478,8 @@ export default function FullscreenClock({
           () => {}
         );
 
-      styleMotion.setValue(
-        0
-      );
+      styleMotion
+        .setValue(0);
 
       Animated.timing(
         styleMotion,
@@ -543,15 +549,11 @@ export default function FullscreenClock({
     onClose();
   }
 
-  const themeLabel =
-    THEME_NAMES[
-      themeName
-    ] ||
-    'EMERALD';
-
   return (
     <Modal
-      visible={visible}
+      visible={
+        visible
+      }
       animationType="none"
       statusBarTranslucent
       navigationBarTranslucent
@@ -607,13 +609,27 @@ export default function FullscreenClock({
           />
         )}
 
+        {/*
+         * Neutral readability overlay.
+         * It deliberately does not use the
+         * selected app theme.
+         */}
         <LinearGradient
           pointerEvents="none"
-          colors={[
-            'rgba(0,0,0,.19)',
-            'rgba(0,0,0,.23)',
-            'rgba(0,0,0,.50)'
-          ]}
+          colors={
+            wallpaper.type ===
+            'custom'
+              ? [
+                  'rgba(0,0,0,.22)',
+                  'rgba(0,0,0,.28)',
+                  'rgba(0,0,0,.52)'
+                ]
+              : [
+                  'rgba(0,0,0,.13)',
+                  'rgba(0,0,0,.18)',
+                  'rgba(0,0,0,.40)'
+                ]
+          }
           style={
             StyleSheet.absoluteFill
           }
@@ -631,11 +647,6 @@ export default function FullscreenClock({
           }
         />
 
-        {/*
-          Empty background tap toggles
-          cinema mode. The center clock
-          has its own Pressable above it.
-        */}
         <Pressable
           style={
             StyleSheet.absoluteFill
@@ -645,6 +656,10 @@ export default function FullscreenClock({
           }
         />
 
+        {/*
+         * BRANDING / CHROME
+         * disappears in cinema mode.
+         */}
         <Animated.View
           pointerEvents={
             chromeVisible
@@ -724,48 +739,36 @@ export default function FullscreenClock({
           </View>
 
           <View
-            style={[
-              styles.themePill,
-
-              {
-                borderColor:
-                  `${theme.accent}75`,
-
-                backgroundColor:
-                  `${theme.accent}24`
-              }
-            ]}
+            style={
+              styles.localPill
+            }
           >
             <View
-              style={[
-                styles.themeDot,
-
-                {
-                  backgroundColor:
-                    theme.accent
-                }
-              ]}
+              style={
+                styles.localDot
+              }
             />
 
             <Text
               style={[
-                styles.themeText,
+                styles.localText,
 
                 {
-                  color:
-                    theme.accentLight,
-
                   fontFamily:
                     bold
                 }
               ]}
             >
-              {themeLabel}
+              NMIX • LOCAL TIME
             </Text>
           </View>
         </Animated.View>
 
-        <View
+        {/*
+         * TIME + DATE remain visible when
+         * cinema mode hides the chrome.
+         */}
+        <Animated.View
           style={[
             styles.clockArea,
 
@@ -773,7 +776,23 @@ export default function FullscreenClock({
               paddingHorizontal:
                 landscape
                   ? 70
-                  : 20
+                  : 20,
+
+              opacity:
+                entrance,
+
+              transform: [
+                {
+                  scale:
+                    entrance.interpolate({
+                      inputRange:
+                        [0, 1],
+
+                      outputRange:
+                        [0.97, 1]
+                    })
+                }
+              ]
             }
           ]}
         >
@@ -840,13 +859,10 @@ export default function FullscreenClock({
                 bold={
                   bold
                 }
-                accent={
-                  theme.accentLight
-                }
               />
             </Animated.View>
           </Pressable>
-        </View>
+        </Animated.View>
 
         <Animated.View
           pointerEvents={
@@ -900,7 +916,9 @@ export default function FullscreenClock({
           >
             <RotateIcon
               size={19}
-              color="#fff"
+              color={
+                FOREGROUND
+              }
             />
 
             <Text
@@ -929,7 +947,9 @@ export default function FullscreenClock({
           >
             <WallpaperIcon
               size={19}
-              color="#fff"
+              color={
+                FOREGROUND
+              }
             />
 
             <Text
@@ -1038,8 +1058,12 @@ export default function FullscreenClock({
           onChange={
             setWallpaper
           }
-          theme={theme}
-          font={font}
+          theme={
+            theme
+          }
+          font={
+            font
+          }
         />
       </View>
     </Modal>
@@ -1052,11 +1076,12 @@ function ClockStyle({
   parts,
   landscape,
   regular,
-  bold,
-  accent
+  bold
 }) {
   const date =
-    formatDate(now);
+    formatDate(
+      now
+    );
 
   if (index === 0) {
     return (
@@ -1068,9 +1093,10 @@ function ClockStyle({
         <Text
           style={[
             styles.styleName,
+
             {
-              color: accent,
-              fontFamily: bold
+              fontFamily:
+                bold
             }
           ]}
         >
@@ -1113,8 +1139,12 @@ function ClockStyle({
         </View>
 
         <DateText
-          text={date}
-          font={regular}
+          text={
+            date
+          }
+          font={
+            regular
+          }
         />
       </View>
     );
@@ -1130,9 +1160,10 @@ function ClockStyle({
         <Text
           style={[
             styles.styleName,
+
             {
-              color: accent,
-              fontFamily: bold
+              fontFamily:
+                bold
             }
           ]}
         >
@@ -1156,8 +1187,12 @@ function ClockStyle({
         </Text>
 
         <DateText
-          text={date}
-          font={regular}
+          text={
+            date
+          }
+          font={
+            regular
+          }
         />
       </View>
     );
@@ -1185,6 +1220,15 @@ function ClockStyle({
         >
           {parts.h24}:{parts.minute}
         </Text>
+
+        <DateText
+          text={
+            date
+          }
+          font={
+            regular
+          }
+        />
       </View>
     );
   }
@@ -1219,8 +1263,8 @@ function ClockStyle({
               styles.secondsBig,
 
               {
-                color: accent,
-                fontFamily: bold
+                fontFamily:
+                  bold
               }
             ]}
           >
@@ -1229,8 +1273,12 @@ function ClockStyle({
         </View>
 
         <DateText
-          text={date}
-          font={regular}
+          text={
+            date
+          }
+          font={
+            regular
+          }
         />
       </View>
     );
@@ -1253,7 +1301,9 @@ function ClockStyle({
               parts.h24
             }
             label="HOUR"
-            font={bold}
+            font={
+              bold
+            }
           />
 
           <Text
@@ -1261,8 +1311,8 @@ function ClockStyle({
               styles.splitColon,
 
               {
-                color: accent,
-                fontFamily: bold
+                fontFamily:
+                  bold
               }
             ]}
           >
@@ -1274,7 +1324,9 @@ function ClockStyle({
               parts.minute
             }
             label="MIN"
-            font={bold}
+            font={
+              bold
+            }
           />
 
           <Text
@@ -1282,8 +1334,8 @@ function ClockStyle({
               styles.splitColon,
 
               {
-                color: accent,
-                fontFamily: bold
+                fontFamily:
+                  bold
               }
             ]}
           >
@@ -1295,13 +1347,19 @@ function ClockStyle({
               parts.second
             }
             label="SEC"
-            font={bold}
+            font={
+              bold
+            }
           />
         </View>
 
         <DateText
-          text={date}
-          font={regular}
+          text={
+            date
+          }
+          font={
+            regular
+          }
         />
       </View>
     );
@@ -1332,7 +1390,6 @@ function ClockStyle({
             styles.elegantPeriod,
 
             {
-              color: accent,
               fontFamily:
                 regular
             }
@@ -1342,8 +1399,12 @@ function ClockStyle({
         </Text>
 
         <DateText
-          text={date}
-          font={regular}
+          text={
+            date
+          }
+          font={
+            regular
+          }
         />
       </View>
     );
@@ -1376,7 +1437,6 @@ function ClockStyle({
             styles.cinemaSeconds,
 
             {
-              color: accent,
               fontFamily:
                 regular
             }
@@ -1384,6 +1444,15 @@ function ClockStyle({
         >
           {parts.second}
         </Text>
+
+        <DateText
+          text={
+            date
+          }
+          font={
+            regular
+          }
+        />
       </View>
     );
   }
@@ -1392,44 +1461,55 @@ function ClockStyle({
     return (
       <View
         style={
-          styles.stacked
+          styles.styleCenter
         }
       >
-        <Text
-          style={[
-            styles.stackedHour,
-
-            {
-              fontFamily:
-                bold
-            }
-          ]}
-        >
-          {parts.h24}
-        </Text>
-
         <View
-          style={[
-            styles.stackLine,
-            {
-              backgroundColor:
-                accent
-            }
-          ]}
-        />
-
-        <Text
-          style={[
-            styles.stackedMinute,
-
-            {
-              fontFamily:
-                bold
-            }
-          ]}
+          style={
+            styles.stacked
+          }
         >
-          {parts.minute}
-        </Text>
+          <Text
+            style={[
+              styles.stackedHour,
+
+              {
+                fontFamily:
+                  bold
+              }
+            ]}
+          >
+            {parts.h24}
+          </Text>
+
+          <View
+            style={
+              styles.stackLine
+            }
+          />
+
+          <Text
+            style={[
+              styles.stackedMinute,
+
+              {
+                fontFamily:
+                  bold
+              }
+            ]}
+          >
+            {parts.minute}
+          </Text>
+        </View>
+
+        <DateText
+          text={
+            date
+          }
+          font={
+            regular
+          }
+        />
       </View>
     );
   }
@@ -1442,20 +1522,23 @@ function ClockStyle({
         }
       >
         <AnalogClock
-          now={now}
+          now={
+            now
+          }
           size={
             landscape
               ? 260
               : 280
           }
-          accent={
-            accent
-          }
         />
 
         <DateText
-          text={date}
-          font={regular}
+          text={
+            date
+          }
+          font={
+            regular
+          }
         />
       </View>
     );
@@ -1471,14 +1554,13 @@ function ClockStyle({
       ]}
     >
       <AnalogClock
-        now={now}
+        now={
+          now
+        }
         size={
           landscape
             ? 220
             : 210
-        }
-        accent={
-          accent
         }
       />
 
@@ -1505,7 +1587,6 @@ function ClockStyle({
             styles.hybridSeconds,
 
             {
-              color: accent,
               fontFamily:
                 bold
             }
@@ -1515,8 +1596,12 @@ function ClockStyle({
         </Text>
 
         <DateText
-          text={date}
-          font={regular}
+          text={
+            date
+          }
+          font={
+            regular
+          }
         />
       </View>
     </View>
@@ -1525,8 +1610,7 @@ function ClockStyle({
 
 function AnalogClock({
   now,
-  size,
-  accent
+  size
 }) {
   const center =
     size / 2;
@@ -1567,119 +1651,156 @@ function AnalogClock({
         cx={center}
         cy={center}
         r={radius}
-        fill="rgba(0,0,0,.17)"
-        stroke="rgba(255,255,255,.36)"
+        fill="rgba(0,0,0,.18)"
+        stroke="rgba(244,247,246,.40)"
         strokeWidth="2"
       />
 
       {Array.from({
         length: 12
-      }).map((_, index) => {
-        const angle =
-          (
-            index * 30 -
-            90
-          ) *
-          Math.PI /
-          180;
+      }).map(
+        (
+          _,
+          index
+        ) => {
+          const angle =
+            (
+              index *
+                30 -
+              90
+            ) *
+            Math.PI /
+            180;
 
-        const outer =
-          radius - 11;
+          const outer =
+            radius -
+            11;
 
-        const inner =
-          radius - 21;
+          const inner =
+            radius -
+            21;
 
-        return (
-          <Line
-            key={index}
+          return (
+            <Line
+              key={
+                index
+              }
 
-            x1={
-              center +
-              Math.cos(angle) *
-                inner
-            }
+              x1={
+                center +
+                Math.cos(
+                  angle
+                ) *
+                  inner
+              }
 
-            y1={
-              center +
-              Math.sin(angle) *
-                inner
-            }
+              y1={
+                center +
+                Math.sin(
+                  angle
+                ) *
+                  inner
+              }
 
-            x2={
-              center +
-              Math.cos(angle) *
-                outer
-            }
+              x2={
+                center +
+                Math.cos(
+                  angle
+                ) *
+                  outer
+              }
 
-            y2={
-              center +
-              Math.sin(angle) *
-                outer
-            }
+              y2={
+                center +
+                Math.sin(
+                  angle
+                ) *
+                  outer
+              }
 
-            stroke={
-              index % 3 ===
+              stroke={
+                index %
+                  3 ===
                 0
-                ? '#ffffff'
-                : 'rgba(255,255,255,.42)'
-            }
+                  ? FOREGROUND
+                  : FOREGROUND_FAINT
+              }
 
-            strokeWidth={
-              index % 3 ===
+              strokeWidth={
+                index %
+                  3 ===
                 0
-                ? 3
-                : 1.5
-            }
+                  ? 3
+                  : 1.5
+              }
 
-            strokeLinecap="round"
-          />
-        );
-      })}
+              strokeLinecap="round"
+            />
+          );
+        }
+      )}
 
       <Hand
-        center={center}
+        center={
+          center
+        }
         radius={
-          radius * 0.50
+          radius *
+          0.50
         }
         angle={
           hourAngle
         }
         width={5}
-        color="#ffffff"
+        color={
+          FOREGROUND
+        }
       />
 
       <Hand
-        center={center}
+        center={
+          center
+        }
         radius={
-          radius * 0.70
+          radius *
+          0.70
         }
         angle={
           minuteAngle
         }
         width={3.5}
-        color="#ffffff"
+        color={
+          FOREGROUND
+        }
       />
 
       <Hand
-        center={center}
+        center={
+          center
+        }
         radius={
-          radius * 0.76
+          radius *
+          0.76
         }
         angle={
           secondAngle
         }
         width={1.8}
         color={
-          accent
+          FOREGROUND_SOFT
         }
       />
 
       <Circle
-        cx={center}
-        cy={center}
+        cx={
+          center
+        }
+        cy={
+          center
+        }
         r="5"
         fill={
-          accent
+          FOREGROUND
         }
       />
     </Svg>
@@ -1695,22 +1816,27 @@ function Hand({
 }) {
   const radians =
     (
-      angle - 90
+      angle -
+      90
     ) *
     Math.PI /
     180;
 
   return (
     <Line
-      x1={center}
-      y1={center}
+      x1={
+        center
+      }
+      y1={
+        center
+      }
 
       x2={
         center +
         Math.cos(
           radians
         ) *
-        radius
+          radius
       }
 
       y2={
@@ -1718,7 +1844,7 @@ function Hand({
         Math.sin(
           radians
         ) *
-        radius
+          radius
       }
 
       stroke={
@@ -1803,35 +1929,56 @@ function AmbientTheme({
 }) {
   const x =
     motion.interpolate({
-      inputRange: [0, 1],
+      inputRange:
+        [0, 1],
 
       outputRange:
         themeName ===
           'blue'
-          ? [-180, 180]
-          : [-100, 110]
+          ? [
+              -180,
+              180
+            ]
+          : [
+              -100,
+              110
+            ]
     });
 
   const y =
     motion.interpolate({
-      inputRange: [0, 1],
+      inputRange:
+        [0, 1],
 
       outputRange:
         themeName ===
           'orange'
-          ? [-100, 130]
-          : [-65, 85]
+          ? [
+              -100,
+              130
+            ]
+          : [
+              -65,
+              85
+            ]
     });
 
   const scale =
     motion.interpolate({
-      inputRange: [0, 1],
+      inputRange:
+        [0, 1],
 
       outputRange:
         themeName ===
           'rose'
-          ? [0.88, 1.28]
-          : [1, 1.20]
+          ? [
+              0.88,
+              1.28
+            ]
+          : [
+              1,
+              1.20
+            ]
     });
 
   return (
@@ -1852,7 +1999,7 @@ function AmbientTheme({
                   [0, 1],
 
                 outputRange:
-                  [0.16, 0.42]
+                  [0.10, 0.25]
               }),
 
             transform: [
@@ -1876,9 +2023,9 @@ function AmbientTheme({
         <LinearGradient
           colors={[
             'transparent',
-            `${theme.accent}05`,
-            `${theme.accent}35`,
-            `${theme.accentLight}08`,
+            `${theme.accent}03`,
+            `${theme.accent}24`,
+            `${theme.accentLight}05`,
             'transparent'
           ]}
           style={
@@ -1916,7 +2063,8 @@ function getTimeParts(
     date.getHours();
 
   const h12Value =
-    rawHour % 12 ||
+    rawHour %
+      12 ||
     12;
 
   return {
@@ -1985,8 +2133,10 @@ const styles =
   StyleSheet.create({
     page: {
       flex: 1,
+
       overflow:
         'hidden',
+
       backgroundColor:
         '#030806'
     },
@@ -1994,259 +2144,399 @@ const styles =
     ambient: {
       position:
         'absolute',
+
       width: 720,
       height: 720,
+
       left: -340,
       top: -330
     },
 
     ambientFill: {
       flex: 1,
+
       borderRadius: 380
     },
 
     brand: {
       position:
         'absolute',
+
       zIndex: 30,
+
       alignItems:
         'flex-start'
     },
 
     brandSub: {
       color:
-        'rgba(255,255,255,.68)',
+        FOREGROUND_MUTED,
+
       fontSize: 6,
+
       lineHeight: 9,
+
       letterSpacing: 1.4
     },
 
     brandFix: {
-      minWidth: 140,
-      paddingRight: 12,
+      minWidth: 150,
+
+      paddingRight: 18,
+
       overflow:
         'visible'
     },
 
     brandTitle: {
-      color: '#fff',
+      color:
+        FOREGROUND,
+
       fontSize: 23,
+
       lineHeight: 34,
+
       letterSpacing: 4,
+
       includeFontPadding:
         false
     },
 
-    themePill: {
-      minHeight: 24,
+    localPill: {
+      minHeight: 25,
+
       marginTop: 3,
-      paddingHorizontal: 8,
+
+      paddingHorizontal: 9,
+
       flexDirection:
         'row',
+
       alignItems:
         'center',
-      gap: 5,
+
+      gap: 6,
+
       borderWidth: 1,
-      borderRadius: 999
+
+      borderColor:
+        'rgba(244,247,246,.16)',
+
+      borderRadius: 999,
+
+      backgroundColor:
+        'rgba(0,0,0,.18)'
     },
 
-    themeDot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3
+    localDot: {
+      width: 5,
+
+      height: 5,
+
+      borderRadius: 3,
+
+      backgroundColor:
+        FOREGROUND_SOFT
     },
 
-    themeText: {
-      fontSize: 7.5,
+    localText: {
+      color:
+        FOREGROUND_MUTED,
+
+      fontSize: 7.2,
+
+      lineHeight: 11,
+
       letterSpacing: 1
     },
 
     clockArea: {
       flex: 1,
+
       justifyContent:
         'center',
+
       alignItems:
         'center'
     },
 
     clockTap: {
       width: '100%',
+
       minHeight: '55%',
+
       justifyContent:
         'center',
+
       alignItems:
         'center'
     },
 
     clockContent: {
       width: '100%',
+
       justifyContent:
         'center',
+
       alignItems:
         'center'
     },
 
     styleCenter: {
       width: '100%',
+
       justifyContent:
         'center',
+
       alignItems:
         'center'
     },
 
     styleName: {
       marginBottom: 6,
+
+      color:
+        FOREGROUND_MUTED,
+
       fontSize: 8,
+
       letterSpacing: 2.5
     },
 
     classicRow: {
       flexDirection:
         'row',
+
       justifyContent:
         'center',
+
       alignItems:
         'flex-end'
     },
 
     bigTime: {
-      color: '#fff',
+      color:
+        FOREGROUND,
+
       fontSize: 72,
+
       lineHeight: 88,
+
       includeFontPadding:
-        false
+        false,
+
+      textShadowColor:
+        'rgba(0,0,0,.28)',
+
+      textShadowRadius: 12
     },
 
     bigTimeLandscape: {
       fontSize: 105,
+
       lineHeight: 122
     },
 
     period: {
       marginLeft: 9,
+
       marginBottom: 13,
+
       color:
-        'rgba(255,255,255,.82)',
+        FOREGROUND_SOFT,
+
       fontSize: 16,
+
       lineHeight: 20
     },
 
     date: {
       width: '90%',
+
       marginTop: 9,
+
       color:
-        'rgba(255,255,255,.72)',
+        FOREGROUND_SOFT,
+
       fontSize: 13,
+
       lineHeight: 20,
+
       textAlign:
         'center',
+
       textShadowColor:
-        'rgba(0,0,0,.4)',
-      textShadowRadius: 8
+        'rgba(0,0,0,.45)',
+
+      textShadowRadius: 9
     },
 
     minimalTime: {
-      color: '#fff',
+      color:
+        FOREGROUND,
+
       fontSize: 92,
+
       lineHeight: 110,
+
       letterSpacing: 2,
+
       includeFontPadding:
-        false
+        false,
+
+      textShadowColor:
+        'rgba(0,0,0,.28)',
+
+      textShadowRadius: 12
     },
 
     minimalLandscape: {
       fontSize: 135,
+
       lineHeight: 150
     },
 
     secondsRow: {
       flexDirection:
         'row',
+
       alignItems:
         'flex-end'
     },
 
     hoursMinutes: {
-      color: '#fff',
+      color:
+        FOREGROUND,
+
       fontSize: 78,
+
       lineHeight: 96
     },
 
     secondsBig: {
       marginLeft: 12,
+
       marginBottom: 10,
+
+      color:
+        FOREGROUND_SOFT,
+
       fontSize: 28,
+
       lineHeight: 34
     },
 
     splitRow: {
       flexDirection:
         'row',
+
       alignItems:
         'center',
+
       justifyContent:
         'center',
+
       gap: 7
     },
 
     splitColon: {
+      color:
+        FOREGROUND_MUTED,
+
       fontSize: 28
     },
 
     timeCard: {
       minWidth: 77,
+
       paddingHorizontal: 12,
+
       paddingVertical: 12,
+
       alignItems:
         'center',
+
       borderWidth: 1,
+
       borderColor:
-        'rgba(255,255,255,.14)',
+        'rgba(244,247,246,.16)',
+
       borderRadius: 15,
+
       backgroundColor:
-        'rgba(0,0,0,.22)'
+        'rgba(0,0,0,.23)'
     },
 
     timeCardValue: {
-      color: '#fff',
+      color:
+        FOREGROUND,
+
       fontSize: 34,
+
       lineHeight: 40
     },
 
     timeCardLabel: {
       marginTop: 2,
+
       color:
-        'rgba(255,255,255,.48)',
+        FOREGROUND_FAINT,
+
       fontSize: 7
     },
 
     elegant: {
-      color: '#fff',
+      color:
+        FOREGROUND,
+
       fontSize: 88,
+
       lineHeight: 105,
+
       letterSpacing: 3
     },
 
     elegantPeriod: {
       marginTop: -7,
+
+      color:
+        FOREGROUND_SOFT,
+
       fontSize: 13,
+
       letterSpacing: 4
     },
 
     cinema: {
       width: '100%',
-      color: '#fff',
+
+      color:
+        FOREGROUND,
+
       fontSize: 132,
+
       lineHeight: 150,
+
       textAlign:
         'center',
+
       includeFontPadding:
-        false
+        false,
+
+      textShadowColor:
+        'rgba(0,0,0,.30)',
+
+      textShadowRadius: 14
     },
 
     cinemaSeconds: {
       marginTop: -10,
+
+      color:
+        FOREGROUND_SOFT,
+
       fontSize: 23,
+
       letterSpacing: 8
     },
 
@@ -2256,37 +2546,53 @@ const styles =
     },
 
     stackedHour: {
-      color: '#fff',
+      color:
+        FOREGROUND,
+
       fontSize: 96,
+
       lineHeight: 102
     },
 
     stackLine: {
       width: 105,
+
       height: 3,
+
       marginVertical: 5,
-      borderRadius: 99
+
+      borderRadius: 99,
+
+      backgroundColor:
+        FOREGROUND_MUTED
     },
 
     stackedMinute: {
-      color: '#fff',
+      color:
+        FOREGROUND,
+
       fontSize: 96,
+
       lineHeight: 102
     },
 
     hybrid: {
       flexDirection:
         'column',
+
       alignItems:
         'center',
+
       gap: 12
     },
 
     hybridLandscape: {
       flexDirection:
         'row',
+
       justifyContent:
         'center',
+
       gap: 30
     },
 
@@ -2296,94 +2602,141 @@ const styles =
     },
 
     hybridTime: {
-      color: '#fff',
+      color:
+        FOREGROUND,
+
       fontSize: 54,
+
       lineHeight: 65
     },
 
     hybridSeconds: {
+      color:
+        FOREGROUND_SOFT,
+
       fontSize: 17,
+
       letterSpacing: 6
     },
 
     controls: {
       position:
         'absolute',
+
       zIndex: 40,
+
       flexDirection:
         'row',
+
       alignItems:
         'center',
+
       gap: 8
     },
 
     control: {
       minHeight: 42,
+
       paddingHorizontal: 12,
+
       flexDirection:
         'row',
+
       justifyContent:
         'center',
+
       alignItems:
         'center',
+
       gap: 7,
+
       borderWidth: 1,
+
       borderColor:
-        'rgba(255,255,255,.16)',
+        'rgba(244,247,246,.16)',
+
       borderRadius: 999,
+
       backgroundColor:
         'rgba(0,0,0,.32)'
     },
 
     exit: {
       minHeight: 42,
+
       paddingHorizontal: 13,
+
       flexDirection:
         'row',
+
       justifyContent:
         'center',
+
       alignItems:
         'center',
+
       gap: 7,
+
       borderWidth: 1,
+
       borderColor:
-        'rgba(255,255,255,.20)',
+        'rgba(244,247,246,.20)',
+
       borderRadius: 999,
+
       backgroundColor:
         'rgba(0,0,0,.40)'
     },
 
     controlText: {
-      color: '#fff',
+      color:
+        FOREGROUND,
+
       fontSize: 10,
+
       lineHeight: 14
     },
 
     exitX: {
-      color: '#fff',
+      color:
+        FOREGROUND,
+
       fontSize: 19,
+
       lineHeight: 21
     },
 
     tip: {
       position:
         'absolute',
+
       left: 0,
+
       right: 0,
+
       bottom: 82,
+
       alignItems:
         'center',
+
       zIndex: 35
     },
 
     tipText: {
       paddingHorizontal: 14,
+
       paddingVertical: 8,
+
       overflow:
         'hidden',
-      color: '#fff',
+
+      color:
+        FOREGROUND,
+
       fontSize: 10,
+
       borderRadius: 999,
+
       backgroundColor:
         'rgba(0,0,0,.48)'
     }
