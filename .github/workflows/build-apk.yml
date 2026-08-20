@@ -14,6 +14,46 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Calculate version FIRST.
+      # If anything is wrong here, Gradle time
+      # will not be wasted.
+      - name: Calculate NMIX version
+        id: version
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LAST_TAG="$(
+            gh release list \
+              --limit 100 \
+              --json tagName \
+              --jq '.[].tagName' 2>/dev/null |
+            grep -E '^v[0-9]+\.[0-9]+$' |
+            sort -V |
+            tail -n 1 || true
+          )"
+
+          if [ -z "$LAST_TAG" ]; then
+            NEXT_VERSION="v1.0"
+          else
+            VERSION="${LAST_TAG#v}"
+
+            MAJOR="${VERSION%%.*}"
+            MINOR="${VERSION##*.}"
+
+            if [ "$MINOR" -ge 9 ]; then
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+            else
+              MINOR=$((MINOR + 1))
+            fi
+
+            NEXT_VERSION="v${MAJOR}.${MINOR}"
+          fi
+
+          echo "version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "NMIX release will be ${NEXT_VERSION}"
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -22,18 +62,14 @@ jobs:
       - name: Configure npm
         run: npm config set legacy-peer-deps true
 
-      # Keep the working npm architecture.
-      # Do not delete node_modules/package-lock on every run.
       - name: Install dependencies
         run: npm install --prefer-offline --no-audit --no-fund
 
-      # Keep these because NMIX depends on these native packages.
+      # Keep the known-working native dependencies.
       - name: Install NMIX native packages
         run: |
           npx expo install react-native-svg expo-splash-screen expo-image-picker expo-file-system expo-screen-orientation
 
-      # expo export is intentionally removed.
-      # assembleRelease creates the Android JS bundle itself.
       - name: Generate Android project
         run: npx expo prebuild --platform android --no-install
 
@@ -54,43 +90,6 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease --build-cache --parallel
 
-      # Find the latest NMIX vX.Y release and calculate the next version.
-      - name: Calculate release version
-        id: version
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          LAST_TAG=$(
-            gh release list \
-              --limit 100 \
-              --json tagName \
-              --jq '.[].tagName' |
-            grep -E '^v[0-9]+\.[0-9]+$' |
-            sort -V |
-            tail -n 1
-          )
-
-          if [ -z "$LAST_TAG" ]; then
-            NEXT_VERSION="v1.0"
-          else
-            VERSION="${LAST_TAG#v}"
-            MAJOR="${VERSION%%.*}"
-            MINOR="${VERSION##*.}"
-
-            if [ "$MINOR" -ge 9 ]; then
-              MAJOR=$((MAJOR + 1))
-              MINOR=0
-            else
-              MINOR=$((MINOR + 1))
-            fi
-
-            NEXT_VERSION="v${MAJOR}.${MINOR}"
-          fi
-
-          echo "version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
-          echo "Next NMIX release: $NEXT_VERSION"
-
       - name: Prepare NMIX APK
         run: |
           mkdir -p release
@@ -99,7 +98,6 @@ jobs:
             android/app/build/outputs/apk/release/app-release.apk \
             "release/NMIX-${{ steps.version.outputs.version }}.apk"
 
-      # Keep Actions artifact as a backup.
       - name: Upload NMIX APK artifact
         uses: actions/upload-artifact@v4
         with:
@@ -108,7 +106,6 @@ jobs:
           if-no-files-found: error
           compression-level: 0
 
-      # Runs only after the APK has built successfully.
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
