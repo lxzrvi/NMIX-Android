@@ -56,11 +56,8 @@ export default function AnimatedSection({
   ] = useState(0);
 
   /*
-   * NATIVE-DRIVER ONLY.
-   *
-   * Used strictly for transforms.
-   * Never use this value for radius,
-   * height, border or other layout styles.
+   * NATIVE DRIVER ONLY:
+   * rotate / scale / arrow.
    */
   const spin =
     useRef(
@@ -70,9 +67,8 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * JS-DRIVER ONLY.
-   *
-   * borderRadius cannot use native driver.
+   * JS DRIVER ONLY:
+   * square -> circle radius.
    */
   const morph =
     useRef(
@@ -82,9 +78,8 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * JS-DRIVER ONLY.
-   *
-   * Used only for accordion height.
+   * JS DRIVER ONLY:
+   * accordion height.
    */
   const panel =
     useRef(
@@ -94,9 +89,8 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * NATIVE-DRIVER ONLY.
-   *
-   * Used for opacity + translateY.
+   * NATIVE DRIVER ONLY:
+   * content fade + slide.
    */
   const contentMotion =
     useRef(
@@ -106,9 +100,8 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * NATIVE-DRIVER ONLY.
-   *
-   * Tap/bounce scale.
+   * NATIVE DRIVER ONLY:
+   * section press bounce.
    */
   const pressScale =
     useRef(
@@ -116,8 +109,7 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * Icon layers animate immediately.
-   * They do not wait for content measurement.
+   * Icon animation.
    */
   useEffect(() => {
     spin.stopAnimation();
@@ -157,8 +149,7 @@ export default function AnimatedSection({
   }, [active]);
 
   /*
-   * Accordion animation starts once
-   * its natural content height is known.
+   * Accordion.
    */
   useEffect(() => {
     if (
@@ -247,7 +238,7 @@ export default function AnimatedSection({
     Animated.timing(
       pressScale,
       {
-        toValue: 0.972,
+        toValue: 0.97,
 
         duration: 150,
 
@@ -270,7 +261,7 @@ export default function AnimatedSection({
       {
         toValue: 1,
 
-        stiffness: 255,
+        stiffness: 250,
         damping: 14,
         mass: 0.72,
 
@@ -285,9 +276,13 @@ export default function AnimatedSection({
     HelpIcon;
 
   /*
-   * Outer layer:
-   * clockwise on open.
-   * Automatically reverses on close.
+   * Full turn.
+   *
+   * Open:
+   * outer  0 -> +360
+   * inner  0 -> -360
+   *
+   * Close automatically reverses.
    */
   const outerRotation =
     spin.interpolate({
@@ -302,10 +297,6 @@ export default function AnimatedSection({
       ]
     });
 
-  /*
-   * Inner outline:
-   * counter-clockwise.
-   */
   const innerRotation =
     spin.interpolate({
       inputRange: [
@@ -333,8 +324,7 @@ export default function AnimatedSection({
     });
 
   /*
-   * These scales use the native-only
-   * spin value, therefore are safe.
+   * Native-only transform values.
    */
   const outerScale =
     spin.interpolate({
@@ -367,8 +357,7 @@ export default function AnimatedSection({
     });
 
   /*
-   * These radii use ONLY morph,
-   * which is JS-driver only.
+   * JS-only radius values.
    */
   const outerRadius =
     morph.interpolate({
@@ -396,10 +385,6 @@ export default function AnimatedSection({
       ]
     });
 
-  /*
-   * Height uses ONLY panel,
-   * another JS-driver-only value.
-   */
   const panelHeight =
     panel.interpolate({
       inputRange: [
@@ -413,10 +398,6 @@ export default function AnimatedSection({
       ]
     });
 
-  /*
-   * Translate uses only native
-   * contentMotion.
-   */
   const contentY =
     contentMotion.interpolate({
       inputRange: [
@@ -481,71 +462,130 @@ export default function AnimatedSection({
             }
           >
             {/*
-             * Outer colored shape.
+             * OUTER MORPH WRAPPER
              *
-             * IMPORTANT:
-             * borderRadius comes from morph.
-             * transforms come from spin.
-             * The animation VALUES themselves
-             * remain driver-separated.
+             * JS driver only.
+             * It never rotates.
              */}
             <Animated.View
               pointerEvents="none"
 
               style={[
-                styles.outer,
+                styles.outerMorph,
 
                 {
-                  backgroundColor:
-                    accent,
-
                   borderRadius:
-                    outerRadius,
-
-                  transform: [
-                    {
-                      rotate:
-                        outerRotation
-                    },
-
-                    {
-                      scale:
-                        outerScale
-                    }
-                  ]
+                    outerRadius
                 }
               ]}
-            />
+            >
+              {/*
+               * Native transform layer.
+               *
+               * Its parent clips it into the
+               * current rounded-square/circle.
+               */}
+              <Animated.View
+                style={[
+                  styles.outerSpin,
 
+                  {
+                    backgroundColor:
+                      accent,
+
+                    transform: [
+                      {
+                        rotate:
+                          outerRotation
+                      },
+
+                      {
+                        scale:
+                          outerScale
+                      }
+                    ]
+                  }
+                ]}
+              >
+                {/*
+                 * Small asymmetric visual marks
+                 * make clockwise rotation visible
+                 * even while the shape approaches
+                 * a perfect circle.
+                 */}
+                <View
+                  style={
+                    styles.outerMarkOne
+                  }
+                />
+
+                <View
+                  style={
+                    styles.outerMarkTwo
+                  }
+                />
+              </Animated.View>
+            </Animated.View>
+
+            {/*
+             * INNER MORPH WRAPPER
+             *
+             * Again: JS driver only.
+             */}
             <Animated.View
               pointerEvents="none"
 
               style={[
-                styles.inner,
+                styles.innerMorph,
 
                 {
                   borderRadius:
-                    innerRadius,
-
-                  transform: [
-                    {
-                      rotate:
-                        innerRotation
-                    },
-
-                    {
-                      scale:
-                        innerScale
-                    }
-                  ]
+                    innerRadius
                 }
               ]}
-            />
+            >
+              {/*
+               * Native counter-clockwise layer.
+               */}
+              <Animated.View
+                style={[
+                  styles.innerSpin,
+
+                  {
+                    transform: [
+                      {
+                        rotate:
+                          innerRotation
+                      },
+
+                      {
+                        scale:
+                          innerScale
+                      }
+                    ]
+                  }
+                ]}
+              >
+                <View
+                  style={
+                    styles.innerMarkOne
+                  }
+                />
+
+                <View
+                  style={
+                    styles.innerMarkTwo
+                  }
+                />
+              </Animated.View>
+            </Animated.View>
 
             {/*
-             * Completely stationary SVG.
-             * It is deliberately outside both
-             * rotating Animated.Views.
+             * CENTER ICON:
+             *
+             * No Animated transform.
+             * Not inside a rotating view.
+             * Completely stationary.
              */}
             <View
               pointerEvents="none"
@@ -632,8 +672,7 @@ export default function AnimatedSection({
       </Animated.View>
 
       {/*
-       * Invisible copy used only to
-       * calculate natural content height.
+       * Invisible measurement copy.
        */}
       <View
         pointerEvents="none"
@@ -663,9 +702,10 @@ export default function AnimatedSection({
                 1
               );
 
-              contentMotion.setValue(
-                1
-              );
+              contentMotion
+                .setValue(
+                  1
+                );
             }
           }
         }}
@@ -776,16 +816,85 @@ const styles =
         'center'
     },
 
-    outer: {
+    /*
+     * JS-driven morph layer.
+     */
+    outerMorph: {
       position:
         'absolute',
 
       width: 42,
 
-      height: 42
+      height: 42,
+
+      overflow:
+        'hidden'
     },
 
-    inner: {
+    /*
+     * Native-driven transform layer.
+     * Slightly larger than its clipping
+     * wrapper so rotation doesn't expose
+     * empty corners.
+     */
+    outerSpin: {
+      position:
+        'absolute',
+
+      left: -9,
+
+      top: -9,
+
+      width: 60,
+
+      height: 60
+    },
+
+    /*
+     * Very subtle asymmetric details.
+     * The center SVG remains untouched.
+     */
+    outerMarkOne: {
+      position:
+        'absolute',
+
+      width: 13,
+
+      height: 3,
+
+      top: 10,
+
+      right: 10,
+
+      borderRadius: 99,
+
+      backgroundColor:
+        'rgba(255,255,255,.24)'
+    },
+
+    outerMarkTwo: {
+      position:
+        'absolute',
+
+      width: 5,
+
+      height: 5,
+
+      left: 12,
+
+      bottom: 11,
+
+      borderRadius: 3,
+
+      backgroundColor:
+        'rgba(255,255,255,.13)'
+    },
+
+    /*
+     * Inner shape is close to the
+     * outer edge as requested.
+     */
+    innerMorph: {
       position:
         'absolute',
 
@@ -793,17 +902,72 @@ const styles =
 
       height: 38,
 
+      overflow:
+        'hidden',
+
       borderWidth: 1.35,
 
       borderColor:
         'rgba(255,255,255,.38)'
     },
 
+    innerSpin: {
+      position:
+        'absolute',
+
+      left: -7,
+
+      top: -7,
+
+      width: 50,
+
+      height: 50
+    },
+
+    innerMarkOne: {
+      position:
+        'absolute',
+
+      width: 10,
+
+      height: 2,
+
+      left: 8,
+
+      top: 8,
+
+      borderRadius: 99,
+
+      backgroundColor:
+        'rgba(255,255,255,.52)'
+    },
+
+    innerMarkTwo: {
+      position:
+        'absolute',
+
+      width: 4,
+
+      height: 4,
+
+      right: 8,
+
+      bottom: 8,
+
+      borderRadius: 2,
+
+      backgroundColor:
+        'rgba(255,255,255,.30)'
+    },
+
+    /*
+     * Stationary SVG layer.
+     */
     iconContent: {
       position:
         'absolute',
 
-      zIndex: 5,
+      zIndex: 10,
 
       width: 44,
 
