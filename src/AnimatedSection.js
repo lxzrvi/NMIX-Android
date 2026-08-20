@@ -56,10 +56,13 @@ export default function AnimatedSection({
   ] = useState(0);
 
   /*
-   * Rotation is separate so it can
-   * stay on the native animation driver.
+   * NATIVE-DRIVER ONLY.
+   *
+   * Used strictly for transforms.
+   * Never use this value for radius,
+   * height, border or other layout styles.
    */
-  const rotation =
+  const spin =
     useRef(
       new Animated.Value(
         active ? 1 : 0
@@ -67,8 +70,9 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * Morph controls square -> circle.
-   * Border radius requires JS driver.
+   * JS-DRIVER ONLY.
+   *
+   * borderRadius cannot use native driver.
    */
   const morph =
     useRef(
@@ -78,7 +82,9 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * Accordion height.
+   * JS-DRIVER ONLY.
+   *
+   * Used only for accordion height.
    */
   const panel =
     useRef(
@@ -88,9 +94,11 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * Inner content fade/slide.
+   * NATIVE-DRIVER ONLY.
+   *
+   * Used for opacity + translateY.
    */
-  const content =
+  const contentMotion =
     useRef(
       new Animated.Value(
         active ? 1 : 0
@@ -98,7 +106,9 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * Independent tap response.
+   * NATIVE-DRIVER ONLY.
+   *
+   * Tap/bounce scale.
    */
   const pressScale =
     useRef(
@@ -106,18 +116,16 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * Icon animation must NOT depend on
-   * content measurement. This fixes the
-   * first-tap animation sometimes being
-   * skipped.
+   * Icon layers animate immediately.
+   * They do not wait for content measurement.
    */
   useEffect(() => {
-    rotation.stopAnimation();
+    spin.stopAnimation();
     morph.stopAnimation();
 
     Animated.parallel([
       Animated.timing(
-        rotation,
+        spin,
         {
           toValue:
             active ? 1 : 0,
@@ -149,8 +157,8 @@ export default function AnimatedSection({
   }, [active]);
 
   /*
-   * Content opening / closing is kept
-   * independent from the spinning icon.
+   * Accordion animation starts once
+   * its natural content height is known.
    */
   useEffect(() => {
     if (
@@ -160,7 +168,7 @@ export default function AnimatedSection({
     }
 
     panel.stopAnimation();
-    content.stopAnimation();
+    contentMotion.stopAnimation();
 
     if (active) {
       Animated.parallel([
@@ -179,11 +187,11 @@ export default function AnimatedSection({
         ),
 
         Animated.timing(
-          content,
+          contentMotion,
           {
             toValue: 1,
 
-            duration: 470,
+            duration: 460,
 
             delay: 55,
 
@@ -211,11 +219,11 @@ export default function AnimatedSection({
         ),
 
         Animated.timing(
-          content,
+          contentMotion,
           {
             toValue: 0,
 
-            duration: 330,
+            duration: 320,
 
             easing:
               Easing.inOut(
@@ -239,7 +247,7 @@ export default function AnimatedSection({
     Animated.timing(
       pressScale,
       {
-        toValue: 0.975,
+        toValue: 0.972,
 
         duration: 150,
 
@@ -262,7 +270,7 @@ export default function AnimatedSection({
       {
         toValue: 1,
 
-        stiffness: 250,
+        stiffness: 255,
         damping: 14,
         mass: 0.72,
 
@@ -277,14 +285,12 @@ export default function AnimatedSection({
     HelpIcon;
 
   /*
-   * Full clockwise turn.
-   *
-   * On close the Animated.Value goes
-   * from 1 -> 0, therefore this visibly
-   * spins backwards automatically.
+   * Outer layer:
+   * clockwise on open.
+   * Automatically reverses on close.
    */
   const outerRotation =
-    rotation.interpolate({
+    spin.interpolate({
       inputRange: [
         0,
         1
@@ -297,10 +303,11 @@ export default function AnimatedSection({
     });
 
   /*
-   * Opposite rotation.
+   * Inner outline:
+   * counter-clockwise.
    */
   const innerRotation =
-    rotation.interpolate({
+    spin.interpolate({
       inputRange: [
         0,
         1
@@ -313,7 +320,7 @@ export default function AnimatedSection({
     });
 
   const arrowRotation =
-    rotation.interpolate({
+    spin.interpolate({
       inputRange: [
         0,
         1
@@ -326,7 +333,42 @@ export default function AnimatedSection({
     });
 
   /*
-   * Rounded-square -> circle.
+   * These scales use the native-only
+   * spin value, therefore are safe.
+   */
+  const outerScale =
+    spin.interpolate({
+      inputRange: [
+        0,
+        0.48,
+        1
+      ],
+
+      outputRange: [
+        1,
+        1.055,
+        1
+      ]
+    });
+
+  const innerScale =
+    spin.interpolate({
+      inputRange: [
+        0,
+        0.52,
+        1
+      ],
+
+      outputRange: [
+        1,
+        0.945,
+        1
+      ]
+    });
+
+  /*
+   * These radii use ONLY morph,
+   * which is JS-driver only.
    */
   const outerRadius =
     morph.interpolate({
@@ -355,40 +397,9 @@ export default function AnimatedSection({
     });
 
   /*
-   * Very subtle breathing of the layers
-   * makes the counter-rotation easier to
-   * perceive without moving the SVG.
+   * Height uses ONLY panel,
+   * another JS-driver-only value.
    */
-  const outerScale =
-    rotation.interpolate({
-      inputRange: [
-        0,
-        0.46,
-        1
-      ],
-
-      outputRange: [
-        1,
-        1.055,
-        1
-      ]
-    });
-
-  const innerScale =
-    rotation.interpolate({
-      inputRange: [
-        0,
-        0.52,
-        1
-      ],
-
-      outputRange: [
-        1,
-        0.94,
-        1
-      ]
-    });
-
   const panelHeight =
     panel.interpolate({
       inputRange: [
@@ -402,8 +413,12 @@ export default function AnimatedSection({
       ]
     });
 
+  /*
+   * Translate uses only native
+   * contentMotion.
+   */
   const contentY =
-    content.interpolate({
+    contentMotion.interpolate({
       inputRange: [
         0,
         1
@@ -466,8 +481,13 @@ export default function AnimatedSection({
             }
           >
             {/*
-             * OUTER:
-             * clockwise rotating color layer.
+             * Outer colored shape.
+             *
+             * IMPORTANT:
+             * borderRadius comes from morph.
+             * transforms come from spin.
+             * The animation VALUES themselves
+             * remain driver-separated.
              */}
             <Animated.View
               pointerEvents="none"
@@ -497,10 +517,6 @@ export default function AnimatedSection({
               ]}
             />
 
-            {/*
-             * INNER:
-             * counter-clockwise outline.
-             */}
             <Animated.View
               pointerEvents="none"
 
@@ -527,11 +543,9 @@ export default function AnimatedSection({
             />
 
             {/*
-             * SVG deliberately has NO animated
-             * transform and is not inside either
-             * rotating layer.
-             *
-             * It remains completely stationary.
+             * Completely stationary SVG.
+             * It is deliberately outside both
+             * rotating Animated.Views.
              */}
             <View
               pointerEvents="none"
@@ -618,8 +632,8 @@ export default function AnimatedSection({
       </Animated.View>
 
       {/*
-       * Invisible natural-height copy.
-       * This exists only to measure children.
+       * Invisible copy used only to
+       * calculate natural content height.
        */}
       <View
         pointerEvents="none"
@@ -644,13 +658,14 @@ export default function AnimatedSection({
               height
             );
 
-            /*
-             * Important when a section is
-             * already open during measurement.
-             */
             if (active) {
-              panel.setValue(1);
-              content.setValue(1);
+              panel.setValue(
+                1
+              );
+
+              contentMotion.setValue(
+                1
+              );
             }
           }
         }}
@@ -694,7 +709,7 @@ export default function AnimatedSection({
                 colors.border,
 
               opacity:
-                content,
+                contentMotion,
 
               transform: [
                 {
@@ -770,9 +785,6 @@ const styles =
       height: 42
     },
 
-    /*
-     * Only 2px inset from the outer layer.
-     */
     inner: {
       position:
         'absolute',
@@ -854,7 +866,8 @@ const styles =
 
       transform: [
         {
-          rotate: '45deg'
+          rotate:
+            '45deg'
         }
       ]
     },
