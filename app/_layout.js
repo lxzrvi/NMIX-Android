@@ -13,28 +13,38 @@ import {
 import * as SplashScreen
   from 'expo-splash-screen';
 
+import {
+  NMixSoundProvider
+} from '../src/useNMixSounds';
+
 SplashScreen
   .preventAutoHideAsync()
-  .catch(() => {});
+  .catch(
+    () => {}
+  );
 
 export default function RootLayout() {
   useEffect(() => {
     SplashScreen
       .hideAsync()
-      .catch(() => {});
+      .catch(
+        () => {}
+      );
   }, []);
 
   return (
-    <>
+    <NMixSoundProvider>
       <StatusBar
         style="light"
       />
 
       <Stack
         screenOptions={{
-          headerShown: false,
+          headerShown:
+            false,
 
-          animation: 'fade',
+          animation:
+            'fade',
 
           contentStyle: {
             backgroundColor:
@@ -42,6 +52,6 @@ export default function RootLayout() {
           }
         }}
       />
-    </>
+    </NMixSoundProvider>
   );
 }
