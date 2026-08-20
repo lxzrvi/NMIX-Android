@@ -1,55 +1,37 @@
 import React, {
   useEffect,
-  useRef
+  useRef,
+  useState
 } from 'react';
 
 import {
   Animated,
   Easing,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View
 } from 'react-native';
 
 import {
-  useSafeAreaInsets
-} from 'react-native-safe-area-context';
+  CalculatorIcon,
+  ClockIcon,
+  CounterIcon,
+  HelpIcon
+} from './icons';
 
-import {
-  themes,
-  fontChoices
-} from './theme';
+const ICONS = {
+  calculator:
+    CalculatorIcon,
 
-import {
-  fontFamily
-} from './useNMixFonts';
+  clock:
+    ClockIcon,
 
-import MotionPressable
-  from './MotionPressable';
+  counter:
+    CounterIcon,
 
-const THEME_META = {
-  green: {
-    label: 'Emerald'
-  },
-
-  blue: {
-    label: 'Ocean'
-  },
-
-  purple: {
-    label: 'Violet'
-  },
-
-  orange: {
-    label: 'Sunset'
-  },
-
-  rose: {
-    label: 'Rose'
-  }
+  instructions:
+    HelpIcon
 };
 
 const EASE =
@@ -60,1175 +42,936 @@ const EASE =
     1
   );
 
-export default function SettingsPanel({
-  visible,
-  onClose,
-  dark,
-  setDark,
-  themeName,
-  setThemeName,
-  font,
-  setFont,
+export default function AnimatedSection({
+  title,
+  subtitle,
+  name,
+  open,
+  toggle,
   colors,
-  accent
+  accent,
+  regular,
+  bold,
+  children
 }) {
-  const insets =
-    useSafeAreaInsets();
+  const active =
+    open === name;
 
-  const {
-    width,
-    height
-  } = useWindowDimensions();
-
-  const motion =
-    useRef(
-      new Animated.Value(
-        visible ? 1 : 0
-      )
-    ).current;
-
-  useEffect(() => {
-    motion.stopAnimation();
-
-    Animated.timing(
-      motion,
-      {
-        toValue:
-          visible ? 1 : 0,
-
-        duration:
-          visible
-            ? 500
-            : 380,
-
-        easing:
-          EASE,
-
-        useNativeDriver:
-          true
-      }
-    ).start();
-  }, [visible]);
-
-  const regular =
-    fontFamily(font);
-
-  const bold =
-    fontFamily(
-      font,
-      true
-    );
-
-  const panelWidth =
-    Math.min(
-      350,
-      width - 20
-    );
+  const [
+    contentHeight,
+    setContentHeight
+  ] = useState(0);
 
   /*
-   * Panel emerges directly from
-   * the right edge/corner.
+   * Transform-only/native value.
    */
-  const translateX =
-    motion.interpolate({
-      inputRange: [
-        0,
-        1
-      ],
+  const spin =
+    useRef(
+      new Animated.Value(
+        active ? 1 : 0
+      )
+    ).current;
 
-      outputRange: [
-        panelWidth * 0.48,
-        0
-      ]
-    });
+  /*
+   * Radius-only/JS value.
+   */
+  const morph =
+    useRef(
+      new Animated.Value(
+        active ? 1 : 0
+      )
+    ).current;
 
-  const translateY =
-    motion.interpolate({
-      inputRange: [
-        0,
-        1
-      ],
+  /*
+   * Accordion height/JS.
+   */
+  const panel =
+    useRef(
+      new Animated.Value(
+        active ? 1 : 0
+      )
+    ).current;
 
-      outputRange: [
-        -12,
-        0
-      ]
-    });
+  /*
+   * Content opacity + translation/native.
+   */
+  const reveal =
+    useRef(
+      new Animated.Value(
+        active ? 1 : 0
+      )
+    ).current;
 
-  const scale =
-    motion.interpolate({
-      inputRange: [
-        0,
-        1
-      ],
+  const press =
+    useRef(
+      new Animated.Value(1)
+    ).current;
 
-      outputRange: [
-        0.975,
-        1
-      ]
-    });
+  useEffect(() => {
+    spin.stopAnimation();
 
-  return (
-    <View
-      pointerEvents={
-        visible
-          ? 'box-none'
-          : 'none'
-      }
-      style={
-        styles.root
-      }
-    >
-      <Animated.View
-        pointerEvents={
-          visible
-            ? 'auto'
-            : 'none'
+    morph.stopAnimation();
+
+    Animated.parallel([
+      Animated.timing(
+        spin,
+        {
+          toValue:
+            active
+              ? 1
+              : 0,
+
+          duration: 720,
+
+          easing:
+            Easing.inOut(
+              Easing.cubic
+            ),
+
+          useNativeDriver:
+            true
         }
-        style={[
-          styles.backdrop,
+      ),
 
-          {
-            opacity:
-              motion.interpolate({
-                inputRange:
-                  [0, 1],
+      Animated.timing(
+        morph,
+        {
+          toValue:
+            active
+              ? 1
+              : 0,
 
-                outputRange:
-                  [0, 1]
-              })
-          }
-        ]}
-      >
-        <Pressable
-          style={
-            StyleSheet.absoluteFill
-          }
-          onPress={
-            onClose
-          }
-        />
-      </Animated.View>
+          duration: 620,
 
-      <Animated.View
-        pointerEvents={
-          visible
-            ? 'auto'
-            : 'none'
-        }
-        style={[
-          styles.panel,
+          easing:
+            EASE,
 
-          {
-            top:
-              insets.top +
-              62,
-
-            /*
-             * Flush against screen edge.
-             */
-            right: 0,
-
-            width:
-              panelWidth,
-
-            maxHeight:
-              height -
-              insets.top -
-              insets.bottom -
-              82,
-
-            backgroundColor:
-              colors.surface,
-
-            borderColor:
-              colors.border,
-
-            opacity:
-              motion,
-
-            transform: [
-              {
-                translateX
-              },
-
-              {
-                translateY
-              },
-
-              {
-                scale
-              }
-            ]
-          }
-        ]}
-      >
-        {/*
-         * Small connector visually joins
-         * the panel to the hamburger/X area.
-         */}
-        <View
-          pointerEvents="none"
-          style={[
-            styles.connector,
-
-            {
-              backgroundColor:
-                colors.surface,
-
-              borderColor:
-                colors.border
-            }
-          ]}
-        />
-
-        <ScrollView
-          showsVerticalScrollIndicator={
+          useNativeDriver:
             false
-          }
-          contentContainerStyle={
-            styles.scroll
-          }
-        >
-          <View
-            style={[
-              styles.header,
-
-              {
-                borderBottomColor:
-                  colors.border
-              }
-            ]}
-          >
-            <View
-              style={
-                styles.headerCopy
-              }
-            >
-              <Text
-                style={[
-                  styles.headerTitle,
-
-                  {
-                    color:
-                      colors.text,
-
-                    fontFamily:
-                      bold
-                  }
-                ]}
-              >
-                NMIX Settings
-              </Text>
-
-              <Text
-                style={[
-                  styles.headerSub,
-
-                  {
-                    color:
-                      colors.muted,
-
-                    fontFamily:
-                      regular
-                  }
-                ]}
-              >
-                Personalize your interface
-              </Text>
-            </View>
-
-            <View
-              style={[
-                styles.connectedHint,
-
-                {
-                  backgroundColor:
-                    `${accent}18`
-                }
-              ]}
-            >
-              <View
-                style={[
-                  styles.connectedDot,
-
-                  {
-                    backgroundColor:
-                      accent
-                  }
-                ]}
-              />
-
-              <Text
-                style={[
-                  styles.connectedText,
-
-                  {
-                    color:
-                      accent,
-
-                    fontFamily:
-                      bold
-                  }
-                ]}
-              >
-                Live
-              </Text>
-            </View>
-          </View>
-
-          <View
-            style={[
-              styles.appearanceRow,
-
-              {
-                borderBottomColor:
-                  colors.border
-              }
-            ]}
-          >
-            <View
-              style={
-                styles.rowCopy
-              }
-            >
-              <Text
-                style={[
-                  styles.title,
-
-                  {
-                    color:
-                      colors.text,
-
-                    fontFamily:
-                      bold
-                  }
-                ]}
-              >
-                Appearance
-              </Text>
-
-              <Text
-                style={[
-                  styles.small,
-
-                  {
-                    color:
-                      colors.muted,
-
-                    fontFamily:
-                      regular
-                  }
-                ]}
-              >
-                Light or dark interface
-              </Text>
-            </View>
-
-            <AnimatedSwitch
-              value={
-                dark
-              }
-              onChange={
-                setDark
-              }
-              accent={
-                accent
-              }
-              inactive={
-                colors.surface3
-              }
-            />
-          </View>
-
-          <View
-            style={[
-              styles.block,
-
-              {
-                borderBottomColor:
-                  colors.border
-              }
-            ]}
-          >
-            <Text
-              style={[
-                styles.title,
-
-                {
-                  color:
-                    colors.text,
-
-                  fontFamily:
-                    bold
-                }
-              ]}
-            >
-              Color Theme
-            </Text>
-
-            <Text
-              style={[
-                styles.small,
-
-                {
-                  color:
-                    colors.muted,
-
-                  fontFamily:
-                    regular
-                }
-              ]}
-            >
-              Selected · {
-                THEME_META[
-                  themeName
-                ]?.label ||
-                'Emerald'
-              }
-            </Text>
-
-            <View
-              style={
-                styles.themeGrid
-              }
-            >
-              {Object.keys(
-                themes
-              ).map(
-                name => (
-                  <ThemeChoice
-                    key={
-                      name
-                    }
-
-                    label={
-                      THEME_META[
-                        name
-                      ]?.label ||
-                      name
-                    }
-
-                    selected={
-                      themeName ===
-                      name
-                    }
-
-                    color={
-                      themes[
-                        name
-                      ].accent
-                    }
-
-                    textColor={
-                      colors.text
-                    }
-
-                    muted={
-                      colors.muted
-                    }
-
-                    surface={
-                      colors.surface2
-                    }
-
-                    border={
-                      colors.border
-                    }
-
-                    font={
-                      regular
-                    }
-
-                    bold={
-                      bold
-                    }
-
-                    onPress={() =>
-                      setThemeName(
-                        name
-                      )
-                    }
-                  />
-                )
-              )}
-            </View>
-          </View>
-
-          <View
-            style={
-              styles.fontBlock
-            }
-          >
-            <Text
-              style={[
-                styles.title,
-
-                {
-                  color:
-                    colors.text,
-
-                  fontFamily:
-                    bold
-                }
-              ]}
-            >
-              Font Style
-            </Text>
-
-            <Text
-              style={[
-                styles.small,
-
-                {
-                  color:
-                    colors.muted,
-
-                  fontFamily:
-                    regular
-                }
-              ]}
-            >
-              Selected · {font}
-            </Text>
-
-            <View
-              style={
-                styles.fontGrid
-              }
-            >
-              {fontChoices.map(
-                name => (
-                  <MotionPressable
-                    key={
-                      name
-                    }
-
-                    onPress={() =>
-                      setFont(
-                        name
-                      )
-                    }
-
-                    style={[
-                      styles.fontButton,
-
-                      {
-                        borderColor:
-                          font ===
-                          name
-                            ? accent
-                            : colors.border,
-
-                        backgroundColor:
-                          colors.surface2
-                      }
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.aa,
-
-                        {
-                          backgroundColor:
-                            font ===
-                            name
-                              ? `${accent}18`
-                              : colors.surface
-                        }
-                      ]}
-                    >
-                      <Text
-                        style={{
-                          color:
-                            accent,
-
-                          fontFamily:
-                            fontFamily(
-                              name,
-                              true
-                            ),
-
-                          fontSize:
-                            14
-                        }}
-                      >
-                        Aa
-                      </Text>
-                    </View>
-
-                    <Text
-                      numberOfLines={1}
-                      style={{
-                        flex: 1,
-
-                        color:
-                          font ===
-                          name
-                            ? accent
-                            : colors.text,
-
-                        fontFamily:
-                          fontFamily(
-                            name
-                          ),
-
-                        fontSize:
-                          10.5
-                      }}
-                    >
-                      {name}
-                    </Text>
-                  </MotionPressable>
-                )
-              )}
-            </View>
-          </View>
-
-          <Text
-            style={[
-              styles.note,
-
-              {
-                color:
-                  colors.muted,
-
-                fontFamily:
-                  regular
-              }
-            ]}
-          >
-            Theme, dark mode and font are saved automatically on this device. Use the top-right X to close Settings.
-          </Text>
-        </ScrollView>
-      </Animated.View>
-    </View>
-  );
-}
-
-function AnimatedSwitch({
-  value,
-  onChange,
-  accent,
-  inactive
-}) {
-  const motion =
-    useRef(
-      new Animated.Value(
-        value ? 1 : 0
+        }
       )
-    ).current;
+    ]).start();
+  }, [active]);
 
   useEffect(() => {
-    Animated.spring(
-      motion,
-      {
-        toValue:
-          value ? 1 : 0,
+    if (
+      contentHeight <=
+      0
+    ) {
+      return;
+    }
 
-        friction: 8,
+    panel.stopAnimation();
 
-        tension: 80,
+    reveal.stopAnimation();
 
-        useNativeDriver:
-          false
-      }
-    ).start();
-  }, [value]);
-
-  const left =
-    motion.interpolate({
-      inputRange: [
-        0,
-        1
-      ],
-
-      outputRange: [
-        4,
-        25
-      ]
-    });
-
-  const backgroundColor =
-    motion.interpolate({
-      inputRange: [
-        0,
-        1
-      ],
-
-      outputRange: [
-        inactive,
-        accent
-      ]
-    });
-
-  return (
-    <MotionPressable
-      onPress={() =>
-        onChange(
-          !value
-        )
-      }
-      style={
-        styles.switchTouch
-      }
-    >
-      <Animated.View
-        style={[
-          styles.switchTrack,
-
+    if (active) {
+      Animated.parallel([
+        Animated.timing(
+          panel,
           {
-            backgroundColor
+            toValue: 1,
+
+            duration: 580,
+
+            easing:
+              EASE,
+
+            useNativeDriver:
+              false
           }
-        ]}
-      >
-        <Animated.View
-          style={[
-            styles.switchKnob,
+        ),
 
-            {
-              left
-            }
-          ]}
-        />
-      </Animated.View>
-    </MotionPressable>
-  );
-}
+        Animated.timing(
+          reveal,
+          {
+            toValue: 1,
 
-function ThemeChoice({
-  label,
-  selected,
-  color,
-  textColor,
-  muted,
-  surface,
-  border,
-  font,
-  bold,
-  onPress
-}) {
-  const selection =
-    useRef(
-      new Animated.Value(
-        selected ? 1 : 0
-      )
-    ).current;
+            duration: 460,
 
-  useEffect(() => {
-    Animated.spring(
-      selection,
+            delay: 55,
+
+            easing:
+              EASE,
+
+            useNativeDriver:
+              true
+          }
+        )
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(
+          panel,
+          {
+            toValue: 0,
+
+            duration: 520,
+
+            easing:
+              EASE,
+
+            useNativeDriver:
+              false
+          }
+        ),
+
+        Animated.timing(
+          reveal,
+          {
+            toValue: 0,
+
+            duration: 300,
+
+            easing:
+              Easing.inOut(
+                Easing.ease
+              ),
+
+            useNativeDriver:
+              true
+          }
+        )
+      ]).start();
+    }
+  }, [
+    active,
+    contentHeight
+  ]);
+
+  function pressIn() {
+    press.stopAnimation();
+
+    Animated.timing(
+      press,
       {
         toValue:
-          selected ? 1 : 0,
+          0.972,
 
-        friction: 7,
+        duration:
+          145,
 
-        tension: 80,
+        easing:
+          Easing.out(
+            Easing.quad
+          ),
 
         useNativeDriver:
           true
       }
     ).start();
-  }, [selected]);
+  }
 
-  const scale =
-    selection.interpolate({
+  function pressOut() {
+    press.stopAnimation();
+
+    Animated.spring(
+      press,
+      {
+        toValue: 1,
+
+        stiffness:
+          240,
+
+        damping:
+          13,
+
+        mass:
+          0.7,
+
+        useNativeDriver:
+          true
+      }
+    ).start();
+  }
+
+  const Icon =
+    ICONS[name] ||
+    HelpIcon;
+
+  /*
+   * Ends at 405° rather than a visually
+   * identical 360° square orientation.
+   *
+   * This leaves the opening spin obvious.
+   * Closing naturally runs 405 -> 0.
+   */
+  const outerRotate =
+    spin.interpolate({
+      inputRange:
+        [0, 1],
+
+      outputRange: [
+        '0deg',
+        '405deg'
+      ]
+    });
+
+  const innerRotate =
+    spin.interpolate({
+      inputRange:
+        [0, 1],
+
+      outputRange: [
+        '0deg',
+        '-405deg'
+      ]
+    });
+
+  const arrowRotate =
+    spin.interpolate({
+      inputRange:
+        [0, 1],
+
+      outputRange: [
+        '0deg',
+        '180deg'
+      ]
+    });
+
+  const outerScale =
+    spin.interpolate({
       inputRange: [
         0,
+        0.5,
         1
       ],
 
       outputRange: [
         1,
-        1.035
+        1.06,
+        1
       ]
     });
 
+  const innerScale =
+    spin.interpolate({
+      inputRange: [
+        0,
+        0.5,
+        1
+      ],
+
+      outputRange: [
+        1,
+        0.94,
+        1
+      ]
+    });
+
+  const outerRadius =
+    morph.interpolate({
+      inputRange:
+        [0, 1],
+
+      outputRange: [
+        8,
+        21
+      ]
+    });
+
+  const innerRadius =
+    morph.interpolate({
+      inputRange:
+        [0, 1],
+
+      outputRange: [
+        6,
+        18
+      ]
+    });
+
+  const panelHeight =
+    panel.interpolate({
+      inputRange:
+        [0, 1],
+
+      outputRange: [
+        0,
+        contentHeight
+      ]
+    });
+
+  const revealY =
+    reveal.interpolate({
+      inputRange:
+        [0, 1],
+
+      outputRange:
+        [-10, 0]
+    });
+
   return (
-    <MotionPressable
-      onPress={
-        onPress
-      }
+    <View
       style={[
-        styles.themeChoice,
+        styles.section,
 
         {
           backgroundColor:
-            surface,
+            colors.surface,
 
           borderColor:
-            selected
-              ? color
-              : border
+            colors.border
         }
       ]}
     >
       <Animated.View
         style={[
-          styles.themePreview,
+          styles.pressLayer,
 
           {
-            backgroundColor:
-              color,
-
             transform: [
               {
-                scale
+                scale:
+                  press
               }
             ]
           }
         ]}
       >
-        <Animated.View
+        <Pressable
+          onPress={() =>
+            toggle(
+              name
+            )
+          }
+
+          onPressIn={
+            pressIn
+          }
+
+          onPressOut={
+            pressOut
+          }
+
+          style={
+            styles.bar
+          }
+        >
+          <View
+            style={
+              styles.iconStage
+            }
+          >
+            {/*
+             * OUTER:
+             *
+             * JS wrapper only changes
+             * clipping radius.
+             */}
+            <Animated.View
+              pointerEvents="none"
+
+              style={[
+                styles.outerMorph,
+
+                {
+                  borderRadius:
+                    outerRadius
+                }
+              ]}
+            >
+              {/*
+               * Native child only rotates/scales.
+               *
+               * Shape is slightly oversized to
+               * keep the morph wrapper fully
+               * filled during rotation.
+               */}
+              <Animated.View
+                style={[
+                  styles.outerSpin,
+
+                  {
+                    backgroundColor:
+                      accent,
+
+                    transform: [
+                      {
+                        rotate:
+                          outerRotate
+                      },
+
+                      {
+                        scale:
+                          outerScale
+                      }
+                    ]
+                  }
+                ]}
+              >
+                {/*
+                 * Subtle corner shading is part
+                 * of the surface, not broken
+                 * decorative line segments.
+                 */}
+                <View
+                  style={
+                    styles.outerShade
+                  }
+                />
+              </Animated.View>
+            </Animated.View>
+
+            {/*
+             * INNER morph wrapper.
+             */}
+            <Animated.View
+              pointerEvents="none"
+
+              style={[
+                styles.innerMorph,
+
+                {
+                  borderRadius:
+                    innerRadius
+                }
+              ]}
+            >
+              {/*
+               * A complete continuous outline.
+               */}
+              <Animated.View
+                style={[
+                  styles.innerSpin,
+
+                  {
+                    transform: [
+                      {
+                        rotate:
+                          innerRotate
+                      },
+
+                      {
+                        scale:
+                          innerScale
+                      }
+                    ]
+                  }
+                ]}
+              />
+            </Animated.View>
+
+            {/*
+             * Stationary SVG.
+             */}
+            <View
+              pointerEvents="none"
+
+              style={
+                styles.iconContent
+              }
+            >
+              <Icon
+                size={21}
+
+                color="#ffffff"
+              />
+            </View>
+          </View>
+
+          <View
+            style={
+              styles.copy
+            }
+          >
+            <Text
+              style={[
+                styles.title,
+
+                {
+                  color:
+                    colors.text,
+
+                  fontFamily:
+                    bold
+                }
+              ]}
+            >
+              {title}
+            </Text>
+
+            <Text
+              numberOfLines={1}
+
+              style={[
+                styles.subtitle,
+
+                {
+                  color:
+                    colors.muted,
+
+                  fontFamily:
+                    regular
+                }
+              ]}
+            >
+              {subtitle}
+            </Text>
+          </View>
+
+          <Animated.View
+            pointerEvents="none"
+
+            style={[
+              styles.arrowStage,
+
+              {
+                transform: [
+                  {
+                    rotate:
+                      arrowRotate
+                  }
+                ]
+              }
+            ]}
+          >
+            <View
+              style={[
+                styles.arrow,
+
+                {
+                  borderColor:
+                    colors.muted
+                }
+              ]}
+            />
+          </Animated.View>
+        </Pressable>
+      </Animated.View>
+
+      <View
+        pointerEvents="none"
+
+        style={
+          styles.measure
+        }
+
+        onLayout={
+          event => {
+            const height =
+              event
+                .nativeEvent
+                .layout
+                .height;
+
+            if (
+              height >
+                0 &&
+              height !==
+                contentHeight
+            ) {
+              setContentHeight(
+                height
+              );
+
+              if (
+                active
+              ) {
+                panel.setValue(
+                  1
+                );
+
+                reveal.setValue(
+                  1
+                );
+              }
+            }
+          }
+        }
+      >
+        <View
           style={[
-            styles.themeCheck,
+            styles.measureBody,
 
             {
+              borderTopColor:
+                colors.border
+            }
+          ]}
+        >
+          {children}
+        </View>
+      </View>
+
+      <Animated.View
+        pointerEvents={
+          active
+            ? 'auto'
+            : 'none'
+        }
+
+        style={[
+          styles.panel,
+
+          {
+            height:
+              panelHeight
+          }
+        ]}
+      >
+        <Animated.View
+          style={[
+            styles.body,
+
+            {
+              borderTopColor:
+                colors.border,
+
               opacity:
-                selection,
+                reveal,
 
               transform: [
                 {
-                  scale:
-                    selection
+                  translateY:
+                    revealY
                 }
               ]
             }
           ]}
-        />
+        >
+          {children}
+        </Animated.View>
       </Animated.View>
-
-      <View
-        style={
-          styles.themeCopy
-        }
-      >
-        <Text
-          style={[
-            styles.themeName,
-
-            {
-              color:
-                selected
-                  ? color
-                  : textColor,
-
-              fontFamily:
-                bold
-            }
-          ]}
-        >
-          {label}
-        </Text>
-
-        <Text
-          style={[
-            styles.themeStatus,
-
-            {
-              color:
-                muted,
-
-              fontFamily:
-                font
-            }
-          ]}
-        >
-          {selected
-            ? 'Active'
-            : 'Tap to apply'}
-        </Text>
-      </View>
-    </MotionPressable>
+    </View>
   );
 }
 
 const styles =
   StyleSheet.create({
-    root: {
-      ...StyleSheet.absoluteFillObject,
-      zIndex: 900
+    section: {
+      position:
+        'relative',
+
+      overflow:
+        'hidden',
+
+      borderWidth: 1,
+
+      borderRadius: 14
     },
 
-    backdrop: {
-      ...StyleSheet.absoluteFillObject,
+    pressLayer: {
+      width: '100%'
+    },
 
-      backgroundColor:
-        'rgba(0,0,0,.34)'
+    bar: {
+      minHeight: 67,
+
+      paddingHorizontal: 14,
+
+      paddingVertical: 11,
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center'
+    },
+
+    iconStage: {
+      position:
+        'relative',
+
+      width: 46,
+
+      height: 46,
+
+      flexShrink: 0,
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center'
+    },
+
+    outerMorph: {
+      position:
+        'absolute',
+
+      width: 42,
+
+      height: 42,
+
+      overflow:
+        'hidden'
     },
 
     /*
-     * Right-hand corners deliberately 0.
+     * Oversized rotating square.
      */
-    panel: {
-      position: 'absolute',
-
-      overflow: 'visible',
-
-      borderWidth: 1,
-      borderRightWidth: 0,
-
-      borderTopLeftRadius: 22,
-      borderBottomLeftRadius: 22,
-
-      borderTopRightRadius: 0,
-      borderBottomRightRadius: 0,
-
-      elevation: 20
-    },
-
-    connector: {
-      position: 'absolute',
-
-      zIndex: 5,
-
-      top: -14,
-      right: 0,
+    outerSpin: {
+      position:
+        'absolute',
 
       width: 58,
-      height: 16,
 
-      borderTopWidth: 1,
-      borderLeftWidth: 1,
+      height: 58,
 
-      borderTopLeftRadius: 14,
+      left: -8,
 
-      borderTopRightRadius: 0
+      top: -8
     },
 
-    scroll: {
-      overflow: 'hidden',
+    /*
+     * Soft complete area detail rather than
+     * disconnected spinning line fragments.
+     */
+    outerShade: {
+      position:
+        'absolute',
 
-      padding: 17,
+      width: 30,
 
-      paddingBottom: 18,
+      height: 30,
 
-      borderTopLeftRadius: 22,
+      right: -5,
 
-      borderBottomLeftRadius: 22
+      top: -5,
+
+      borderRadius: 15,
+
+      backgroundColor:
+        'rgba(255,255,255,.10)'
     },
 
-    header: {
-      paddingBottom: 14,
+    /*
+     * Close to outer edge.
+     */
+    innerMorph: {
+      position:
+        'absolute',
 
-      flexDirection: 'row',
+      width: 37,
+
+      height: 37,
+
+      overflow:
+        'visible'
+    },
+
+    /*
+     * Full continuous rounded-square outline.
+     * This whole shape rotates as one object.
+     */
+    innerSpin: {
+      width: 37,
+
+      height: 37,
+
+      borderWidth: 1.5,
+
+      borderColor:
+        'rgba(255,255,255,.48)',
+
+      borderRadius: 7
+    },
+
+    iconContent: {
+      position:
+        'absolute',
+
+      zIndex: 20,
+
+      width: 46,
+
+      height: 46,
 
       justifyContent:
-        'space-between',
+        'center',
 
-      alignItems: 'center',
-
-      gap: 12,
-
-      borderBottomWidth: 1
+      alignItems:
+        'center'
     },
 
-    headerCopy: {
-      flex: 1
-    },
+    copy: {
+      flex: 1,
 
-    headerTitle: {
-      fontSize: 15
-    },
+      minWidth: 0,
 
-    headerSub: {
-      marginTop: 2,
-      fontSize: 10
-    },
-
-    connectedHint: {
-      height: 28,
-
-      paddingHorizontal: 9,
-
-      flexDirection: 'row',
-
-      alignItems: 'center',
-
-      gap: 5,
-
-      borderRadius: 999
-    },
-
-    connectedDot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3
-    },
-
-    connectedText: {
-      fontSize: 8
-    },
-
-    appearanceRow: {
-      paddingVertical: 16,
-
-      flexDirection: 'row',
-
-      alignItems: 'center',
+      paddingHorizontal: 12,
 
       justifyContent:
-        'space-between',
-
-      gap: 12,
-
-      borderBottomWidth: 1
-    },
-
-    rowCopy: {
-      flex: 1
+        'center'
     },
 
     title: {
-      fontSize: 13
+      fontSize: 14,
+
+      lineHeight: 19
     },
 
-    small: {
-      marginTop: 2,
-      fontSize: 10
-    },
-
-    switchTouch: {
-      width: 53,
-      height: 32,
-      justifyContent: 'center'
-    },
-
-    switchTrack: {
-      position: 'relative',
-      width: 53,
-      height: 28,
-      borderRadius: 999
-    },
-
-    switchKnob: {
-      position: 'absolute',
-
-      top: 4,
-
-      width: 20,
-      height: 20,
-
-      borderRadius: 10,
-
-      backgroundColor:
-        '#ffffff',
-
-      elevation: 2
-    },
-
-    block: {
-      paddingVertical: 16,
-      borderBottomWidth: 1
-    },
-
-    themeGrid: {
-      marginTop: 12,
-      gap: 8
-    },
-
-    themeChoice: {
-      minHeight: 54,
-
-      paddingHorizontal: 10,
-
-      flexDirection: 'row',
-
-      alignItems: 'center',
-
-      gap: 10,
-
-      borderWidth: 1,
-
-      borderRadius: 12
-    },
-
-    themePreview: {
-      width: 34,
-      height: 34,
-
-      justifyContent: 'center',
-      alignItems: 'center',
-
-      borderRadius: 17
-    },
-
-    themeCheck: {
-      width: 13,
-      height: 13,
-
-      borderWidth: 2,
-
-      borderColor:
-        '#ffffff',
-
-      borderRadius: 7
-    },
-
-    themeCopy: {
-      flex: 1
-    },
-
-    themeName: {
-      fontSize: 11.5
-    },
-
-    themeStatus: {
+    subtitle: {
       marginTop: 1,
-      fontSize: 8.5
+
+      fontSize: 10,
+
+      lineHeight: 14
     },
 
-    fontBlock: {
-      paddingTop: 16
-    },
+    arrowStage: {
+      width: 28,
 
-    fontGrid: {
-      marginTop: 11,
+      height: 28,
 
-      flexDirection: 'row',
-
-      flexWrap: 'wrap',
+      flexShrink: 0,
 
       justifyContent:
-        'space-between',
+        'center',
 
-      rowGap: 8
+      alignItems:
+        'center'
     },
 
-    fontButton: {
-      width: '48.5%',
+    arrow: {
+      width: 10,
 
-      minHeight: 50,
+      height: 10,
 
-      paddingHorizontal: 7,
+      borderRightWidth: 2,
 
-      flexDirection: 'row',
+      borderBottomWidth: 2,
 
-      alignItems: 'center',
-
-      gap: 7,
-
-      borderWidth: 1,
-
-      borderRadius: 10
+      transform: [
+        {
+          rotate:
+            '45deg'
+        }
+      ]
     },
 
-    aa: {
-      width: 30,
-      height: 30,
+    measure: {
+      position:
+        'absolute',
 
-      justifyContent: 'center',
-      alignItems: 'center',
+      left: 0,
 
-      borderRadius: 7
+      right: 0,
+
+      top: 67,
+
+      zIndex: -50,
+
+      opacity: 0
     },
 
-    note: {
-      marginTop: 14,
+    measureBody: {
+      width: '100%',
 
-      fontSize: 8.5,
+      borderTopWidth: 1
+    },
 
-      lineHeight: 13
+    panel: {
+      width: '100%',
+
+      overflow:
+        'hidden'
+    },
+
+    body: {
+      width: '100%',
+
+      borderTopWidth: 1
     }
   });
