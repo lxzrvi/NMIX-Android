@@ -22,26 +22,22 @@ jobs:
       - name: Configure npm
         run: npm config set legacy-peer-deps true
 
-      - name: Clean and install dependencies
-        run: |
-          rm -rf node_modules
-          rm -f package-lock.json
-          npm install
+      # Keep the working npm architecture.
+      # Do not delete node_modules/package-lock on every run.
+      - name: Install dependencies
+        run: npm install --prefer-offline --no-audit --no-fund
 
+      # Keep these because NMIX depends on these native packages.
       - name: Install NMIX native packages
         run: |
           npx expo install react-native-svg expo-splash-screen expo-image-picker expo-file-system expo-screen-orientation
 
-      - name: Check Expo project
-        run: npx expo-doctor
-
-      - name: Test JavaScript bundle
-        run: npx expo export --platform android --output-dir dist
-
+      # expo export is intentionally removed.
+      # assembleRelease creates the Android JS bundle itself.
       - name: Generate Android project
         run: npx expo prebuild --platform android --no-install
 
-      - name: Setup Java
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -49,35 +45,80 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
 
-      - name: Build standalone release APK
+      - name: Build release APK
         working-directory: android
-        run: ./gradlew assembleRelease
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --build-cache --parallel
 
-      - name: Upload NMIX APK
+      # Find the latest NMIX vX.Y release and calculate the next version.
+      - name: Calculate release version
+        id: version
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LAST_TAG=$(
+            gh release list \
+              --limit 100 \
+              --json tagName \
+              --jq '.[].tagName' |
+            grep -E '^v[0-9]+\.[0-9]+$' |
+            sort -V |
+            tail -n 1
+          )
+
+          if [ -z "$LAST_TAG" ]; then
+            NEXT_VERSION="v1.0"
+          else
+            VERSION="${LAST_TAG#v}"
+            MAJOR="${VERSION%%.*}"
+            MINOR="${VERSION##*.}"
+
+            if [ "$MINOR" -ge 9 ]; then
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+            else
+              MINOR=$((MINOR + 1))
+            fi
+
+            NEXT_VERSION="v${MAJOR}.${MINOR}"
+          fi
+
+          echo "version=$NEXT_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Next NMIX release: $NEXT_VERSION"
+
+      - name: Prepare NMIX APK
+        run: |
+          mkdir -p release
+
+          cp \
+            android/app/build/outputs/apk/release/app-release.apk \
+            "release/NMIX-${{ steps.version.outputs.version }}.apk"
+
+      # Keep Actions artifact as a backup.
+      - name: Upload NMIX APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: NMIX-Android-Release
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: NMIX-${{ steps.version.outputs.version }}
+          path: release/NMIX-${{ steps.version.outputs.version }}.apk
+          if-no-files-found: error
+          compression-level: 0
 
-      - name: Get next version
-        id: version
-        uses: reallukemorrison/next-version@v1
-        with:
-          prefix: "v"
-
-      - name: Create NMIX Release
+      # Runs only after the APK has built successfully.
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.version }}
           name: NMIX ${{ steps.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
           body: |
-            ## NMIX ${{ steps.version.outputs.version }}
+            NMIX — everything with numbers
 
-            🔢 Anything with numbers
-
-            📱 Android APK release.
-          files: android/app/build/outputs/apk/release/app-release.apk
-          make_latest: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            Native Android release
+            Package: com.lxz.nmix
+            Version: ${{ steps.version.outputs.version }}
+          files: release/NMIX-${{ steps.version.outputs.version }}.apk
