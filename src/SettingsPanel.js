@@ -30,6 +30,9 @@ import {
 import MotionPressable
   from './MotionPressable';
 
+import useNMixSounds
+  from './useNMixSounds';
+
 const THEME_META = {
   green: {
     label: 'Emerald'
@@ -80,18 +83,20 @@ export default function SettingsPanel({
     height
   } = useWindowDimensions();
 
+  const {
+    uiSounds,
+    setUiSounds,
+    timerAlarm,
+    setTimerAlarm,
+    select
+  } = useNMixSounds();
+
   const panelWidth =
     Math.min(
       350,
       width - 20
     );
 
-  /*
-   * 0 = completely outside right edge
-   * 1 = final visible position
-   *
-   * No opacity is applied to the panel.
-   */
   const motion =
     useRef(
       new Animated.Value(
@@ -140,11 +145,6 @@ export default function SettingsPanel({
       true
     );
 
-  /*
-   * Add extra distance so the whole panel,
-   * including its border/shadow, is beyond
-   * the physical right edge.
-   */
   const translateX =
     motion.interpolate({
       inputRange:
@@ -156,10 +156,6 @@ export default function SettingsPanel({
       ]
     });
 
-  /*
-   * Backdrop may softly appear, but the
-   * Settings PANEL itself never fades.
-   */
   const backdropOpacity =
     motion.interpolate({
       inputRange:
@@ -168,6 +164,79 @@ export default function SettingsPanel({
       outputRange:
         [0, 1]
     });
+
+  function changeDark(
+    value
+  ) {
+    setDark(
+      value
+    );
+
+    select();
+  }
+
+  function changeTheme(
+    value
+  ) {
+    setThemeName(
+      value
+    );
+
+    select();
+  }
+
+  function changeFont(
+    value
+  ) {
+    setFont(
+      value
+    );
+
+    select();
+  }
+
+  function changeUiSounds(
+    value
+  ) {
+    /*
+     * Play feedback BEFORE turning sounds off.
+     * When switching them on, play after.
+     */
+    if (!value) {
+      select();
+
+      setUiSounds(
+        false
+      );
+
+      return;
+    }
+
+    setUiSounds(
+      true
+    );
+
+    /*
+     * Small delay allows shared setting
+     * state to become enabled first.
+     */
+    setTimeout(
+      () => {
+        select();
+      },
+      25
+    );
+  }
+
+  function changeTimerAlarm(
+    value
+  ) {
+    setTimerAlarm(
+      value
+    );
+
+    select();
+  }
 
   return (
     <View
@@ -219,10 +288,6 @@ export default function SettingsPanel({
               insets.top +
               62,
 
-            /*
-             * Final position is flush with
-             * physical right edge.
-             */
             right: 0,
 
             width:
@@ -343,9 +408,44 @@ export default function SettingsPanel({
             </View>
           </View>
 
+          <SettingSwitchRow
+            title="Appearance"
+            subtitle="Light or dark interface"
+            value={
+              dark
+            }
+            onChange={
+              changeDark
+            }
+            accent={
+              accent
+            }
+            inactive={
+              colors.surface3
+            }
+            textColor={
+              colors.text
+            }
+            muted={
+              colors.muted
+            }
+            regular={
+              regular
+            }
+            bold={
+              bold
+            }
+            border={
+              colors.border
+            }
+          />
+
+          {/*
+           * Independent sound controls.
+           */}
           <View
             style={[
-              styles.appearanceRow,
+              styles.soundBlock,
 
               {
                 borderBottomColor:
@@ -353,58 +453,107 @@ export default function SettingsPanel({
               }
             ]}
           >
+            <Text
+              style={[
+                styles.title,
+
+                {
+                  color:
+                    colors.text,
+
+                  fontFamily:
+                    bold
+                }
+              ]}
+            >
+              Sound
+            </Text>
+
+            <Text
+              style={[
+                styles.small,
+
+                {
+                  color:
+                    colors.muted,
+
+                  fontFamily:
+                    regular
+                }
+              ]}
+            >
+              Interaction and timer feedback
+            </Text>
+
             <View
               style={
-                styles.rowCopy
+                styles.soundRows
               }
             >
-              <Text
-                style={[
-                  styles.title,
+              <CompactSwitchRow
+                title="UI Sounds"
+                subtitle="Taps and selections"
+                value={
+                  uiSounds
+                }
+                onChange={
+                  changeUiSounds
+                }
+                accent={
+                  accent
+                }
+                inactive={
+                  colors.surface3
+                }
+                textColor={
+                  colors.text
+                }
+                muted={
+                  colors.muted
+                }
+                surface={
+                  colors.surface2
+                }
+                regular={
+                  regular
+                }
+                bold={
+                  bold
+                }
+              />
 
-                  {
-                    color:
-                      colors.text,
-
-                    fontFamily:
-                      bold
-                  }
-                ]}
-              >
-                Appearance
-              </Text>
-
-              <Text
-                style={[
-                  styles.small,
-
-                  {
-                    color:
-                      colors.muted,
-
-                    fontFamily:
-                      regular
-                  }
-                ]}
-              >
-                Light or dark interface
-              </Text>
+              <CompactSwitchRow
+                title="Timer Alarm"
+                subtitle="Beep when timer ends"
+                value={
+                  timerAlarm
+                }
+                onChange={
+                  changeTimerAlarm
+                }
+                accent={
+                  accent
+                }
+                inactive={
+                  colors.surface3
+                }
+                textColor={
+                  colors.text
+                }
+                muted={
+                  colors.muted
+                }
+                surface={
+                  colors.surface2
+                }
+                regular={
+                  regular
+                }
+                bold={
+                  bold
+                }
+              />
             </View>
-
-            <AnimatedSwitch
-              value={
-                dark
-              }
-              onChange={
-                setDark
-              }
-              accent={
-                accent
-              }
-              inactive={
-                colors.surface3
-              }
-            />
           </View>
 
           <View
@@ -511,7 +660,7 @@ export default function SettingsPanel({
                     }
 
                     onPress={() =>
-                      setThemeName(
+                      changeTheme(
                         name
                       )
                     }
@@ -570,8 +719,15 @@ export default function SettingsPanel({
                       name
                     }
 
+                    /*
+                     * This control plays select.wav
+                     * itself, so prevent automatic
+                     * tap.wav duplication.
+                     */
+                    sound={false}
+
                     onPress={() =>
-                      setFont(
+                      changeFont(
                         name
                       )
                     }
@@ -664,10 +820,171 @@ export default function SettingsPanel({
               }
             ]}
           >
-            Theme, dark mode and font are saved automatically on this device. Use the top-right X to close Settings.
+            Theme, dark mode, font and sound preferences are saved automatically on this device.
           </Text>
         </ScrollView>
       </Animated.View>
+    </View>
+  );
+}
+
+function SettingSwitchRow({
+  title,
+  subtitle,
+  value,
+  onChange,
+  accent,
+  inactive,
+  textColor,
+  muted,
+  regular,
+  bold,
+  border
+}) {
+  return (
+    <View
+      style={[
+        styles.appearanceRow,
+
+        {
+          borderBottomColor:
+            border
+        }
+      ]}
+    >
+      <View
+        style={
+          styles.rowCopy
+        }
+      >
+        <Text
+          style={[
+            styles.title,
+
+            {
+              color:
+                textColor,
+
+              fontFamily:
+                bold
+            }
+          ]}
+        >
+          {title}
+        </Text>
+
+        <Text
+          style={[
+            styles.small,
+
+            {
+              color:
+                muted,
+
+              fontFamily:
+                regular
+            }
+          ]}
+        >
+          {subtitle}
+        </Text>
+      </View>
+
+      <AnimatedSwitch
+        value={
+          value
+        }
+        onChange={
+          onChange
+        }
+        accent={
+          accent
+        }
+        inactive={
+          inactive
+        }
+      />
+    </View>
+  );
+}
+
+function CompactSwitchRow({
+  title,
+  subtitle,
+  value,
+  onChange,
+  accent,
+  inactive,
+  textColor,
+  muted,
+  surface,
+  regular,
+  bold
+}) {
+  return (
+    <View
+      style={[
+        styles.compactRow,
+
+        {
+          backgroundColor:
+            surface
+        }
+      ]}
+    >
+      <View
+        style={
+          styles.rowCopy
+        }
+      >
+        <Text
+          style={[
+            styles.compactTitle,
+
+            {
+              color:
+                textColor,
+
+              fontFamily:
+                bold
+            }
+          ]}
+        >
+          {title}
+        </Text>
+
+        <Text
+          style={[
+            styles.compactSub,
+
+            {
+              color:
+                muted,
+
+              fontFamily:
+                regular
+            }
+          ]}
+        >
+          {subtitle}
+        </Text>
+      </View>
+
+      <AnimatedSwitch
+        value={
+          value
+        }
+        onChange={
+          onChange
+        }
+        accent={
+          accent
+        }
+        inactive={
+          inactive
+        }
+        compact
+      />
     </View>
   );
 }
@@ -676,7 +993,8 @@ function AnimatedSwitch({
   value,
   onChange,
   accent,
-  inactive
+  inactive,
+  compact = false
 }) {
   const motion =
     useRef(
@@ -710,7 +1028,9 @@ function AnimatedSwitch({
         [0, 1],
 
       outputRange:
-        [4, 25]
+        compact
+          ? [4, 21]
+          : [4, 25]
     });
 
   const backgroundColor =
@@ -726,18 +1046,29 @@ function AnimatedSwitch({
 
   return (
     <MotionPressable
+      /*
+       * Switch callback handles its dedicated
+       * selection sound.
+       */
+      sound={false}
+
       onPress={() =>
         onChange(
           !value
         )
       }
+
       style={
-        styles.switchTouch
+        compact
+          ? styles.switchTouchCompact
+          : styles.switchTouch
       }
     >
       <Animated.View
         style={[
-          styles.switchTrack,
+          compact
+            ? styles.switchTrackCompact
+            : styles.switchTrack,
 
           {
             backgroundColor
@@ -746,7 +1077,9 @@ function AnimatedSwitch({
       >
         <Animated.View
           style={[
-            styles.switchKnob,
+            compact
+              ? styles.switchKnobCompact
+              : styles.switchKnob,
 
             {
               left
@@ -807,9 +1140,12 @@ function ThemeChoice({
 
   return (
     <MotionPressable
+      sound={false}
+
       onPress={
         onPress
       }
+
       style={[
         styles.themeChoice,
 
@@ -924,9 +1260,6 @@ const styles =
     panel: {
       position: 'absolute',
 
-      /*
-       * No connector/pill behind hamburger.
-       */
       overflow: 'hidden',
 
       borderWidth: 1,
@@ -958,7 +1291,8 @@ const styles =
       justifyContent:
         'space-between',
 
-      alignItems: 'center',
+      alignItems:
+        'center',
 
       gap: 12,
 
@@ -1034,13 +1368,48 @@ const styles =
       fontSize: 10
     },
 
+    soundBlock: {
+      paddingVertical: 16,
+
+      borderBottomWidth: 1
+    },
+
+    soundRows: {
+      marginTop: 11,
+
+      gap: 8
+    },
+
+    compactRow: {
+      minHeight: 54,
+
+      paddingHorizontal: 11,
+
+      flexDirection: 'row',
+
+      alignItems: 'center',
+
+      gap: 10,
+
+      borderRadius: 12
+    },
+
+    compactTitle: {
+      fontSize: 11
+    },
+
+    compactSub: {
+      marginTop: 1,
+
+      fontSize: 8.5
+    },
+
     switchTouch: {
       width: 53,
 
       height: 32,
 
-      justifyContent:
-        'center'
+      justifyContent: 'center'
     },
 
     switchTrack: {
@@ -1063,6 +1432,41 @@ const styles =
       height: 20,
 
       borderRadius: 10,
+
+      backgroundColor:
+        '#ffffff',
+
+      elevation: 2
+    },
+
+    switchTouchCompact: {
+      width: 47,
+
+      height: 30,
+
+      justifyContent: 'center'
+    },
+
+    switchTrackCompact: {
+      position: 'relative',
+
+      width: 47,
+
+      height: 26,
+
+      borderRadius: 999
+    },
+
+    switchKnobCompact: {
+      position: 'absolute',
+
+      top: 4,
+
+      width: 18,
+
+      height: 18,
+
+      borderRadius: 9,
 
       backgroundColor:
         '#ffffff',
@@ -1103,11 +1507,9 @@ const styles =
 
       height: 34,
 
-      justifyContent:
-        'center',
+      justifyContent: 'center',
 
-      alignItems:
-        'center',
+      alignItems: 'center',
 
       borderRadius: 17
     },
@@ -1179,11 +1581,9 @@ const styles =
 
       height: 30,
 
-      justifyContent:
-        'center',
+      justifyContent: 'center',
 
-      alignItems:
-        'center',
+      alignItems: 'center',
 
       borderRadius: 7
     },
