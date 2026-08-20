@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import React, { useState, useEffect, createContext, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEY_THEME = 'nmix-theme-accent';
@@ -6,13 +6,25 @@ const STORAGE_KEY_DARK = 'nmix-theme-dark';
 const STORAGE_KEY_FONT = 'nmix-app-font';
 const STORAGE_KEY_ANIM_SPEED = 'nmix-anim-speed';
 
-const SettingsContext = createContext();
+const DEFAULT_SETTINGS = {
+  accentTheme: 'green',
+  changeAccentTheme: () => {},
+  isDarkMode: true,
+  toggleDarkMode: () => {},
+  selectedFont: 'Poppins',
+  changeSelectedFont: () => {},
+  animSpeed: 1.0,
+  changeAnimSpeed: () => {},
+  isLoaded: true,
+};
+
+const SettingsContext = createContext(DEFAULT_SETTINGS);
 
 export function SettingsProvider({ children }) {
   const [accentTheme, setAccentTheme] = useState('green');
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [selectedFont, setSelectedFont] = useState('Poppins');
-  const [animSpeed, setAnimSpeed] = useState(1.0); // 0.5x to 2.0x multiplier
+  const [animSpeed, setAnimSpeed] = useState(1.0);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -84,5 +96,6 @@ export function SettingsProvider({ children }) {
 }
 
 export function useNMixSettings() {
-  return useContext(SettingsContext);
+  const context = useContext(SettingsContext);
+  return context || DEFAULT_SETTINGS;
 }
