@@ -1,1240 +1,310 @@
-import React, {
-  useEffect,
-  useRef,
-  useState
-} from 'react';
-
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
-  Linking,
-  Share,
   StyleSheet,
   Text,
-  View
+  View,
+  Animated,
+  Easing,
+  TouchableOpacity,
+  ScrollView,
+  Linking,
+  Dimensions,
 } from 'react-native';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNMixSettings } from '../src/useNMixSettings';
+import { getThemeColors } from '../src/theme';
+import { GithubIcon, AppLogoIcon } from '../src/icons';
 
-import {
-  LinearGradient
-} from 'expo-linear-gradient';
+const { width, height } = Dimensions.get('window');
 
-import {
-  router
-} from 'expo-router';
+export default function WelcomeScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { accentTheme, isDarkMode, selectedFont, animSpeed } = useNMixSettings();
+  const theme = getThemeColors(accentTheme, isDarkMode);
 
-import AsyncStorage
-  from '@react-native-async-storage/async-storage';
+  const [showMoreInfo, setShowMoreInfo] = useState(false);
 
-import useNMixFonts, {
-  logoFont
-} from '../src/useNMixFonts';
-
-import useNMixSettings
-  from '../src/useNMixSettings';
-
-import MotionPressable
-  from '../src/MotionPressable';
-
-const WELCOME_KEY =
-  'nmix-welcome-seen';
-
-const descriptions = [
-  'NMIX brings useful number tools together in one simple and responsive interface.',
-  'Calculate, count, generate random values and work with time from one place.',
-  'NMIX keeps everyday number tools quick, clean and easy to reach.',
-  'Use the calculator, timer, local clock, stopwatch and counters without switching between apps.',
-  'Themes, dark mode and fonts let you personalize how NMIX looks and feels.',
-  'NMIX is built as a native Android experience with smooth interaction and offline-ready tools.'
-];
-
-const EASE =
-  Easing.bezier(
-    0.22,
-    1,
-    0.36,
-    1
-  );
-
-export default function Welcome() {
-  const fontsLoaded =
-    useNMixFonts();
-
-  const {
-    loaded,
-    theme,
-    dark
-  } = useNMixSettings();
-
-  const [
-    descriptionIndex,
-    setDescriptionIndex
-  ] = useState(0);
-
-  const entrance =
-    useRef(
-      new Animated.Value(0)
-    ).current;
-
-  const glowOne =
-    useRef(
-      new Animated.Value(0)
-    ).current;
-
-  const glowTwo =
-    useRef(
-      new Animated.Value(0)
-    ).current;
-
-  const descriptionMotion =
-    useRef(
-      new Animated.Value(1)
-    ).current;
+  // Background ambient animation values
+  const floatAnim1 = useRef(new Animated.Value(0)).current;
+  const floatAnim2 = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(
-      entrance,
-      {
-        toValue: 1,
-        duration: 900,
-        easing: EASE,
-        useNativeDriver: true
-      }
+    // Smooth Fade-in on load
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800 * animSpeed,
+      useNativeDriver: true,
+    }).start();
+
+    // Continuous floating ambient pulses
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim1, {
+          toValue: 1,
+          duration: 7000 * animSpeed,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim1, {
+          toValue: 0,
+          duration: 7000 * animSpeed,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
     ).start();
 
-    const first =
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(
-            glowOne,
-            {
-              toValue: 1,
-              duration: 10500,
-              easing:
-                Easing.inOut(
-                  Easing.ease
-                ),
-              useNativeDriver: true
-            }
-          ),
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(floatAnim2, {
+          toValue: 1,
+          duration: 9000 * animSpeed,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(floatAnim2, {
+          toValue: 0,
+          duration: 9000 * animSpeed,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [animSpeed]);
 
-          Animated.timing(
-            glowOne,
-            {
-              toValue: 0,
-              duration: 10500,
-              easing:
-                Easing.inOut(
-                  Easing.ease
-                ),
-              useNativeDriver: true
-            }
-          )
-        ])
-      );
+  const handleStart = async () => {
+    await AsyncStorage.setItem('nmix-welcome-seen', '1');
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 400 * animSpeed,
+      useNativeDriver: true,
+    }).start(() => {
+      router.replace('/main');
+    });
+  };
 
-    const second =
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(
-            glowTwo,
-            {
-              toValue: 1,
-              duration: 13000,
-              easing:
-                Easing.inOut(
-                  Easing.ease
-                ),
-              useNativeDriver: true
-            }
-          ),
+  const orb1TranslateY = floatAnim1.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-30, 40],
+  });
 
-          Animated.timing(
-            glowTwo,
-            {
-              toValue: 0,
-              duration: 13000,
-              easing:
-                Easing.inOut(
-                  Easing.ease
-                ),
-              useNativeDriver: true
-            }
-          )
-        ])
-      );
-
-    first.start();
-    second.start();
-
-    const timer =
-      setInterval(
-        () => {
-          Animated.timing(
-            descriptionMotion,
-            {
-              toValue: 0,
-              duration: 260,
-              useNativeDriver: true
-            }
-          ).start(
-            () => {
-              setDescriptionIndex(
-                value =>
-                  (
-                    value + 1
-                  ) %
-                  descriptions.length
-              );
-
-              descriptionMotion
-                .setValue(0);
-
-              Animated.timing(
-                descriptionMotion,
-                {
-                  toValue: 1,
-                  duration: 650,
-                  easing: EASE,
-                  useNativeDriver: true
-                }
-              ).start();
-            }
-          );
-        },
-        6800
-      );
-
-    return () => {
-      first.stop();
-      second.stop();
-
-      clearInterval(
-        timer
-      );
-    };
-  }, []);
-
-  async function enterApp() {
-    try {
-      await AsyncStorage
-        .setItem(
-          WELCOME_KEY,
-          '1'
-        );
-    } catch {}
-
-    router.replace(
-      '/main'
-    );
-  }
-
-  async function shareApp() {
-    try {
-      await Share.share({
-        title: 'NMIX',
-
-        message:
-          'Check out NMIX — everything with numbers! https://lxzrvi.github.io/NMIX/'
-      });
-    } catch {}
-  }
-
-  function openWebsite() {
-    Linking
-      .openURL(
-        'https://lxzrvi.github.io/NMIX/'
-      )
-      .catch(
-        () => {}
-      );
-  }
-
-  function openGithub() {
-    Linking
-      .openURL(
-        'https://github.com/lxzrvi'
-      )
-      .catch(
-        () => {}
-      );
-  }
-
-  if (
-    !fontsLoaded ||
-    !loaded
-  ) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor:
-            '#07110f'
-        }}
-      />
-    );
-  }
-
-  const accent =
-    theme.accent;
-
-  const text =
-    dark
-      ? '#edf4f1'
-      : '#202321';
-
-  const muted =
-    dark
-      ? '#aab6b1'
-      : '#66706c';
-
-  const glassBackground =
-    dark
-      ? 'rgba(15,22,19,.82)'
-      : 'rgba(241,248,245,.88)';
-
-  const glassBorder =
-    dark
-      ? 'rgba(255,255,255,.075)'
-      : 'rgba(255,255,255,.42)';
-
-  const innerBackground =
-    dark
-      ? 'rgba(255,255,255,.052)'
-      : 'rgba(255,255,255,.50)';
+  const orb2TranslateY = floatAnim2.interpolate({
+    inputRange: [0, 1],
+    outputRange: [30, -50],
+  });
 
   return (
-    <LinearGradient
-      colors={[
-        '#020807',
-        theme.topOne,
-        theme.topTwo,
-        theme.topThree,
-        '#020807'
-      ]}
-      locations={[
-        0,
-        0.24,
-        0.52,
-        0.79,
-        1
-      ]}
-      start={{
-        x: 0,
-        y: 0
-      }}
-      end={{
-        x: 1,
-        y: 1
-      }}
-      style={
-        styles.page
-      }
-    >
-      <View
-        pointerEvents="none"
-        style={
-          StyleSheet.absoluteFill
-        }
-      >
-        <Animated.View
-          style={[
-            styles.glowA,
-
-            {
-              opacity:
-                glowOne.interpolate({
-                  inputRange:
-                    [0, 1],
-
-                  outputRange:
-                    [0.30, 0.80]
-                }),
-
-              transform: [
-                {
-                  translateX:
-                    glowOne.interpolate({
-                      inputRange:
-                        [0, 1],
-
-                      outputRange:
-                        [-120, 125]
-                    })
-                },
-
-                {
-                  translateY:
-                    glowOne.interpolate({
-                      inputRange:
-                        [0, 1],
-
-                      outputRange:
-                        [-90, 105]
-                    })
-                },
-
-                {
-                  scale:
-                    glowOne.interpolate({
-                      inputRange:
-                        [0, 1],
-
-                      outputRange:
-                        [1, 1.23]
-                    })
-                }
-              ]
-            }
-          ]}
-        >
-          <LinearGradient
-            colors={[
-              'transparent',
-              `${theme.accentLight}05`,
-              `${theme.accentLight}2B`,
-              `${theme.accentLight}07`,
-              'transparent'
-            ]}
-            style={
-              styles.glowFill
-            }
-          />
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            styles.glowB,
-
-            {
-              opacity:
-                glowTwo.interpolate({
-                  inputRange:
-                    [0, 1],
-
-                  outputRange:
-                    [0.58, 0.18]
-                }),
-
-              transform: [
-                {
-                  translateX:
-                    glowTwo.interpolate({
-                      inputRange:
-                        [0, 1],
-
-                      outputRange:
-                        [130, -120]
-                    })
-                },
-
-                {
-                  translateY:
-                    glowTwo.interpolate({
-                      inputRange:
-                        [0, 1],
-
-                      outputRange:
-                        [100, -90]
-                    })
-                }
-              ]
-            }
-          ]}
-        >
-          <LinearGradient
-            colors={[
-              'transparent',
-              `${accent}04`,
-              `${accent}25`,
-              `${accent}05`,
-              'transparent'
-            ]}
-            style={
-              styles.glowFill
-            }
-          />
-        </Animated.View>
-      </View>
-
+    <View style={[styles.container, { backgroundColor: theme.bg, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      {/* Dynamic Ambient Background Blobs */}
       <Animated.View
         style={[
-          styles.content,
-
+          styles.ambientOrb,
           {
-            opacity:
-              entrance,
-
-            transform: [
-              {
-                translateY:
-                  entrance.interpolate({
-                    inputRange:
-                      [0, 1],
-
-                    outputRange:
-                      [25, 0]
-                  })
-              }
-            ]
-          }
+            backgroundColor: theme.accent,
+            opacity: isDarkMode ? 0.25 : 0.15,
+            top: '10%',
+            left: -50,
+            transform: [{ translateY: orb1TranslateY }, { scale: 1.2 }],
+          },
         ]}
-      >
-        <View
-          style={
-            styles.brand
-          }
-        >
-          <Text
-            style={[
-              styles.subtitle,
+      />
+      <Animated.View
+        style={[
+          styles.ambientOrb,
+          {
+            backgroundColor: theme.accent,
+            opacity: isDarkMode ? 0.2 : 0.12,
+            bottom: '15%',
+            right: -60,
+            transform: [{ translateY: orb2TranslateY }, { scale: 1.4 }],
+          },
+        ]}
+      />
 
-              {
-                color:
-                  theme.accentLight
-              }
-            ]}
-          >
-            EVERYTHING WITH NUMBERS
-          </Text>
-
-          <View
-            style={
-              styles.logoFix
-            }
-          >
-            <Text
-              numberOfLines={1}
-              style={
-                styles.logo
-              }
-            >
+      <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+        {/* Title / Branding */}
+        <View style={styles.headerArea}>
+          <View style={styles.logoWrap}>
+            <AppLogoIcon color={theme.accent} size={64} />
+            <Text style={[styles.appTitle, { color: theme.text, fontFamily: 'CinzelDecorative-Bold' }]}>
               NMIX
             </Text>
           </View>
-        </View>
-
-        <View
-          style={
-            styles.actions
-          }
-        >
-          <MotionPressable
-            onPress={
-              enterApp
-            }
-            style={[
-              styles.actionButton,
-
-              {
-                backgroundColor:
-                  glassBackground,
-
-                borderColor:
-                  glassBorder
-              }
-            ]}
-          >
-            <LinearGradient
-              pointerEvents="none"
-              colors={[
-                'rgba(255,255,255,.085)',
-                'rgba(255,255,255,.012)',
-                `${accent}08`
-              ]}
-              style={[
-                StyleSheet.absoluteFill,
-                styles.actionGradient
-              ]}
-            />
-
-            <Text
-              style={[
-                styles.actionText,
-
-                {
-                  color:
-                    accent
-                }
-              ]}
-            >
-              Start
-            </Text>
-          </MotionPressable>
-
-          <MotionPressable
-            onPress={
-              shareApp
-            }
-            style={[
-              styles.actionButton,
-
-              {
-                backgroundColor:
-                  glassBackground,
-
-                borderColor:
-                  glassBorder
-              }
-            ]}
-          >
-            <LinearGradient
-              pointerEvents="none"
-              colors={[
-                'rgba(255,255,255,.085)',
-                'rgba(255,255,255,.012)',
-                `${accent}08`
-              ]}
-              style={[
-                StyleSheet.absoluteFill,
-                styles.actionGradient
-              ]}
-            />
-
-            <Text
-              style={[
-                styles.actionText,
-
-                {
-                  color:
-                    accent
-                }
-              ]}
-            >
-              Share
-            </Text>
-          </MotionPressable>
-        </View>
-
-        <View
-          style={[
-            styles.infoCard,
-
-            {
-              backgroundColor:
-                glassBackground
-            }
-          ]}
-        >
-          <LinearGradient
-            pointerEvents="none"
-            colors={[
-              'rgba(255,255,255,.09)',
-              'rgba(255,255,255,.015)',
-              `${accent}06`
-            ]}
-            style={
-              StyleSheet.absoluteFill
-            }
-          />
-
-          <Text
-            style={[
-              styles.heading,
-
-              {
-                color: text
-              }
-            ]}
-          >
-            More Info
+          <Text style={[styles.tagline, { color: theme.subText, fontFamily: `${selectedFont}-Bold` }]}>
+            EVERYTHING WITH NUMBERS
           </Text>
+        </View>
 
-          <View
-            style={
-              styles.columns
-            }
+        {/* Action Buttons */}
+        <View style={styles.actionArea}>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={[styles.primaryBtn, { backgroundColor: isDarkMode ? '#1E1E1E' : '#FFFFFF', borderColor: theme.accent }]}
+            onPress={handleStart}
           >
-            <View
-              style={[
-                styles.appBox,
+            <Text style={[styles.primaryBtnText, { color: theme.accent, fontFamily: `${selectedFont}-Bold` }]}>
+              START
+            </Text>
+          </TouchableOpacity>
 
-                {
-                  backgroundColor:
-                    innerBackground,
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={[styles.secondaryBtn, { backgroundColor: theme.cardBg }]}
+            onPress={() => setShowMoreInfo(!showMoreInfo)}
+          >
+            <Text style={[styles.secondaryBtnText, { color: theme.text, fontFamily: `${selectedFont}-Regular` }]}>
+              {showMoreInfo ? 'Hide Details' : 'More Info'}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-                  borderColor:
-                    dark
-                      ? 'rgba(255,255,255,.07)'
-                      : 'rgba(0,0,0,.055)'
-                }
-              ]}
-            >
-              <View
-                style={
-                  styles.appNameFix
-                }
+        {/* More Info Section */}
+        {showMoreInfo && (
+          <ScrollView style={styles.moreInfoScroll} showsVerticalScrollIndicator={false}>
+            <View style={[styles.infoCard, { backgroundColor: theme.cardBg }]}>
+              <Text style={[styles.cardTitle, { color: theme.accent, fontFamily: `${selectedFont}-Bold` }]}>About NMIX</Text>
+              <Text style={[styles.cardBody, { color: theme.text, fontFamily: `${selectedFont}-Regular` }]}>
+                NMIX is an all-in-one suite designed to offer effortless numerical utility tools right at your fingertips with zero webview wrappers or delay.
+              </Text>
+              <View style={styles.chipRow}>
+                {['React Native', 'Expo', 'JavaScript'].map((tech) => (
+                  <View key={tech} style={[styles.chip, { backgroundColor: theme.accent + '22' }]}>
+                    <Text style={[styles.chipText, { color: theme.accent }]}>{tech}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            <View style={[styles.infoCard, { backgroundColor: theme.cardBg, marginBottom: 15 }]}>
+              <Text style={[styles.cardTitle, { color: theme.accent, fontFamily: `${selectedFont}-Bold` }]}>App Details</Text>
+              <View style={styles.chipRow}>
+                {['Android', 'Offline Tools', 'Native UI'].map((feat) => (
+                  <View key={feat} style={[styles.chip, { backgroundColor: theme.accent + '22' }]}>
+                    <Text style={[styles.chipText, { color: theme.accent }]}>{feat}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <TouchableOpacity
+                style={styles.githubBtn}
+                onPress={() => Linking.openURL('https://github.com/lxzrvi')}
               >
-                <Text
-                  numberOfLines={1}
-                  style={[
-                    styles.appName,
-
-                    {
-                      color:
-                        accent
-                    }
-                  ]}
-                >
-                  NMIX
+                <GithubIcon color={theme.accent} size={20} />
+                <Text style={[styles.githubBtnText, { color: theme.accent, fontFamily: `${selectedFont}-Bold` }]}>
+                  GitHub Repository
                 </Text>
-              </View>
-
-              <Animated.Text
-                style={[
-                  styles.description,
-
-                  {
-                    color:
-                      muted,
-
-                    opacity:
-                      descriptionMotion,
-
-                    transform: [
-                      {
-                        translateY:
-                          descriptionMotion
-                            .interpolate({
-                              inputRange:
-                                [0, 1],
-
-                              outputRange:
-                                [13, 0]
-                            })
-                      }
-                    ]
-                  }
-                ]}
-              >
-                {
-                  descriptions[
-                    descriptionIndex
-                  ]
-                }
-              </Animated.Text>
+              </TouchableOpacity>
             </View>
-
-            <View
-              style={[
-                styles.detailsBox,
-
-                {
-                  backgroundColor:
-                    innerBackground,
-
-                  borderColor:
-                    dark
-                      ? 'rgba(255,255,255,.07)'
-                      : 'rgba(0,0,0,.055)'
-                }
-              ]}
-            >
-              <Text
-                style={[
-                  styles.detailsHeading,
-
-                  {
-                    color:
-                      text
-                  }
-                ]}
-              >
-                App Details
-              </Text>
-
-              <View
-                style={
-                  styles.chips
-                }
-              >
-                {[
-                  'React Native',
-                  'Expo',
-                  'JavaScript'
-                ].map(
-                  item => (
-                    <Chip
-                      key={
-                        item
-                      }
-                      text={
-                        item
-                      }
-                      accent={
-                        accent
-                      }
-                      color={
-                        dark
-                          ? theme.accentLight
-                          : theme.accentDark
-                      }
-                    />
-                  )
-                )}
-              </View>
-
-              <Text
-                style={[
-                  styles.builtFor,
-
-                  {
-                    color:
-                      muted
-                  }
-                ]}
-              >
-                Built For
-              </Text>
-
-              <View
-                style={
-                  styles.chips
-                }
-              >
-                {[
-                  'Android',
-                  'Offline Tools',
-                  'Native UI'
-                ].map(
-                  item => (
-                    <Chip
-                      key={
-                        item
-                      }
-                      text={
-                        item
-                      }
-                      accent={
-                        accent
-                      }
-                      color={
-                        dark
-                          ? theme.accentLight
-                          : theme.accentDark
-                      }
-                    />
-                  )
-                )}
-              </View>
-            </View>
-          </View>
-
-          {/*
-           * Centered Web + GitHub pair.
-           */}
-          <View
-            style={
-              styles.infoActions
-            }
-          >
-            <MotionPressable
-              onPress={
-                openWebsite
-              }
-              style={[
-                styles.infoActionButton,
-
-                {
-                  backgroundColor:
-                    accent
-                }
-              ]}
-            >
-              <Text
-                style={
-                  styles.infoActionText
-                }
-              >
-                Web
-              </Text>
-            </MotionPressable>
-
-            <MotionPressable
-              onPress={
-                openGithub
-              }
-              style={[
-                styles.infoActionButton,
-
-                {
-                  backgroundColor:
-                    accent
-                }
-              ]}
-            >
-              <Text
-                style={
-                  styles.infoActionText
-                }
-              >
-                GitHub
-              </Text>
-            </MotionPressable>
-          </View>
-        </View>
+          </ScrollView>
+        )}
       </Animated.View>
-
-      <View
-        pointerEvents="none"
-        style={
-          styles.bottomBrand
-        }
-      >
-        <View
-          style={
-            styles.bottomLogoFix
-          }
-        >
-          <Text
-            numberOfLines={1}
-            style={[
-              styles.bottomLogo,
-
-              {
-                color:
-                  theme.accentLight
-              }
-            ]}
-          >
-            NMIX
-          </Text>
-        </View>
-      </View>
-
-      <View
-        style={
-          styles.footer
-        }
-      >
-        <Text
-          style={
-            styles.footerMain
-          }
-        >
-          © {new Date().getFullYear()} Alex Ravi
-        </Text>
-
-        <Text
-          style={
-            styles.footerSub
-          }
-        >
-          All Rights Reserved
-        </Text>
-      </View>
-    </LinearGradient>
-  );
-}
-
-function Chip({
-  text,
-  accent,
-  color
-}) {
-  return (
-    <View
-      style={[
-        styles.chip,
-
-        {
-          backgroundColor:
-            `${accent}18`,
-
-          borderColor:
-            `${accent}38`
-        }
-      ]}
-    >
-      <Text
-        style={[
-          styles.chipText,
-
-          {
-            color
-          }
-        ]}
-      >
-        {text}
-      </Text>
     </View>
   );
 }
 
-const styles =
-  StyleSheet.create({
-    page: {
-      flex: 1,
-      overflow: 'hidden'
-    },
-
-    glowA: {
-      position: 'absolute',
-      width: 570,
-      height: 570,
-      left: -280,
-      top: -270
-    },
-
-    glowB: {
-      position: 'absolute',
-      width: 680,
-      height: 680,
-      right: -345,
-      bottom: -325
-    },
-
-    glowFill: {
-      flex: 1,
-      borderRadius: 350
-    },
-
-    content: {
-      flex: 1,
-      paddingHorizontal: 16,
-      paddingTop: 50,
-      paddingBottom: 76,
-      justifyContent: 'center',
-      alignItems: 'center'
-    },
-
-    brand: {
-      alignItems: 'center',
-      marginBottom: 18,
-      overflow: 'visible'
-    },
-
-    subtitle: {
-      fontFamily:
-        'Poppins-Bold',
-      fontSize: 10,
-      lineHeight: 15,
-      letterSpacing: 2.8,
-      textAlign: 'center'
-    },
-
-    logoFix: {
-      width: 300,
-      minHeight: 76,
-      paddingHorizontal: 38,
-      paddingVertical: 6,
-      overflow: 'visible',
-      justifyContent: 'center',
-      alignItems: 'center'
-    },
-
-    logo: {
-      width: '100%',
-      color: '#ffffff',
-      fontFamily: logoFont,
-      fontSize: 46,
-      lineHeight: 64,
-      letterSpacing: 5,
-      paddingHorizontal: 10,
-      textAlign: 'center',
-      includeFontPadding: false
-    },
-
-    actions: {
-      width: '72%',
-      maxWidth: 280,
-      gap: 10,
-      marginBottom: 18
-    },
-
-    actionButton: {
-      position: 'relative',
-      minHeight: 51,
-      overflow: 'hidden',
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderWidth: 1,
-      borderRadius: 999,
-      elevation: 5
-    },
-
-    actionGradient: {
-      borderRadius: 999
-    },
-
-    actionText: {
-      fontFamily:
-        'Poppins-Bold',
-      fontSize: 14
-    },
-
-    infoCard: {
-      position: 'relative',
-      width: '100%',
-      maxWidth: 460,
-      minHeight: 218,
-      padding: 13,
-      paddingBottom: 65,
-      overflow: 'hidden',
-      borderRadius: 18,
-      elevation: 8
-    },
-
-    heading: {
-      marginBottom: 11,
-      fontFamily:
-        'Poppins-Bold',
-      fontSize: 14
-    },
-
-    columns: {
-      flexDirection: 'row',
-      alignItems: 'stretch',
-      gap: 10
-    },
-
-    appBox: {
-      flex: 1,
-      minHeight: 132,
-      padding: 11,
-      overflow: 'hidden',
-      borderWidth: 1,
-      borderRadius: 12
-    },
-
-    appNameFix: {
-      minWidth: 105,
-      paddingHorizontal: 5,
-      overflow: 'visible'
-    },
-
-    appName: {
-      fontFamily: logoFont,
-      fontSize: 16,
-      lineHeight: 26,
-      letterSpacing: 1,
-      includeFontPadding: false
-    },
-
-    description: {
-      marginTop: 6,
-      fontFamily:
-        'Poppins-Regular',
-      fontSize: 10.5,
-      lineHeight: 16
-    },
-
-    detailsBox: {
-      flex: 1,
-      minHeight: 132,
-      padding: 10,
-      borderWidth: 1,
-      borderRadius: 12
-    },
-
-    detailsHeading: {
-      fontFamily:
-        'Poppins-Bold',
-      fontSize: 11.5
-    },
-
-    builtFor: {
-      marginTop: 10,
-      fontFamily:
-        'Poppins-Bold',
-      fontSize: 9.5
-    },
-
-    chips: {
-      marginTop: 7,
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 5
-    },
-
-    chip: {
-      paddingHorizontal: 7,
-      paddingVertical: 4,
-      borderWidth: 1,
-      borderRadius: 999
-    },
-
-    chipText: {
-      fontFamily:
-        'Poppins-Bold',
-      fontSize: 8
-    },
-
-    infoActions: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      bottom: 12,
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
-      gap: 12
-    },
-
-    infoActionButton: {
-      minWidth: 98,
-      minHeight: 39,
-      paddingHorizontal: 19,
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderRadius: 999
-    },
-
-    infoActionText: {
-      color: '#ffffff',
-      fontFamily:
-        'Poppins-Bold',
-      fontSize: 11.5,
-      lineHeight: 16
-    },
-
-    bottomBrand: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      bottom: 41,
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-
-    bottomLogoFix: {
-      minWidth: 100,
-      paddingHorizontal: 16,
-      paddingVertical: 2,
-      overflow: 'visible',
-      alignItems: 'center'
-    },
-
-    bottomLogo: {
-      fontFamily: logoFont,
-      fontSize: 12,
-      lineHeight: 20,
-      letterSpacing: 2.2,
-      textAlign: 'center',
-      includeFontPadding: false,
-      opacity: 0.78
-    },
-
-    footer: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      bottom: 9,
-      alignItems: 'center'
-    },
-
-    footerMain: {
-      color:
-        'rgba(255,255,255,.72)',
-      fontFamily:
-        'Poppins-Regular',
-      fontSize: 10
-    },
-
-    footerSub: {
-      color:
-        'rgba(255,255,255,.52)',
-      fontFamily:
-        'Poppins-Regular',
-      fontSize: 8
-    }
-  });
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: 24,
+    justifyContent: 'center',
+  },
+  ambientOrb: {
+    position: 'absolute',
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  headerArea: {
+    alignItems: 'center',
+    marginVertical: 40,
+  },
+  logoWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  appTitle: {
+    fontSize: 48,
+    includeFontPadding: false,
+  },
+  tagline: {
+    fontSize: 12,
+    letterSpacing: 3,
+    marginTop: 10,
+  },
+  actionArea: {
+    gap: 14,
+    marginVertical: 20,
+  },
+  primaryBtn: {
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+  },
+  primaryBtnText: {
+    fontSize: 18,
+    letterSpacing: 2,
+  },
+  secondaryBtn: {
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  secondaryBtnText: {
+    fontSize: 15,
+  },
+  moreInfoScroll: {
+    maxHeight: 260,
+    marginTop: 10,
+  },
+  infoCard: {
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+  },
+  cardTitle: {
+    fontSize: 16,
+    marginBottom: 6,
+  },
+  cardBody: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  chipText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  githubBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 14,
+    alignSelf: 'flex-start',
+  },
+  githubBtnText: {
+    fontSize: 13,
+  },
+});
