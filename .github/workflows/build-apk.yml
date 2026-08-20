@@ -12,21 +12,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: package-lock.json
 
       - name: Configure npm
         run: npm config set legacy-peer-deps true
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
+
+      - name: Install NMIX native packages
+        run: |
+          npx expo install react-native-svg expo-splash-screen expo-image-picker expo-file-system expo-screen-orientation
 
       - name: Generate Android project
         run: npx expo prebuild --platform android --no-install
@@ -36,7 +38,6 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-          cache: gradle
 
       - name: Build release APK
         working-directory: android
@@ -44,7 +45,7 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease --build-cache --parallel
 
-      - name: Prepare APK
+      - name: Prepare NMIX APK
         run: |
           mkdir -p release
           cp android/app/build/outputs/apk/release/app-release.apk release/NMIX.apk
@@ -63,9 +64,9 @@ jobs:
           tag_name: nmix-build-${{ github.run_number }}
           name: NMIX Build ${{ github.run_number }}
           body: |
-            NMIX Android native release build.
+            NMIX — everything with numbers
 
+            Native Android release APK
             Package: com.lxz.nmix
-            APK: NMIX.apk
             Commit: ${{ github.sha }}
           files: release/NMIX.apk
