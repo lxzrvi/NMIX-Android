@@ -1,37 +1,55 @@
 import React, {
   useEffect,
-  useRef,
-  useState
+  useRef
 } from 'react';
 
 import {
   Animated,
   Easing,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View
 } from 'react-native';
 
 import {
-  CalculatorIcon,
-  ClockIcon,
-  CounterIcon,
-  HelpIcon
-} from './icons';
+  useSafeAreaInsets
+} from 'react-native-safe-area-context';
 
-const ICONS = {
-  calculator:
-    CalculatorIcon,
+import {
+  themes,
+  fontChoices
+} from './theme';
 
-  clock:
-    ClockIcon,
+import {
+  fontFamily
+} from './useNMixFonts';
 
-  counter:
-    CounterIcon,
+import MotionPressable
+  from './MotionPressable';
 
-  instructions:
-    HelpIcon
+const THEME_META = {
+  green: {
+    label: 'Emerald'
+  },
+
+  blue: {
+    label: 'Ocean'
+  },
+
+  purple: {
+    label: 'Violet'
+  },
+
+  orange: {
+    label: 'Sunset'
+  },
+
+  rose: {
+    label: 'Rose'
+  }
 };
 
 const EASE =
@@ -42,358 +60,87 @@ const EASE =
     1
   );
 
-export default function AnimatedSection({
-  title,
-  subtitle,
-  name,
-  open,
-  toggle,
+export default function SettingsPanel({
+  visible,
+  onClose,
+  dark,
+  setDark,
+  themeName,
+  setThemeName,
+  font,
+  setFont,
   colors,
-  accent,
-  regular,
-  bold,
-  children
+  accent
 }) {
-  const active =
-    open === name;
+  const insets =
+    useSafeAreaInsets();
 
-  const [
-    contentHeight,
-    setContentHeight
-  ] = useState(0);
+  const {
+    width,
+    height
+  } = useWindowDimensions();
 
-  /*
-   * Transform-only/native value.
-   */
-  const spin =
+  const motion =
     useRef(
       new Animated.Value(
-        active ? 1 : 0
+        visible ? 1 : 0
       )
-    ).current;
-
-  /*
-   * Radius-only/JS value.
-   */
-  const morph =
-    useRef(
-      new Animated.Value(
-        active ? 1 : 0
-      )
-    ).current;
-
-  /*
-   * Accordion height/JS.
-   */
-  const panel =
-    useRef(
-      new Animated.Value(
-        active ? 1 : 0
-      )
-    ).current;
-
-  /*
-   * Content opacity + translation/native.
-   */
-  const reveal =
-    useRef(
-      new Animated.Value(
-        active ? 1 : 0
-      )
-    ).current;
-
-  const press =
-    useRef(
-      new Animated.Value(1)
     ).current;
 
   useEffect(() => {
-    spin.stopAnimation();
-
-    morph.stopAnimation();
-
-    Animated.parallel([
-      Animated.timing(
-        spin,
-        {
-          toValue:
-            active
-              ? 1
-              : 0,
-
-          duration: 720,
-
-          easing:
-            Easing.inOut(
-              Easing.cubic
-            ),
-
-          useNativeDriver:
-            true
-        }
-      ),
-
-      Animated.timing(
-        morph,
-        {
-          toValue:
-            active
-              ? 1
-              : 0,
-
-          duration: 620,
-
-          easing:
-            EASE,
-
-          useNativeDriver:
-            false
-        }
-      )
-    ]).start();
-  }, [active]);
-
-  useEffect(() => {
-    if (
-      contentHeight <=
-      0
-    ) {
-      return;
-    }
-
-    panel.stopAnimation();
-
-    reveal.stopAnimation();
-
-    if (active) {
-      Animated.parallel([
-        Animated.timing(
-          panel,
-          {
-            toValue: 1,
-
-            duration: 580,
-
-            easing:
-              EASE,
-
-            useNativeDriver:
-              false
-          }
-        ),
-
-        Animated.timing(
-          reveal,
-          {
-            toValue: 1,
-
-            duration: 460,
-
-            delay: 55,
-
-            easing:
-              EASE,
-
-            useNativeDriver:
-              true
-          }
-        )
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(
-          panel,
-          {
-            toValue: 0,
-
-            duration: 520,
-
-            easing:
-              EASE,
-
-            useNativeDriver:
-              false
-          }
-        ),
-
-        Animated.timing(
-          reveal,
-          {
-            toValue: 0,
-
-            duration: 300,
-
-            easing:
-              Easing.inOut(
-                Easing.ease
-              ),
-
-            useNativeDriver:
-              true
-          }
-        )
-      ]).start();
-    }
-  }, [
-    active,
-    contentHeight
-  ]);
-
-  function pressIn() {
-    press.stopAnimation();
+    motion.stopAnimation();
 
     Animated.timing(
-      press,
+      motion,
       {
         toValue:
-          0.972,
+          visible
+            ? 1
+            : 0,
 
         duration:
-          145,
+          visible
+            ? 480
+            : 360,
 
         easing:
-          Easing.out(
-            Easing.quad
-          ),
+          EASE,
 
         useNativeDriver:
           true
       }
     ).start();
-  }
+  }, [visible]);
 
-  function pressOut() {
-    press.stopAnimation();
+  const regular =
+    fontFamily(font);
 
-    Animated.spring(
-      press,
-      {
-        toValue: 1,
+  const bold =
+    fontFamily(
+      font,
+      true
+    );
 
-        stiffness:
-          240,
+  const panelWidth =
+    Math.min(
+      350,
+      width - 20
+    );
 
-        damping:
-          13,
-
-        mass:
-          0.7,
-
-        useNativeDriver:
-          true
-      }
-    ).start();
-  }
-
-  const Icon =
-    ICONS[name] ||
-    HelpIcon;
-
-  /*
-   * Ends at 405° rather than a visually
-   * identical 360° square orientation.
-   *
-   * This leaves the opening spin obvious.
-   * Closing naturally runs 405 -> 0.
-   */
-  const outerRotate =
-    spin.interpolate({
+  const translateX =
+    motion.interpolate({
       inputRange:
         [0, 1],
 
       outputRange: [
-        '0deg',
-        '405deg'
+        panelWidth *
+          0.42,
+        0
       ]
     });
 
-  const innerRotate =
-    spin.interpolate({
-      inputRange:
-        [0, 1],
-
-      outputRange: [
-        '0deg',
-        '-405deg'
-      ]
-    });
-
-  const arrowRotate =
-    spin.interpolate({
-      inputRange:
-        [0, 1],
-
-      outputRange: [
-        '0deg',
-        '180deg'
-      ]
-    });
-
-  const outerScale =
-    spin.interpolate({
-      inputRange: [
-        0,
-        0.5,
-        1
-      ],
-
-      outputRange: [
-        1,
-        1.06,
-        1
-      ]
-    });
-
-  const innerScale =
-    spin.interpolate({
-      inputRange: [
-        0,
-        0.5,
-        1
-      ],
-
-      outputRange: [
-        1,
-        0.94,
-        1
-      ]
-    });
-
-  const outerRadius =
-    morph.interpolate({
-      inputRange:
-        [0, 1],
-
-      outputRange: [
-        8,
-        21
-      ]
-    });
-
-  const innerRadius =
-    morph.interpolate({
-      inputRange:
-        [0, 1],
-
-      outputRange: [
-        6,
-        18
-      ]
-    });
-
-  const panelHeight =
-    panel.interpolate({
-      inputRange:
-        [0, 1],
-
-      outputRange: [
-        0,
-        contentHeight
-      ]
-    });
-
-  const revealY =
-    reveal.interpolate({
+  const translateY =
+    motion.interpolate({
       inputRange:
         [0, 1],
 
@@ -403,176 +150,362 @@ export default function AnimatedSection({
 
   return (
     <View
-      style={[
-        styles.section,
-
-        {
-          backgroundColor:
-            colors.surface,
-
-          borderColor:
-            colors.border
-        }
-      ]}
+      pointerEvents={
+        visible
+          ? 'box-none'
+          : 'none'
+      }
+      style={
+        styles.root
+      }
     >
       <Animated.View
+        pointerEvents={
+          visible
+            ? 'auto'
+            : 'none'
+        }
         style={[
-          styles.pressLayer,
+          styles.backdrop,
 
           {
+            opacity:
+              motion
+          }
+        ]}
+      >
+        <Pressable
+          style={
+            StyleSheet.absoluteFill
+          }
+          onPress={
+            onClose
+          }
+        />
+      </Animated.View>
+
+      <Animated.View
+        pointerEvents={
+          visible
+            ? 'auto'
+            : 'none'
+        }
+        style={[
+          styles.panel,
+
+          {
+            top:
+              insets.top +
+              62,
+
+            right: 0,
+
+            width:
+              panelWidth,
+
+            maxHeight:
+              height -
+              insets.top -
+              insets.bottom -
+              82,
+
+            backgroundColor:
+              colors.surface,
+
+            borderColor:
+              colors.border,
+
+            opacity:
+              motion,
+
             transform: [
               {
-                scale:
-                  press
+                translateX
+              },
+
+              {
+                translateY
               }
             ]
           }
         ]}
       >
-        <Pressable
-          onPress={() =>
-            toggle(
-              name
-            )
+        <ScrollView
+          showsVerticalScrollIndicator={
+            false
           }
-
-          onPressIn={
-            pressIn
-          }
-
-          onPressOut={
-            pressOut
-          }
-
-          style={
-            styles.bar
+          contentContainerStyle={
+            styles.scroll
           }
         >
           <View
-            style={
-              styles.iconStage
-            }
+            style={[
+              styles.header,
+
+              {
+                borderBottomColor:
+                  colors.border
+              }
+            ]}
           >
-            {/*
-             * OUTER:
-             *
-             * JS wrapper only changes
-             * clipping radius.
-             */}
-            <Animated.View
-              pointerEvents="none"
-
-              style={[
-                styles.outerMorph,
-
-                {
-                  borderRadius:
-                    outerRadius
-                }
-              ]}
+            <View
+              style={
+                styles.headerCopy
+              }
             >
-              {/*
-               * Native child only rotates/scales.
-               *
-               * Shape is slightly oversized to
-               * keep the morph wrapper fully
-               * filled during rotation.
-               */}
-              <Animated.View
+              <Text
                 style={[
-                  styles.outerSpin,
+                  styles.headerTitle,
 
                   {
-                    backgroundColor:
-                      accent,
+                    color:
+                      colors.text,
 
-                    transform: [
-                      {
-                        rotate:
-                          outerRotate
-                      },
-
-                      {
-                        scale:
-                          outerScale
-                      }
-                    ]
+                    fontFamily:
+                      bold
                   }
                 ]}
               >
-                {/*
-                 * Subtle corner shading is part
-                 * of the surface, not broken
-                 * decorative line segments.
-                 */}
-                <View
-                  style={
-                    styles.outerShade
+                NMIX Settings
+              </Text>
+
+              <Text
+                style={[
+                  styles.headerSub,
+
+                  {
+                    color:
+                      colors.muted,
+
+                    fontFamily:
+                      regular
                   }
-                />
-              </Animated.View>
-            </Animated.View>
+                ]}
+              >
+                Personalize your interface
+              </Text>
+            </View>
 
-            {/*
-             * INNER morph wrapper.
-             */}
-            <Animated.View
-              pointerEvents="none"
-
+            <View
               style={[
-                styles.innerMorph,
+                styles.live,
 
                 {
-                  borderRadius:
-                    innerRadius
+                  backgroundColor:
+                    `${accent}18`
                 }
               ]}
             >
-              {/*
-               * A complete continuous outline.
-               */}
-              <Animated.View
+              <View
                 style={[
-                  styles.innerSpin,
+                  styles.liveDot,
 
                   {
-                    transform: [
-                      {
-                        rotate:
-                          innerRotate
-                      },
-
-                      {
-                        scale:
-                          innerScale
-                      }
-                    ]
+                    backgroundColor:
+                      accent
                   }
                 ]}
               />
-            </Animated.View>
 
-            {/*
-             * Stationary SVG.
-             */}
+              <Text
+                style={[
+                  styles.liveText,
+
+                  {
+                    color:
+                      accent,
+
+                    fontFamily:
+                      bold
+                  }
+                ]}
+              >
+                Live
+              </Text>
+            </View>
+          </View>
+
+          <View
+            style={[
+              styles.appearanceRow,
+
+              {
+                borderBottomColor:
+                  colors.border
+              }
+            ]}
+          >
             <View
-              pointerEvents="none"
-
               style={
-                styles.iconContent
+                styles.rowCopy
               }
             >
-              <Icon
-                size={21}
+              <Text
+                style={[
+                  styles.title,
 
-                color="#ffffff"
-              />
+                  {
+                    color:
+                      colors.text,
+
+                    fontFamily:
+                      bold
+                  }
+                ]}
+              >
+                Appearance
+              </Text>
+
+              <Text
+                style={[
+                  styles.small,
+
+                  {
+                    color:
+                      colors.muted,
+
+                    fontFamily:
+                      regular
+                  }
+                ]}
+              >
+                Light or dark interface
+              </Text>
+            </View>
+
+            <AnimatedSwitch
+              value={
+                dark
+              }
+              onChange={
+                setDark
+              }
+              accent={
+                accent
+              }
+              inactive={
+                colors.surface3
+              }
+            />
+          </View>
+
+          <View
+            style={[
+              styles.block,
+
+              {
+                borderBottomColor:
+                  colors.border
+              }
+            ]}
+          >
+            <Text
+              style={[
+                styles.title,
+
+                {
+                  color:
+                    colors.text,
+
+                  fontFamily:
+                    bold
+                }
+              ]}
+            >
+              Color Theme
+            </Text>
+
+            <Text
+              style={[
+                styles.small,
+
+                {
+                  color:
+                    colors.muted,
+
+                  fontFamily:
+                    regular
+                }
+              ]}
+            >
+              Selected · {
+                THEME_META[
+                  themeName
+                ]?.label ||
+                'Emerald'
+              }
+            </Text>
+
+            <View
+              style={
+                styles.themeGrid
+              }
+            >
+              {Object.keys(
+                themes
+              ).map(
+                name => (
+                  <ThemeChoice
+                    key={
+                      name
+                    }
+
+                    label={
+                      THEME_META[
+                        name
+                      ]?.label ||
+                      name
+                    }
+
+                    selected={
+                      themeName ===
+                      name
+                    }
+
+                    color={
+                      themes[
+                        name
+                      ].accent
+                    }
+
+                    textColor={
+                      colors.text
+                    }
+
+                    muted={
+                      colors.muted
+                    }
+
+                    surface={
+                      colors.surface2
+                    }
+
+                    border={
+                      colors.border
+                    }
+
+                    font={
+                      regular
+                    }
+
+                    bold={
+                      bold
+                    }
+
+                    onPress={() =>
+                      setThemeName(
+                        name
+                      )
+                    }
+                  />
+                )
+              )}
             </View>
           </View>
 
           <View
             style={
-              styles.copy
+              styles.fontBlock
             }
           >
             <Text
@@ -588,14 +521,12 @@ export default function AnimatedSection({
                 }
               ]}
             >
-              {title}
+              Font Style
             </Text>
 
             <Text
-              numberOfLines={1}
-
               style={[
-                styles.subtitle,
+                styles.small,
 
                 {
                   color:
@@ -606,372 +537,655 @@ export default function AnimatedSection({
                 }
               ]}
             >
-              {subtitle}
+              Selected · {font}
             </Text>
+
+            <View
+              style={
+                styles.fontGrid
+              }
+            >
+              {fontChoices.map(
+                name => (
+                  <MotionPressable
+                    key={
+                      name
+                    }
+
+                    onPress={() =>
+                      setFont(
+                        name
+                      )
+                    }
+
+                    style={[
+                      styles.fontButton,
+
+                      {
+                        borderColor:
+                          font ===
+                          name
+                            ? accent
+                            : colors.border,
+
+                        backgroundColor:
+                          colors.surface2
+                      }
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.aa,
+
+                        {
+                          backgroundColor:
+                            font ===
+                            name
+                              ? `${accent}18`
+                              : colors.surface
+                        }
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color:
+                            accent,
+
+                          fontFamily:
+                            fontFamily(
+                              name,
+                              true
+                            ),
+
+                          fontSize:
+                            14
+                        }}
+                      >
+                        Aa
+                      </Text>
+                    </View>
+
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        flex: 1,
+
+                        color:
+                          font ===
+                          name
+                            ? accent
+                            : colors.text,
+
+                        fontFamily:
+                          fontFamily(
+                            name
+                          ),
+
+                        fontSize:
+                          10.5
+                      }}
+                    >
+                      {name}
+                    </Text>
+                  </MotionPressable>
+                )
+              )}
+            </View>
           </View>
 
-          <Animated.View
-            pointerEvents="none"
-
+          <Text
             style={[
-              styles.arrowStage,
+              styles.note,
 
               {
-                transform: [
-                  {
-                    rotate:
-                      arrowRotate
-                  }
-                ]
+                color:
+                  colors.muted,
+
+                fontFamily:
+                  regular
               }
             ]}
           >
-            <View
-              style={[
-                styles.arrow,
-
-                {
-                  borderColor:
-                    colors.muted
-                }
-              ]}
-            />
-          </Animated.View>
-        </Pressable>
-      </Animated.View>
-
-      <View
-        pointerEvents="none"
-
-        style={
-          styles.measure
-        }
-
-        onLayout={
-          event => {
-            const height =
-              event
-                .nativeEvent
-                .layout
-                .height;
-
-            if (
-              height >
-                0 &&
-              height !==
-                contentHeight
-            ) {
-              setContentHeight(
-                height
-              );
-
-              if (
-                active
-              ) {
-                panel.setValue(
-                  1
-                );
-
-                reveal.setValue(
-                  1
-                );
-              }
-            }
-          }
-        }
-      >
-        <View
-          style={[
-            styles.measureBody,
-
-            {
-              borderTopColor:
-                colors.border
-            }
-          ]}
-        >
-          {children}
-        </View>
-      </View>
-
-      <Animated.View
-        pointerEvents={
-          active
-            ? 'auto'
-            : 'none'
-        }
-
-        style={[
-          styles.panel,
-
-          {
-            height:
-              panelHeight
-          }
-        ]}
-      >
-        <Animated.View
-          style={[
-            styles.body,
-
-            {
-              borderTopColor:
-                colors.border,
-
-              opacity:
-                reveal,
-
-              transform: [
-                {
-                  translateY:
-                    revealY
-                }
-              ]
-            }
-          ]}
-        >
-          {children}
-        </Animated.View>
+            Theme, dark mode and font are saved automatically on this device. Use the top-right X to close Settings.
+          </Text>
+        </ScrollView>
       </Animated.View>
     </View>
   );
 }
 
+function AnimatedSwitch({
+  value,
+  onChange,
+  accent,
+  inactive
+}) {
+  const motion =
+    useRef(
+      new Animated.Value(
+        value ? 1 : 0
+      )
+    ).current;
+
+  useEffect(() => {
+    Animated.spring(
+      motion,
+      {
+        toValue:
+          value
+            ? 1
+            : 0,
+
+        friction: 8,
+
+        tension: 80,
+
+        useNativeDriver:
+          false
+      }
+    ).start();
+  }, [value]);
+
+  const left =
+    motion.interpolate({
+      inputRange:
+        [0, 1],
+
+      outputRange:
+        [4, 25]
+    });
+
+  const backgroundColor =
+    motion.interpolate({
+      inputRange:
+        [0, 1],
+
+      outputRange: [
+        inactive,
+        accent
+      ]
+    });
+
+  return (
+    <MotionPressable
+      onPress={() =>
+        onChange(
+          !value
+        )
+      }
+      style={
+        styles.switchTouch
+      }
+    >
+      <Animated.View
+        style={[
+          styles.switchTrack,
+
+          {
+            backgroundColor
+          }
+        ]}
+      >
+        <Animated.View
+          style={[
+            styles.switchKnob,
+
+            {
+              left
+            }
+          ]}
+        />
+      </Animated.View>
+    </MotionPressable>
+  );
+}
+
+function ThemeChoice({
+  label,
+  selected,
+  color,
+  textColor,
+  muted,
+  surface,
+  border,
+  font,
+  bold,
+  onPress
+}) {
+  const selection =
+    useRef(
+      new Animated.Value(
+        selected ? 1 : 0
+      )
+    ).current;
+
+  useEffect(() => {
+    Animated.spring(
+      selection,
+      {
+        toValue:
+          selected
+            ? 1
+            : 0,
+
+        friction: 7,
+
+        tension: 80,
+
+        useNativeDriver:
+          true
+      }
+    ).start();
+  }, [selected]);
+
+  const scale =
+    selection.interpolate({
+      inputRange:
+        [0, 1],
+
+      outputRange:
+        [1, 1.035]
+    });
+
+  return (
+    <MotionPressable
+      onPress={
+        onPress
+      }
+      style={[
+        styles.themeChoice,
+
+        {
+          backgroundColor:
+            surface,
+
+          borderColor:
+            selected
+              ? color
+              : border
+        }
+      ]}
+    >
+      <Animated.View
+        style={[
+          styles.themePreview,
+
+          {
+            backgroundColor:
+              color,
+
+            transform: [
+              {
+                scale
+              }
+            ]
+          }
+        ]}
+      >
+        <Animated.View
+          style={[
+            styles.themeCheck,
+
+            {
+              opacity:
+                selection,
+
+              transform: [
+                {
+                  scale:
+                    selection
+                }
+              ]
+            }
+          ]}
+        />
+      </Animated.View>
+
+      <View
+        style={
+          styles.themeCopy
+        }
+      >
+        <Text
+          style={[
+            styles.themeName,
+
+            {
+              color:
+                selected
+                  ? color
+                  : textColor,
+
+              fontFamily:
+                bold
+            }
+          ]}
+        >
+          {label}
+        </Text>
+
+        <Text
+          style={[
+            styles.themeStatus,
+
+            {
+              color:
+                muted,
+
+              fontFamily:
+                font
+            }
+          ]}
+        >
+          {selected
+            ? 'Active'
+            : 'Tap to apply'}
+        </Text>
+      </View>
+    </MotionPressable>
+  );
+}
+
 const styles =
   StyleSheet.create({
-    section: {
+    root: {
+      ...StyleSheet.absoluteFillObject,
+
+      zIndex: 900
+    },
+
+    backdrop: {
+      ...StyleSheet.absoluteFillObject,
+
+      backgroundColor:
+        'rgba(0,0,0,.34)'
+    },
+
+    panel: {
       position:
-        'relative',
+        'absolute',
 
       overflow:
         'hidden',
 
       borderWidth: 1,
 
-      borderRadius: 14
+      borderRightWidth: 0,
+
+      borderTopLeftRadius: 22,
+
+      borderBottomLeftRadius: 22,
+
+      borderTopRightRadius: 0,
+
+      borderBottomRightRadius: 0,
+
+      elevation: 20
     },
 
-    pressLayer: {
-      width: '100%'
+    scroll: {
+      padding: 17,
+
+      paddingBottom: 18
     },
 
-    bar: {
-      minHeight: 67,
+    header: {
+      paddingBottom: 14,
 
-      paddingHorizontal: 14,
+      flexDirection:
+        'row',
 
-      paddingVertical: 11,
+      justifyContent:
+        'space-between',
+
+      alignItems:
+        'center',
+
+      gap: 12,
+
+      borderBottomWidth: 1
+    },
+
+    headerCopy: {
+      flex: 1
+    },
+
+    headerTitle: {
+      fontSize: 15
+    },
+
+    headerSub: {
+      marginTop: 2,
+
+      fontSize: 10
+    },
+
+    live: {
+      height: 28,
+
+      paddingHorizontal: 9,
 
       flexDirection:
         'row',
 
       alignItems:
+        'center',
+
+      gap: 5,
+
+      borderRadius: 999
+    },
+
+    liveDot: {
+      width: 6,
+
+      height: 6,
+
+      borderRadius: 3
+    },
+
+    liveText: {
+      fontSize: 8
+    },
+
+    appearanceRow: {
+      paddingVertical: 16,
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      justifyContent:
+        'space-between',
+
+      gap: 12,
+
+      borderBottomWidth: 1
+    },
+
+    rowCopy: {
+      flex: 1
+    },
+
+    title: {
+      fontSize: 13
+    },
+
+    small: {
+      marginTop: 2,
+
+      fontSize: 10
+    },
+
+    switchTouch: {
+      width: 53,
+
+      height: 32,
+
+      justifyContent:
         'center'
     },
 
-    iconStage: {
+    switchTrack: {
       position:
         'relative',
 
-      width: 46,
+      width: 53,
 
-      height: 46,
+      height: 28,
 
-      flexShrink: 0,
+      borderRadius: 999
+    },
+
+    switchKnob: {
+      position:
+        'absolute',
+
+      top: 4,
+
+      width: 20,
+
+      height: 20,
+
+      borderRadius: 10,
+
+      backgroundColor:
+        '#fff',
+
+      elevation: 2
+    },
+
+    block: {
+      paddingVertical: 16,
+
+      borderBottomWidth: 1
+    },
+
+    themeGrid: {
+      marginTop: 12,
+
+      gap: 8
+    },
+
+    themeChoice: {
+      minHeight: 54,
+
+      paddingHorizontal: 10,
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      gap: 10,
+
+      borderWidth: 1,
+
+      borderRadius: 12
+    },
+
+    themePreview: {
+      width: 34,
+
+      height: 34,
 
       justifyContent:
         'center',
 
       alignItems:
-        'center'
+        'center',
+
+      borderRadius: 17
     },
 
-    outerMorph: {
-      position:
-        'absolute',
+    themeCheck: {
+      width: 13,
 
-      width: 42,
+      height: 13,
 
-      height: 42,
-
-      overflow:
-        'hidden'
-    },
-
-    /*
-     * Oversized rotating square.
-     */
-    outerSpin: {
-      position:
-        'absolute',
-
-      width: 58,
-
-      height: 58,
-
-      left: -8,
-
-      top: -8
-    },
-
-    /*
-     * Soft complete area detail rather than
-     * disconnected spinning line fragments.
-     */
-    outerShade: {
-      position:
-        'absolute',
-
-      width: 30,
-
-      height: 30,
-
-      right: -5,
-
-      top: -5,
-
-      borderRadius: 15,
-
-      backgroundColor:
-        'rgba(255,255,255,.10)'
-    },
-
-    /*
-     * Close to outer edge.
-     */
-    innerMorph: {
-      position:
-        'absolute',
-
-      width: 37,
-
-      height: 37,
-
-      overflow:
-        'visible'
-    },
-
-    /*
-     * Full continuous rounded-square outline.
-     * This whole shape rotates as one object.
-     */
-    innerSpin: {
-      width: 37,
-
-      height: 37,
-
-      borderWidth: 1.5,
+      borderWidth: 2,
 
       borderColor:
-        'rgba(255,255,255,.48)',
+        '#ffffff',
 
       borderRadius: 7
     },
 
-    iconContent: {
-      position:
-        'absolute',
-
-      zIndex: 20,
-
-      width: 46,
-
-      height: 46,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
+    themeCopy: {
+      flex: 1
     },
 
-    copy: {
-      flex: 1,
-
-      minWidth: 0,
-
-      paddingHorizontal: 12,
-
-      justifyContent:
-        'center'
+    themeName: {
+      fontSize: 11.5
     },
 
-    title: {
-      fontSize: 14,
-
-      lineHeight: 19
-    },
-
-    subtitle: {
+    themeStatus: {
       marginTop: 1,
 
-      fontSize: 10,
-
-      lineHeight: 14
+      fontSize: 8.5
     },
 
-    arrowStage: {
-      width: 28,
+    fontBlock: {
+      paddingTop: 16
+    },
 
-      height: 28,
+    fontGrid: {
+      marginTop: 11,
 
-      flexShrink: 0,
+      flexDirection:
+        'row',
+
+      flexWrap:
+        'wrap',
+
+      justifyContent:
+        'space-between',
+
+      rowGap: 8
+    },
+
+    fontButton: {
+      width: '48.5%',
+
+      minHeight: 50,
+
+      paddingHorizontal: 7,
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
+      gap: 7,
+
+      borderWidth: 1,
+
+      borderRadius: 10
+    },
+
+    aa: {
+      width: 30,
+
+      height: 30,
 
       justifyContent:
         'center',
 
       alignItems:
-        'center'
+        'center',
+
+      borderRadius: 7
     },
 
-    arrow: {
-      width: 10,
+    note: {
+      marginTop: 14,
 
-      height: 10,
+      fontSize: 8.5,
 
-      borderRightWidth: 2,
-
-      borderBottomWidth: 2,
-
-      transform: [
-        {
-          rotate:
-            '45deg'
-        }
-      ]
-    },
-
-    measure: {
-      position:
-        'absolute',
-
-      left: 0,
-
-      right: 0,
-
-      top: 67,
-
-      zIndex: -50,
-
-      opacity: 0
-    },
-
-    measureBody: {
-      width: '100%',
-
-      borderTopWidth: 1
-    },
-
-    panel: {
-      width: '100%',
-
-      overflow:
-        'hidden'
-    },
-
-    body: {
-      width: '100%',
-
-      borderTopWidth: 1
+      lineHeight: 13
     }
   });
