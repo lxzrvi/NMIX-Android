@@ -279,10 +279,20 @@ export default function Welcome() {
       ? '#aab6b1'
       : '#66706c';
 
+  /*
+   * Start + Share now use the same glass/color
+   * family as the More Info card instead of a
+   * separate solid white/black treatment.
+   */
   const buttonBackground =
     dark
-      ? '#0d1210'
-      : '#ffffff';
+      ? 'rgba(15,22,19,.82)'
+      : 'rgba(241,248,245,.88)';
+
+  const buttonBorder =
+    dark
+      ? 'rgba(255,255,255,.075)'
+      : 'rgba(255,255,255,.42)';
 
   const cardBackground =
     dark
@@ -499,12 +509,23 @@ export default function Welcome() {
                   buttonBackground,
 
                 borderColor:
-                  dark
-                    ? 'rgba(255,255,255,.10)'
-                    : 'rgba(0,0,0,.045)'
+                  buttonBorder
               }
             ]}
           >
+            <LinearGradient
+              pointerEvents="none"
+              colors={[
+                'rgba(255,255,255,.085)',
+                'rgba(255,255,255,.012)',
+                `${accent}08`
+              ]}
+              style={[
+                StyleSheet.absoluteFill,
+                styles.actionGradient
+              ]}
+            />
+
             <Text
               style={[
                 styles.actionText,
@@ -526,12 +547,23 @@ export default function Welcome() {
                   buttonBackground,
 
                 borderColor:
-                  dark
-                    ? 'rgba(255,255,255,.10)'
-                    : 'rgba(0,0,0,.045)'
+                  buttonBorder
               }
             ]}
           >
+            <LinearGradient
+              pointerEvents="none"
+              colors={[
+                'rgba(255,255,255,.085)',
+                'rgba(255,255,255,.012)',
+                `${accent}08`
+              ]}
+              style={[
+                StyleSheet.absoluteFill,
+                styles.actionGradient
+              ]}
+            />
+
             <Text
               style={[
                 styles.actionText,
@@ -743,6 +775,31 @@ export default function Welcome() {
         </View>
       </Animated.View>
 
+      {/*
+       * Bottom starting-screen branding.
+       * Kept above copyright footer so they do
+       * not overlap on smaller Android screens.
+       */}
+      <View
+        pointerEvents="none"
+        style={styles.bottomBrand}
+      >
+        <View style={styles.bottomLogoFix}>
+          <Text
+            numberOfLines={1}
+            style={[
+              styles.bottomLogo,
+              {
+                color:
+                  theme.accentLight
+              }
+            ]}
+          >
+            NMIX
+          </Text>
+        </View>
+      </View>
+
       <View style={styles.footer}>
         <Text
           style={
@@ -828,7 +885,13 @@ const styles =
       flex: 1,
       paddingHorizontal: 16,
       paddingTop: 50,
-      paddingBottom: 52,
+
+      /*
+       * Gives the new bottom branding/footer
+       * their own visual space.
+       */
+      paddingBottom: 76,
+
       justifyContent: 'center',
       alignItems: 'center'
     },
@@ -875,12 +938,18 @@ const styles =
     },
 
     actionButton: {
+      position: 'relative',
       minHeight: 51,
       justifyContent: 'center',
       alignItems: 'center',
+      overflow: 'hidden',
       borderWidth: 1,
       borderRadius: 999,
       elevation: 5
+    },
+
+    actionGradient: {
+      borderRadius: 999
     },
 
     actionText: {
@@ -889,9 +958,6 @@ const styles =
       fontSize: 14
     },
 
-    /*
-     * No thick outer border.
-     */
     infoCard: {
       position: 'relative',
       width: '100%',
@@ -991,9 +1057,6 @@ const styles =
       fontSize: 8
     },
 
-    /*
-     * Bottom-left as requested.
-     */
     github: {
       position: 'absolute',
       left: 13,
@@ -1011,6 +1074,35 @@ const styles =
       fontFamily:
         'Poppins-Bold',
       fontSize: 10
+    },
+
+    bottomBrand: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 41,
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+
+    bottomLogoFix: {
+      minWidth: 80,
+      paddingHorizontal: 12,
+      paddingVertical: 2,
+      overflow: 'visible',
+      alignItems: 'center'
+    },
+
+    bottomLogo: {
+      fontFamily:
+        logoFont,
+      fontSize: 12,
+      lineHeight: 20,
+      letterSpacing: 2.2,
+      textAlign: 'center',
+      includeFontPadding:
+        false,
+      opacity: 0.78
     },
 
     footer: {
