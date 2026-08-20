@@ -34,6 +34,9 @@ const ICONS = {
     HelpIcon
 };
 
+/*
+ * CSS-transition-like easing.
+ */
 const EASE =
   Easing.bezier(
     0.22,
@@ -63,69 +66,90 @@ export default function AnimatedSection({
   ] = useState(0);
 
   /*
-   * Native transforms only.
+   * IMPORTANT:
+   *
+   * Website behavior:
+   * before = +180deg
+   * after  = -180deg
+   *
+   * Rotation stays on native driver.
    */
-  const spin =
+  const rotation =
     useRef(
       new Animated.Value(
-        active ? 1 : 0
+        active
+          ? 1
+          : 0
       )
     ).current;
 
   /*
-   * JS geometry only.
+   * Border radius cannot use native driver.
+   * Separate value avoids the previous
+   * native/JS Animated node crash.
    */
   const morph =
     useRef(
       new Animated.Value(
-        active ? 1 : 0
+        active
+          ? 1
+          : 0
       )
     ).current;
 
   /*
-   * JS accordion height.
+   * Accordion height.
    */
   const panel =
     useRef(
       new Animated.Value(
-        active ? 1 : 0
+        active
+          ? 1
+          : 0
       )
     ).current;
 
   /*
-   * Native content reveal.
+   * Content fade/slide.
    */
   const reveal =
     useRef(
       new Animated.Value(
-        active ? 1 : 0
+        active
+          ? 1
+          : 0
       )
     ).current;
 
-  const press =
+  /*
+   * Tap feedback.
+   */
+  const pressScale =
     useRef(
       new Animated.Value(1)
     ).current;
 
   useEffect(() => {
-    spin.stopAnimation();
+    rotation.stopAnimation();
     morph.stopAnimation();
 
     Animated.parallel([
       Animated.timing(
-        spin,
+        rotation,
         {
           toValue:
             active
               ? 1
               : 0,
 
-          duration: 760,
+          /*
+           * Long enough to actually see the
+           * same soothing website transition.
+           */
+          duration: 580,
 
           easing:
-            Easing.inOut(
-              Easing.cubic
-            ),
+            EASE,
 
           useNativeDriver:
             true
@@ -140,7 +164,7 @@ export default function AnimatedSection({
               ? 1
               : 0,
 
-          duration: 650,
+          duration: 580,
 
           easing:
             EASE,
@@ -174,8 +198,8 @@ export default function AnimatedSection({
 
           duration:
             active
-              ? 580
-              : 520,
+              ? 520
+              : 470,
 
           easing:
             EASE,
@@ -195,20 +219,16 @@ export default function AnimatedSection({
 
           duration:
             active
-              ? 460
-              : 300,
+              ? 420
+              : 280,
 
           delay:
             active
-              ? 55
+              ? 45
               : 0,
 
           easing:
-            active
-              ? EASE
-              : Easing.inOut(
-                  Easing.ease
-                ),
+            EASE,
 
           useNativeDriver:
             true
@@ -221,12 +241,13 @@ export default function AnimatedSection({
   ]);
 
   function pressIn() {
-    press.stopAnimation();
+    pressScale
+      .stopAnimation();
 
     Animated.timing(
-      press,
+      pressScale,
       {
-        toValue: 0.972,
+        toValue: 0.975,
 
         duration: 145,
 
@@ -242,16 +263,19 @@ export default function AnimatedSection({
   }
 
   function pressOut() {
-    press.stopAnimation();
+    pressScale
+      .stopAnimation();
 
     Animated.spring(
-      press,
+      pressScale,
       {
         toValue: 1,
 
-        stiffness: 240,
-        damping: 13,
-        mass: 0.7,
+        stiffness: 245,
+
+        damping: 15,
+
+        mass: 0.72,
 
         useNativeDriver:
           true
@@ -264,33 +288,47 @@ export default function AnimatedSection({
     HelpIcon;
 
   /*
-   * Clearly visible rotations.
-   * Close automatically reverses.
+   * Exact website directions.
    */
   const outerRotate =
-    spin.interpolate({
+    rotation.interpolate({
       inputRange:
         [0, 1],
 
       outputRange: [
         '0deg',
-        '405deg'
+        '180deg'
       ]
     });
 
   const innerRotate =
-    spin.interpolate({
+    rotation.interpolate({
       inputRange:
         [0, 1],
 
       outputRange: [
         '0deg',
-        '-405deg'
+        '-180deg'
+      ]
+    });
+
+  /*
+   * Website:
+   * scale(1.04)
+   */
+  const outerScale =
+    rotation.interpolate({
+      inputRange:
+        [0, 1],
+
+      outputRange: [
+        1,
+        1.04
       ]
     });
 
   const arrowRotate =
-    spin.interpolate({
+    rotation.interpolate({
       inputRange:
         [0, 1],
 
@@ -301,8 +339,7 @@ export default function AnimatedSection({
     });
 
   /*
-   * Actual outer and inner geometry
-   * both morph into circles.
+   * Rounded square -> circle.
    */
   const outerRadius =
     morph.interpolate({
@@ -321,7 +358,7 @@ export default function AnimatedSection({
         [0, 1],
 
       outputRange: [
-        6,
+        7,
         18.5
       ]
     });
@@ -342,8 +379,10 @@ export default function AnimatedSection({
       inputRange:
         [0, 1],
 
-      outputRange:
-        [-10, 0]
+      outputRange: [
+        -9,
+        0
+      ]
     });
 
   return (
@@ -368,7 +407,7 @@ export default function AnimatedSection({
             transform: [
               {
                 scale:
-                  press
+                  pressScale
               }
             ]
           }
@@ -376,7 +415,9 @@ export default function AnimatedSection({
       >
         <Pressable
           onPress={() =>
-            toggle(name)
+            toggle(
+              name
+            )
           }
 
           onPressIn={
@@ -397,10 +438,9 @@ export default function AnimatedSection({
             }
           >
             {/*
-             * Native clockwise rotator.
+             * Website ::before equivalent.
              *
-             * It rotates a JS-morphing shape
-             * nested inside it.
+             * Native rotating parent.
              */}
             <Animated.View
               pointerEvents="none"
@@ -413,11 +453,21 @@ export default function AnimatedSection({
                     {
                       rotate:
                         outerRotate
+                    },
+
+                    {
+                      scale:
+                        outerScale
                     }
                   ]
                 }
               ]}
             >
+              {/*
+               * JS-driven shape morph.
+               *
+               * The shape itself changes to circle.
+               */}
               <Animated.View
                 style={[
                   styles.outerShape,
@@ -430,17 +480,13 @@ export default function AnimatedSection({
                       outerRadius
                   }
                 ]}
-              >
-                <View
-                  style={
-                    styles.outerHighlight
-                  }
-                />
-              </Animated.View>
+              />
             </Animated.View>
 
             {/*
-             * Counter-clockwise rotator.
+             * Website ::after equivalent.
+             *
+             * Counter-clockwise.
              */}
             <Animated.View
               pointerEvents="none"
@@ -458,10 +504,6 @@ export default function AnimatedSection({
                 }
               ]}
             >
-              {/*
-               * THIS actual outline now morphs
-               * from rounded square -> circle.
-               */}
               <Animated.View
                 style={[
                   styles.innerShape,
@@ -471,17 +513,11 @@ export default function AnimatedSection({
                       innerRadius
                   }
                 ]}
-              >
-                <View
-                  style={
-                    styles.innerMarker
-                  }
-                />
-              </Animated.View>
+              />
             </Animated.View>
 
             {/*
-             * Stationary center icon.
+             * Center SVG remains stationary.
              */}
             <View
               pointerEvents="none"
@@ -705,10 +741,6 @@ const styles =
       alignItems: 'center'
     },
 
-    /*
-     * These wrappers contain ONLY native
-     * transform animation.
-     */
     outerRotator: {
       position: 'absolute',
 
@@ -724,32 +756,13 @@ const styles =
     outerShape: {
       width: 42,
 
-      height: 42,
-
-      overflow: 'hidden'
+      height: 42
     },
 
     /*
-     * Asymmetric highlight travels with
-     * the shape so clockwise spin is visible.
+     * Close to the outer shape just like
+     * the website ::after layer.
      */
-    outerHighlight: {
-      position: 'absolute',
-
-      width: 18,
-
-      height: 5,
-
-      right: 4,
-
-      top: 4,
-
-      borderRadius: 99,
-
-      backgroundColor:
-        'rgba(255,255,255,.22)'
-    },
-
     innerRotator: {
       position: 'absolute',
 
@@ -763,37 +776,14 @@ const styles =
     },
 
     innerShape: {
-      position: 'relative',
-
       width: 37,
 
       height: 37,
 
-      borderWidth: 1.5,
+      borderWidth: 1.4,
 
       borderColor:
-        'rgba(255,255,255,.52)'
-    },
-
-    /*
-     * Marker stays attached to the complete
-     * outline, making counter-spin readable.
-     */
-    innerMarker: {
-      position: 'absolute',
-
-      width: 9,
-
-      height: 3,
-
-      top: -2.2,
-
-      left: 14,
-
-      borderRadius: 99,
-
-      backgroundColor:
-        'rgba(255,255,255,.95)'
+        'rgba(255,255,255,.44)'
     },
 
     iconContent: {
@@ -857,7 +847,8 @@ const styles =
 
       transform: [
         {
-          rotate: '45deg'
+          rotate:
+            '45deg'
         }
       ]
     },
