@@ -56,6 +56,9 @@ import {
   logoFont
 } from './useNMixFonts';
 
+import useNMixSounds
+  from './useNMixSounds';
+
 const STYLE_KEY =
   'nmix-fullscreen-clock-style';
 
@@ -136,8 +139,14 @@ export default function FullscreenClock({
   const insets =
     useSafeAreaInsets();
 
+  const {
+    select:
+      playSelect
+  } = useNMixSounds();
+
   const landscape =
-    width > height;
+    width >
+    height;
 
   const [
     now,
@@ -197,10 +206,6 @@ export default function FullscreenClock({
       new Animated.Value(1)
     ).current;
 
-  /*
-   * Hidden NMIX branding gets an inverse
-   * animation to the normal chrome.
-   */
   const hiddenBrand =
     useRef(
       new Animated.Value(0)
@@ -336,7 +341,8 @@ export default function FullscreenClock({
 
         duration: 650,
 
-        easing: EASE,
+        easing:
+          EASE,
 
         useNativeDriver:
           true
@@ -426,7 +432,8 @@ export default function FullscreenClock({
 
           duration: 460,
 
-          easing: EASE,
+          easing:
+            EASE,
 
           useNativeDriver:
             true
@@ -451,7 +458,8 @@ export default function FullscreenClock({
               ? 0
               : 150,
 
-          easing: EASE,
+          easing:
+            EASE,
 
           useNativeDriver:
             true
@@ -500,7 +508,8 @@ export default function FullscreenClock({
     ];
 
   const clockColor =
-    selectedColor.color;
+    selectedColor
+      .color;
 
   function animateClockChange(
     callback
@@ -531,7 +540,8 @@ export default function FullscreenClock({
 
           duration: 340,
 
-          easing: EASE,
+          easing:
+            EASE,
 
           useNativeDriver:
             true
@@ -547,6 +557,7 @@ export default function FullscreenClock({
       wrapIndex(
         clockStyle +
         direction,
+
         CLOCK_STYLES.length
       );
 
@@ -575,6 +586,7 @@ export default function FullscreenClock({
       wrapIndex(
         colorIndex +
         direction,
+
         CLOCK_COLORS.length
       );
 
@@ -602,6 +614,7 @@ export default function FullscreenClock({
     const current =
       Math.max(
         0,
+
         CLOCK_FONTS
           .indexOf(
             clockFont
@@ -612,6 +625,7 @@ export default function FullscreenClock({
       wrapIndex(
         current +
         direction,
+
         CLOCK_FONTS.length
       );
 
@@ -693,17 +707,20 @@ export default function FullscreenClock({
   const carouselWidth =
     Math.min(
       landscape
-        ? 230
-        : 205,
+        ? 220
+        : 195,
+
       Math.max(
-        175,
-        width * 0.47
+        168,
+        width * 0.45
       )
     );
 
   return (
     <Modal
-      visible={visible}
+      visible={
+        visible
+      }
       animationType="none"
       statusBarTranslucent
       navigationBarTranslucent
@@ -781,17 +798,17 @@ export default function FullscreenClock({
         />
 
         <AmbientTheme
-          motion={ambient}
-          theme={theme}
+          motion={
+            ambient
+          }
+          theme={
+            theme
+          }
           themeName={
             themeName
           }
         />
 
-        {/*
-         * Hidden state:
-         * tap anywhere to restore chrome.
-         */}
         {!chromeVisible && (
           <Pressable
             onPress={
@@ -804,10 +821,6 @@ export default function FullscreenClock({
           />
         )}
 
-        {/*
-         * TIME + DATE.
-         * Never handles style changing.
-         */}
         <Animated.View
           pointerEvents="none"
           style={[
@@ -878,15 +891,21 @@ export default function FullscreenClock({
               index={
                 clockStyle
               }
-              now={now}
-              parts={parts}
+              now={
+                now
+              }
+              parts={
+                parts
+              }
               landscape={
                 landscape
               }
               regular={
                 regular
               }
-              bold={bold}
+              bold={
+                bold
+              }
               color={
                 clockColor
               }
@@ -894,9 +913,6 @@ export default function FullscreenClock({
           </Animated.View>
         </Animated.View>
 
-        {/*
-         * Hidden-only NMIX branding.
-         */}
         <Animated.View
           pointerEvents="none"
           style={[
@@ -949,9 +965,6 @@ export default function FullscreenClock({
           </View>
         </Animated.View>
 
-        {/*
-         * Normal chrome.
-         */}
         <Animated.View
           pointerEvents={
             chromeVisible
@@ -1052,10 +1065,6 @@ export default function FullscreenClock({
             </Text>
           </Animated.View>
 
-          {/*
-           * Top-right swipe carousels.
-           * Safe below top system area.
-           */}
           <Animated.View
             style={[
               styles.carouselStack,
@@ -1073,9 +1082,9 @@ export default function FullscreenClock({
 
                 right:
                   Math.max(
-                    12,
+                    14,
                     insets.right +
-                    10
+                    12
                   ),
 
                 width:
@@ -1108,13 +1117,18 @@ export default function FullscreenClock({
               onChange={
                 changeStyle
               }
+              onSelectSound={
+                playSelect
+              }
               color={
                 clockColor
               }
               regular={
                 regular
               }
-              bold={bold}
+              bold={
+                bold
+              }
             />
 
             <SwipeCarousel
@@ -1132,13 +1146,18 @@ export default function FullscreenClock({
               onChange={
                 changeColor
               }
+              onSelectSound={
+                playSelect
+              }
               color={
                 clockColor
               }
               regular={
                 regular
               }
-              bold={bold}
+              bold={
+                bold
+              }
             />
 
             <SwipeCarousel
@@ -1149,6 +1168,7 @@ export default function FullscreenClock({
               index={
                 Math.max(
                   0,
+
                   CLOCK_FONTS
                     .indexOf(
                       clockFont
@@ -1158,19 +1178,21 @@ export default function FullscreenClock({
               onChange={
                 changeFont
               }
+              onSelectSound={
+                playSelect
+              }
               color={
                 clockColor
               }
               regular={
                 regular
               }
-              bold={bold}
+              bold={
+                bold
+              }
             />
           </Animated.View>
 
-          {/*
-           * Larger metadata, away from time.
-           */}
           <View
             pointerEvents="none"
             style={[
@@ -1445,7 +1467,9 @@ export default function FullscreenClock({
           onChange={
             setWallpaper
           }
-          theme={theme}
+          theme={
+            theme
+          }
           font={
             clockFont
           }
@@ -1455,18 +1479,12 @@ export default function FullscreenClock({
   );
 }
 
-/*
- * Drag/swipe carousel.
- *
- * Swipe left  -> next
- * Swipe right -> previous
- * Short drag  -> spring back
- */
 function SwipeCarousel({
   label,
   items,
   index,
   onChange,
+  onSelectSound,
   color,
   regular,
   bold
@@ -1506,9 +1524,13 @@ function SwipeCarousel({
       drag,
       {
         toValue: 0,
+
         stiffness: 260,
+
         damping: 22,
+
         mass: 0.7,
+
         useNativeDriver:
           true
       }
@@ -1529,8 +1551,8 @@ function SwipeCarousel({
 
     const destination =
       direction > 0
-        ? -70
-        : 70;
+        ? -66
+        : 66;
 
     Animated.timing(
       drag,
@@ -1538,7 +1560,7 @@ function SwipeCarousel({
         toValue:
           destination,
 
-        duration: 160,
+        duration: 150,
 
         easing:
           Easing.out(
@@ -1548,31 +1570,45 @@ function SwipeCarousel({
         useNativeDriver:
           true
       }
-    ).start(() => {
-      onChange(
-        direction
-      );
+    ).start(
+      () => {
+        /*
+         * Selection SFX only when an option
+         * actually snaps/applies.
+         */
+        onSelectSound?.();
 
-      drag.setValue(
-        -destination *
-        0.30
-      );
+        onChange(
+          direction
+        );
 
-      Animated.spring(
-        drag,
-        {
-          toValue: 0,
-          stiffness: 230,
-          damping: 19,
-          mass: 0.72,
-          useNativeDriver:
-            true
-        }
-      ).start(() => {
-        changing.current =
-          false;
-      });
-    });
+        drag.setValue(
+          -destination *
+          0.28
+        );
+
+        Animated.spring(
+          drag,
+          {
+            toValue: 0,
+
+            stiffness: 230,
+
+            damping: 19,
+
+            mass: 0.72,
+
+            useNativeDriver:
+              true
+          }
+        ).start(
+          () => {
+            changing.current =
+              false;
+          }
+        );
+      }
+    );
   }
 
   const responder =
@@ -1595,7 +1631,8 @@ function SwipeCarousel({
 
         onPanResponderGrant:
           () => {
-            drag.stopAnimation();
+            drag
+              .stopAnimation();
           },
 
         onPanResponderMove:
@@ -1609,17 +1646,15 @@ function SwipeCarousel({
               return;
             }
 
-            /*
-             * Resistance keeps gesture smooth
-             * without letting content escape.
-             */
             const value =
               Math.max(
-                -76,
+                -70,
+
                 Math.min(
-                  76,
+                  70,
+
                   gesture.dx *
-                    0.72
+                  0.74
                 )
               );
 
@@ -1643,22 +1678,21 @@ function SwipeCarousel({
               Math.abs(
                 gesture.dx
               ) >
-                34 ||
+                32 ||
               Math.abs(
                 gesture.vx
               ) >
-                0.34;
+                0.32;
 
             if (!swipe) {
               reset();
+
               return;
             }
 
-            /*
-             * Negative = left = next.
-             */
             commit(
-              gesture.dx < 0
+              gesture.dx <
+              0
                 ? 1
                 : -1
             );
@@ -1672,15 +1706,33 @@ function SwipeCarousel({
   const centerScale =
     drag.interpolate({
       inputRange: [
-        -76,
+        -70,
         0,
-        76
+        70
       ],
 
       outputRange: [
-        0.88,
+        0.89,
         1,
-        0.88
+        0.89
+      ],
+
+      extrapolate:
+        'clamp'
+    });
+
+  const sideOpacity =
+    drag.interpolate({
+      inputRange: [
+        -70,
+        0,
+        70
+      ],
+
+      outputRange: [
+        0.48,
+        0.32,
+        0.48
       ],
 
       extrapolate:
@@ -1689,7 +1741,9 @@ function SwipeCarousel({
 
   return (
     <View
-      {...responder.panHandlers}
+      {...responder
+        .panHandlers}
+
       style={[
         styles.carousel,
 
@@ -1697,7 +1751,7 @@ function SwipeCarousel({
           borderColor:
             withOpacity(
               color,
-              0.25
+              0.24
             )
         }
       ]}
@@ -1711,7 +1765,7 @@ function SwipeCarousel({
             color:
               withOpacity(
                 color,
-                0.58
+                0.60
               ),
 
             fontFamily:
@@ -1737,17 +1791,15 @@ function SwipeCarousel({
           }
         ]}
       >
-        <Text
+        <Animated.Text
           numberOfLines={1}
           style={[
             styles.carouselSide,
 
             {
-              color:
-                withOpacity(
-                  color,
-                  0.35
-                ),
+              color,
+              opacity:
+                sideOpacity,
 
               fontFamily:
                 regular
@@ -1755,7 +1807,7 @@ function SwipeCarousel({
           ]}
         >
           {previous}
-        </Text>
+        </Animated.Text>
 
         <Animated.View
           style={[
@@ -1789,17 +1841,15 @@ function SwipeCarousel({
           </Text>
         </Animated.View>
 
-        <Text
+        <Animated.Text
           numberOfLines={1}
           style={[
             styles.carouselSide,
 
             {
-              color:
-                withOpacity(
-                  color,
-                  0.35
-                ),
+              color,
+              opacity:
+                sideOpacity,
 
               fontFamily:
                 regular
@@ -1807,7 +1857,7 @@ function SwipeCarousel({
           ]}
         >
           {next}
-        </Text>
+        </Animated.Text>
       </Animated.View>
     </View>
   );
@@ -1880,9 +1930,15 @@ function ClockStyle({
         </View>
 
         <DateText
-          text={date}
-          font={regular}
-          color={color}
+          text={
+            date
+          }
+          font={
+            regular
+          }
+          color={
+            color
+          }
         />
       </View>
     );
@@ -1916,9 +1972,15 @@ function ClockStyle({
         </Text>
 
         <DateText
-          text={date}
-          font={regular}
-          color={color}
+          text={
+            date
+          }
+          font={
+            regular
+          }
+          color={
+            color
+          }
         />
       </View>
     );
@@ -1952,9 +2014,15 @@ function ClockStyle({
         </Text>
 
         <DateText
-          text={date}
-          font={regular}
-          color={color}
+          text={
+            date
+          }
+          font={
+            regular
+          }
+          color={
+            color
+          }
         />
       </View>
     );
@@ -2010,9 +2078,15 @@ function ClockStyle({
         </View>
 
         <DateText
-          text={date}
-          font={regular}
-          color={color}
+          text={
+            date
+          }
+          font={
+            regular
+          }
+          color={
+            color
+          }
         />
       </View>
     );
@@ -2037,8 +2111,12 @@ function ClockStyle({
               parts.h24
             }
             label="HOUR"
-            font={bold}
-            color={color}
+            font={
+              bold
+            }
+            color={
+              color
+            }
           />
 
           <Text
@@ -2065,8 +2143,12 @@ function ClockStyle({
               parts.minute
             }
             label="MIN"
-            font={bold}
-            color={color}
+            font={
+              bold
+            }
+            color={
+              color
+            }
           />
 
           <Text
@@ -2093,15 +2175,25 @@ function ClockStyle({
               parts.second
             }
             label="SEC"
-            font={bold}
-            color={color}
+            font={
+              bold
+            }
+            color={
+              color
+            }
           />
         </View>
 
         <DateText
-          text={date}
-          font={regular}
-          color={color}
+          text={
+            date
+          }
+          font={
+            regular
+          }
+          color={
+            color
+          }
         />
       </View>
     );
@@ -2151,9 +2243,15 @@ function ClockStyle({
         </Text>
 
         <DateText
-          text={date}
-          font={regular}
-          color={color}
+          text={
+            date
+          }
+          font={
+            regular
+          }
+          color={
+            color
+          }
         />
       </View>
     );
@@ -2205,9 +2303,15 @@ function ClockStyle({
         </Text>
 
         <DateText
-          text={date}
-          font={regular}
-          color={color}
+          text={
+            date
+          }
+          font={
+            regular
+          }
+          color={
+            color
+          }
         />
       </View>
     );
@@ -2273,9 +2377,15 @@ function ClockStyle({
         </View>
 
         <DateText
-          text={date}
-          font={regular}
-          color={color}
+          text={
+            date
+          }
+          font={
+            regular
+          }
+          color={
+            color
+          }
         />
       </View>
     );
@@ -2291,19 +2401,29 @@ function ClockStyle({
         }
       >
         <AnalogClock
-          now={now}
+          now={
+            now
+          }
           size={
             landscape
               ? 250
               : 274
           }
-          color={color}
+          color={
+            color
+          }
         />
 
         <DateText
-          text={date}
-          font={regular}
-          color={color}
+          text={
+            date
+          }
+          font={
+            regular
+          }
+          color={
+            color
+          }
         />
       </View>
     );
@@ -2319,13 +2439,17 @@ function ClockStyle({
       ]}
     >
       <AnalogClock
-        now={now}
+        now={
+          now
+        }
         size={
           landscape
             ? 210
             : 205
         }
-        color={color}
+        color={
+          color
+        }
       />
 
       <View
@@ -2368,9 +2492,15 @@ function ClockStyle({
         </Text>
 
         <DateText
-          text={date}
-          font={regular}
-          color={color}
+          text={
+            date
+          }
+          font={
+            regular
+          }
+          color={
+            color
+          }
         />
       </View>
     </View>
@@ -2490,14 +2620,24 @@ function AnalogClock({
 
   return (
     <Svg
-      width={size}
-      height={size}
+      width={
+        size
+      }
+      height={
+        size
+      }
       viewBox={`0 0 ${size} ${size}`}
     >
       <Circle
-        cx={center}
-        cy={center}
-        r={radius}
+        cx={
+          center
+        }
+        cy={
+          center
+        }
+        r={
+          radius
+        }
         fill="rgba(0,0,0,.18)"
         stroke={
           withOpacity(
@@ -2534,8 +2674,9 @@ function AnalogClock({
 
           return (
             <Line
-              key={index}
-
+              key={
+                index
+              }
               x1={
                 center +
                 Math.cos(
@@ -2543,7 +2684,6 @@ function AnalogClock({
                 ) *
                   inner
               }
-
               y1={
                 center +
                 Math.sin(
@@ -2551,7 +2691,6 @@ function AnalogClock({
                 ) *
                   inner
               }
-
               x2={
                 center +
                 Math.cos(
@@ -2559,7 +2698,6 @@ function AnalogClock({
                 ) *
                   outer
               }
-
               y2={
                 center +
                 Math.sin(
@@ -2567,10 +2705,10 @@ function AnalogClock({
                 ) *
                   outer
               }
-
               stroke={
                 withOpacity(
                   color,
+
                   index %
                     3 ===
                   0
@@ -2578,7 +2716,6 @@ function AnalogClock({
                     : 0.38
                 )
               }
-
               strokeWidth={
                 index %
                   3 ===
@@ -2586,7 +2723,6 @@ function AnalogClock({
                   ? 3
                   : 1.5
               }
-
               strokeLinecap="round"
             />
           );
@@ -2594,7 +2730,9 @@ function AnalogClock({
       )}
 
       <Hand
-        center={center}
+        center={
+          center
+        }
         radius={
           radius *
           0.50
@@ -2603,12 +2741,18 @@ function AnalogClock({
           hours *
           30
         }
-        width={5}
-        color={color}
+        width={
+          5
+        }
+        color={
+          color
+        }
       />
 
       <Hand
-        center={center}
+        center={
+          center
+        }
         radius={
           radius *
           0.70
@@ -2617,12 +2761,18 @@ function AnalogClock({
           minutes *
           6
         }
-        width={3.5}
-        color={color}
+        width={
+          3.5
+        }
+        color={
+          color
+        }
       />
 
       <Hand
-        center={center}
+        center={
+          center
+        }
         radius={
           radius *
           0.76
@@ -2631,7 +2781,9 @@ function AnalogClock({
           seconds *
           6
         }
-        width={1.8}
+        width={
+          1.8
+        }
         color={
           withOpacity(
             color,
@@ -2641,10 +2793,16 @@ function AnalogClock({
       />
 
       <Circle
-        cx={center}
-        cy={center}
+        cx={
+          center
+        }
+        cy={
+          center
+        }
         r="5"
-        fill={color}
+        fill={
+          color
+        }
       />
     </Svg>
   );
@@ -2667,9 +2825,12 @@ function Hand({
 
   return (
     <Line
-      x1={center}
-      y1={center}
-
+      x1={
+        center
+      }
+      y1={
+        center
+      }
       x2={
         center +
         Math.cos(
@@ -2677,7 +2838,6 @@ function Hand({
         ) *
           radius
       }
-
       y2={
         center +
         Math.sin(
@@ -2685,9 +2845,12 @@ function Hand({
         ) *
           radius
       }
-
-      stroke={color}
-      strokeWidth={width}
+      stroke={
+        color
+      }
+      strokeWidth={
+        width
+      }
       strokeLinecap="round"
     />
   );
@@ -2747,21 +2910,24 @@ function AmbientTheme({
 
           {
             opacity:
-              motion.interpolate({
-                inputRange:
-                  [0, 1],
+              motion
+                .interpolate({
+                  inputRange:
+                    [0, 1],
 
-                outputRange:
-                  [0.10, 0.24]
-              }),
+                  outputRange:
+                    [0.10, 0.24]
+                }),
 
             transform: [
               {
-                translateX: x
+                translateX:
+                  x
               },
 
               {
-                translateY: y
+                translateY:
+                  y
               },
 
               {
@@ -2866,7 +3032,8 @@ function getTimeParts(
       ),
 
     period:
-      rawHour >= 12
+      rawHour >=
+      12
         ? 'PM'
         : 'AM'
   };
@@ -2899,11 +3066,12 @@ function withOpacity(
   opacity
 ) {
   const clean =
-    String(hex)
-      .replace(
-        '#',
-        ''
-      );
+    String(
+      hex
+    ).replace(
+      '#',
+      ''
+    );
 
   if (
     clean.length !==
@@ -2946,7 +3114,8 @@ const styles =
   StyleSheet.create({
     page: {
       flex: 1,
-      overflow: 'hidden',
+      overflow:
+        'hidden',
       backgroundColor:
         '#030806'
     },
@@ -2956,7 +3125,8 @@ const styles =
     },
 
     ambient: {
-      position: 'absolute',
+      position:
+        'absolute',
       width: 720,
       height: 720,
       left: -340,
@@ -2965,7 +3135,8 @@ const styles =
 
     ambientFill: {
       flex: 1,
-      borderRadius: 380
+      borderRadius:
+        380
     },
 
     clockArea: {
@@ -2991,7 +3162,8 @@ const styles =
     },
 
     brand: {
-      position: 'absolute',
+      position:
+        'absolute',
       zIndex: 45,
       alignItems:
         'flex-start'
@@ -3008,15 +3180,18 @@ const styles =
     brandFix: {
       minWidth: 185,
       paddingRight: 28,
-      overflow: 'visible'
+      overflow:
+        'visible'
     },
 
     brandTitle: {
-      color: '#F5F7F6',
+      color:
+        '#F5F7F6',
       fontSize: 24,
       lineHeight: 37,
       letterSpacing: 4,
-      paddingHorizontal: 3,
+      paddingHorizontal:
+        3,
       includeFontPadding:
         false
     },
@@ -3031,17 +3206,25 @@ const styles =
     },
 
     carouselStack: {
-      position: 'absolute',
+      position:
+        'absolute',
       zIndex: 75,
-      gap: 8
+      gap: 7
     },
 
+    /*
+     * Compact height, long enough horizontally
+     * for meaningful swipe travel.
+     */
     carousel: {
-      position: 'relative',
+      position:
+        'relative',
       width: '100%',
-      height: 57,
-      overflow: 'hidden',
-      justifyContent: 'flex-end',
+      height: 49,
+      overflow:
+        'hidden',
+      justifyContent:
+        'flex-end',
       borderWidth: 1,
       borderRadius: 999,
       backgroundColor:
@@ -3049,52 +3232,62 @@ const styles =
     },
 
     carouselLabel: {
-      position: 'absolute',
+      position:
+        'absolute',
       zIndex: 5,
-      top: 5,
+      top: 4,
       left: 0,
       right: 0,
-      fontSize: 7,
+      fontSize: 6.8,
       lineHeight: 9,
-      letterSpacing: 1.3,
-      textAlign: 'center'
+      letterSpacing: 1.25,
+      textAlign:
+        'center'
     },
 
     carouselValues: {
-      height: 39,
-      flexDirection: 'row',
-      alignItems: 'center',
+      height: 34,
+      flexDirection:
+        'row',
+      alignItems:
+        'center',
       justifyContent:
         'center'
     },
 
     carouselSide: {
       width: '28%',
-      fontSize: 8,
-      lineHeight: 12,
-      textAlign: 'center'
+      fontSize: 7.5,
+      lineHeight: 11,
+      textAlign:
+        'center'
     },
 
     carouselCurrentWrap: {
       width: '44%',
-      alignItems: 'center',
-      justifyContent: 'center'
+      alignItems:
+        'center',
+      justifyContent:
+        'center'
     },
 
     carouselCurrent: {
       width: '100%',
-      fontSize: 12,
-      lineHeight: 16,
-      textAlign: 'center'
+      fontSize: 11.5,
+      lineHeight: 15,
+      textAlign:
+        'center'
     },
 
     styleInfo: {
-      position: 'absolute',
+      position:
+        'absolute',
       zIndex: 50,
       top: '25%',
       left: 70,
       right: 70,
-      alignItems: 'center'
+      alignItems:
+        'center'
     },
 
     styleInfoLandscape: {
@@ -3114,18 +3307,23 @@ const styles =
       fontSize: 13,
       lineHeight: 18,
       letterSpacing: 1,
-      textAlign: 'center'
+      textAlign:
+        'center'
     },
 
     lowerInfo: {
-      position: 'absolute',
+      position:
+        'absolute',
       zIndex: 50,
       left: 70,
       right: 70,
       bottom: '21%',
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
       gap: 7
     },
 
@@ -3146,40 +3344,51 @@ const styles =
     },
 
     hiddenBrand: {
-      position: 'absolute',
+      position:
+        'absolute',
       zIndex: 110,
       left: 0,
       right: 0,
       top: '67%',
-      alignItems: 'center'
+      alignItems:
+        'center'
     },
 
     hiddenBrandFix: {
       minWidth: 180,
-      paddingHorizontal: 24,
-      overflow: 'visible',
-      alignItems: 'center'
+      paddingHorizontal:
+        24,
+      overflow:
+        'visible',
+      alignItems:
+        'center'
     },
 
     hiddenBrandText: {
       fontSize: 19,
       lineHeight: 32,
       letterSpacing: 4,
-      textAlign: 'center',
+      textAlign:
+        'center',
       includeFontPadding:
         false
     },
 
     styleCenter: {
       width: '100%',
-      justifyContent: 'center',
-      alignItems: 'center'
+      justifyContent:
+        'center',
+      alignItems:
+        'center'
     },
 
     classicRow: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'flex-end'
+      flexDirection:
+        'row',
+      justifyContent:
+        'center',
+      alignItems:
+        'flex-end'
     },
 
     bigTime: {
@@ -3209,7 +3418,8 @@ const styles =
       marginTop: 9,
       fontSize: 13,
       lineHeight: 20,
-      textAlign: 'center',
+      textAlign:
+        'center',
       textShadowColor:
         'rgba(0,0,0,.45)',
       textShadowRadius: 8
@@ -3229,8 +3439,10 @@ const styles =
     },
 
     secondsRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-end'
+      flexDirection:
+        'row',
+      alignItems:
+        'flex-end'
     },
 
     hoursMinutes: {
@@ -3246,9 +3458,12 @@ const styles =
     },
 
     splitRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
+      flexDirection:
+        'row',
+      alignItems:
+        'center',
+      justifyContent:
+        'center',
       gap: 7
     },
 
@@ -3258,9 +3473,12 @@ const styles =
 
     timeCard: {
       minWidth: 77,
-      paddingHorizontal: 12,
-      paddingVertical: 12,
-      alignItems: 'center',
+      paddingHorizontal:
+        12,
+      paddingVertical:
+        12,
+      alignItems:
+        'center',
       borderWidth: 1,
       borderRadius: 15,
       backgroundColor:
@@ -3293,7 +3511,8 @@ const styles =
       width: '100%',
       fontSize: 132,
       lineHeight: 150,
-      textAlign: 'center',
+      textAlign:
+        'center',
       includeFontPadding:
         false
     },
@@ -3305,7 +3524,8 @@ const styles =
     },
 
     stacked: {
-      alignItems: 'center'
+      alignItems:
+        'center'
     },
 
     stackedHour: {
@@ -3326,19 +3546,24 @@ const styles =
     },
 
     hybrid: {
-      flexDirection: 'column',
-      alignItems: 'center',
+      flexDirection:
+        'column',
+      alignItems:
+        'center',
       gap: 12
     },
 
     hybridLandscape: {
-      flexDirection: 'row',
-      justifyContent: 'center',
+      flexDirection:
+        'row',
+      justifyContent:
+        'center',
       gap: 30
     },
 
     hybridDigital: {
-      alignItems: 'center'
+      alignItems:
+        'center'
     },
 
     hybridTime: {
@@ -3352,21 +3577,30 @@ const styles =
     },
 
     bottomControls: {
-      position: 'absolute',
+      position:
+        'absolute',
       zIndex: 70,
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'flex-end',
-      alignItems: 'center',
+      flexDirection:
+        'row',
+      flexWrap:
+        'wrap',
+      justifyContent:
+        'flex-end',
+      alignItems:
+        'center',
       gap: 7
     },
 
     bottomButton: {
       minHeight: 40,
-      paddingHorizontal: 11,
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
+      paddingHorizontal:
+        11,
+      flexDirection:
+        'row',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
       gap: 6,
       borderWidth: 1,
       borderColor:
@@ -3387,13 +3621,15 @@ const styles =
     },
 
     bottomButtonText: {
-      color: '#ffffff',
+      color:
+        '#ffffff',
       fontSize: 9.5,
       lineHeight: 14
     },
 
     exitX: {
-      color: '#ffffff',
+      color:
+        '#ffffff',
       fontSize: 18,
       lineHeight: 20
     },
@@ -3401,10 +3637,13 @@ const styles =
     eye: {
       width: 17,
       height: 13,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent:
+        'center',
+      alignItems:
+        'center',
       borderWidth: 1.5,
-      borderColor: '#ffffff',
+      borderColor:
+        '#ffffff',
       borderRadius: 9
     },
 
