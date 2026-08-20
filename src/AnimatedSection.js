@@ -56,8 +56,7 @@ export default function AnimatedSection({
   ] = useState(0);
 
   /*
-   * NATIVE DRIVER ONLY:
-   * rotate / scale / arrow.
+   * Native transforms only.
    */
   const spin =
     useRef(
@@ -67,8 +66,7 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * JS DRIVER ONLY:
-   * square -> circle radius.
+   * JS border radius only.
    */
   const morph =
     useRef(
@@ -78,8 +76,7 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * JS DRIVER ONLY:
-   * accordion height.
+   * JS height only.
    */
   const panel =
     useRef(
@@ -89,10 +86,9 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * NATIVE DRIVER ONLY:
-   * content fade + slide.
+   * Native content motion.
    */
-  const contentMotion =
+  const reveal =
     useRef(
       new Animated.Value(
         active ? 1 : 0
@@ -100,17 +96,13 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * NATIVE DRIVER ONLY:
-   * section press bounce.
+   * Native press response.
    */
-  const pressScale =
+  const press =
     useRef(
       new Animated.Value(1)
     ).current;
 
-  /*
-   * Icon animation.
-   */
   useEffect(() => {
     spin.stopAnimation();
     morph.stopAnimation();
@@ -122,9 +114,12 @@ export default function AnimatedSection({
           toValue:
             active ? 1 : 0,
 
-          duration: 680,
+          duration: 720,
 
-          easing: EASE,
+          easing:
+            Easing.inOut(
+              Easing.cubic
+            ),
 
           useNativeDriver:
             true
@@ -137,7 +132,7 @@ export default function AnimatedSection({
           toValue:
             active ? 1 : 0,
 
-          duration: 610,
+          duration: 620,
 
           easing: EASE,
 
@@ -148,9 +143,6 @@ export default function AnimatedSection({
     ]).start();
   }, [active]);
 
-  /*
-   * Accordion.
-   */
   useEffect(() => {
     if (
       contentHeight <= 0
@@ -159,7 +151,7 @@ export default function AnimatedSection({
     }
 
     panel.stopAnimation();
-    contentMotion.stopAnimation();
+    reveal.stopAnimation();
 
     if (active) {
       Animated.parallel([
@@ -168,7 +160,7 @@ export default function AnimatedSection({
           {
             toValue: 1,
 
-            duration: 570,
+            duration: 580,
 
             easing: EASE,
 
@@ -178,13 +170,13 @@ export default function AnimatedSection({
         ),
 
         Animated.timing(
-          contentMotion,
+          reveal,
           {
             toValue: 1,
 
-            duration: 460,
+            duration: 470,
 
-            delay: 55,
+            delay: 65,
 
             easing: EASE,
 
@@ -200,7 +192,7 @@ export default function AnimatedSection({
           {
             toValue: 0,
 
-            duration: 530,
+            duration: 520,
 
             easing: EASE,
 
@@ -210,11 +202,11 @@ export default function AnimatedSection({
         ),
 
         Animated.timing(
-          contentMotion,
+          reveal,
           {
             toValue: 0,
 
-            duration: 320,
+            duration: 300,
 
             easing:
               Easing.inOut(
@@ -232,15 +224,14 @@ export default function AnimatedSection({
     contentHeight
   ]);
 
-  function handlePressIn() {
-    pressScale.stopAnimation();
+  function pressIn() {
+    press.stopAnimation();
 
     Animated.timing(
-      pressScale,
+      press,
       {
-        toValue: 0.97,
-
-        duration: 150,
+        toValue: 0.972,
+        duration: 145,
 
         easing:
           Easing.out(
@@ -253,17 +244,17 @@ export default function AnimatedSection({
     ).start();
   }
 
-  function handlePressOut() {
-    pressScale.stopAnimation();
+  function pressOut() {
+    press.stopAnimation();
 
     Animated.spring(
-      pressScale,
+      press,
       {
         toValue: 1,
 
-        stiffness: 250,
-        damping: 14,
-        mass: 0.72,
+        stiffness: 240,
+        damping: 13,
+        mass: 0.7,
 
         useNativeDriver:
           true
@@ -276,46 +267,39 @@ export default function AnimatedSection({
     HelpIcon;
 
   /*
-   * Full turn.
+   * 450 degrees instead of a perfect 360.
    *
-   * Open:
-   * outer  0 -> +360
-   * inner  0 -> -360
-   *
-   * Close automatically reverses.
+   * This matters visually:
+   * at 360 a square ends in exactly the same
+   * orientation, which made the spin look
+   * almost invisible.
    */
   const outerRotation =
     spin.interpolate({
-      inputRange: [
-        0,
-        1
-      ],
+      inputRange:
+        [0, 1],
 
       outputRange: [
         '0deg',
-        '360deg'
+        '450deg'
       ]
     });
 
   const innerRotation =
     spin.interpolate({
-      inputRange: [
-        0,
-        1
-      ],
+      inputRange:
+        [0, 1],
 
       outputRange: [
         '0deg',
-        '-360deg'
+        '-450deg'
       ]
     });
 
   const arrowRotation =
     spin.interpolate({
-      inputRange: [
-        0,
-        1
-      ],
+      inputRange:
+        [0, 1],
 
       outputRange: [
         '0deg',
@@ -324,19 +308,22 @@ export default function AnimatedSection({
     });
 
   /*
-   * Native-only transform values.
+   * Slight asymmetric scale during travel
+   * makes opposite rotations readable.
    */
   const outerScale =
     spin.interpolate({
       inputRange: [
         0,
-        0.48,
+        0.38,
+        0.72,
         1
       ],
 
       outputRange: [
         1,
-        1.055,
+        1.075,
+        0.975,
         1
       ]
     });
@@ -345,39 +332,34 @@ export default function AnimatedSection({
     spin.interpolate({
       inputRange: [
         0,
-        0.52,
+        0.4,
+        0.75,
         1
       ],
 
       outputRange: [
         1,
-        0.945,
+        0.92,
+        1.045,
         1
       ]
     });
 
-  /*
-   * JS-only radius values.
-   */
   const outerRadius =
     morph.interpolate({
-      inputRange: [
-        0,
-        1
-      ],
+      inputRange:
+        [0, 1],
 
       outputRange: [
         9,
-        21
+        22
       ]
     });
 
   const innerRadius =
     morph.interpolate({
-      inputRange: [
-        0,
-        1
-      ],
+      inputRange:
+        [0, 1],
 
       outputRange: [
         7,
@@ -387,10 +369,8 @@ export default function AnimatedSection({
 
   const panelHeight =
     panel.interpolate({
-      inputRange: [
-        0,
-        1
-      ],
+      inputRange:
+        [0, 1],
 
       outputRange: [
         0,
@@ -399,15 +379,24 @@ export default function AnimatedSection({
     });
 
   const contentY =
-    contentMotion.interpolate({
-      inputRange: [
-        0,
-        1
-      ],
+    reveal.interpolate({
+      inputRange:
+        [0, 1],
 
       outputRange: [
-        -11,
+        -12,
         0
+      ]
+    });
+
+  const contentScale =
+    reveal.interpolate({
+      inputRange:
+        [0, 1],
+
+      outputRange: [
+        0.985,
+        1
       ]
     });
 
@@ -427,13 +416,12 @@ export default function AnimatedSection({
     >
       <Animated.View
         style={[
-          styles.pressMotion,
+          styles.pressLayer,
 
           {
             transform: [
               {
-                scale:
-                  pressScale
+                scale: press
               }
             ]
           }
@@ -443,15 +431,12 @@ export default function AnimatedSection({
           onPress={() =>
             toggle(name)
           }
-
           onPressIn={
-            handlePressIn
+            pressIn
           }
-
           onPressOut={
-            handlePressOut
+            pressOut
           }
-
           style={
             styles.bar
           }
@@ -462,16 +447,12 @@ export default function AnimatedSection({
             }
           >
             {/*
-             * OUTER MORPH WRAPPER
-             *
-             * JS driver only.
-             * It never rotates.
+             * JS morph wrapper.
              */}
             <Animated.View
               pointerEvents="none"
-
               style={[
-                styles.outerMorph,
+                styles.outerClip,
 
                 {
                   borderRadius:
@@ -480,10 +461,7 @@ export default function AnimatedSection({
               ]}
             >
               {/*
-               * Native transform layer.
-               *
-               * Its parent clips it into the
-               * current rounded-square/circle.
+               * Native rotating surface.
                */}
               <Animated.View
                 style={[
@@ -507,36 +485,28 @@ export default function AnimatedSection({
                   }
                 ]}
               >
-                {/*
-                 * Small asymmetric visual marks
-                 * make clockwise rotation visible
-                 * even while the shape approaches
-                 * a perfect circle.
-                 */}
                 <View
                   style={
-                    styles.outerMarkOne
+                    styles.outerAccentA
                   }
                 />
 
                 <View
                   style={
-                    styles.outerMarkTwo
+                    styles.outerAccentB
                   }
                 />
               </Animated.View>
             </Animated.View>
 
             {/*
-             * INNER MORPH WRAPPER
-             *
-             * Again: JS driver only.
+             * Independent JS morph wrapper
+             * for inner outline.
              */}
             <Animated.View
               pointerEvents="none"
-
               style={[
-                styles.innerMorph,
+                styles.innerClip,
 
                 {
                   borderRadius:
@@ -544,9 +514,6 @@ export default function AnimatedSection({
                 }
               ]}
             >
-              {/*
-               * Native counter-clockwise layer.
-               */}
               <Animated.View
                 style={[
                   styles.innerSpin,
@@ -568,28 +535,36 @@ export default function AnimatedSection({
               >
                 <View
                   style={
-                    styles.innerMarkOne
+                    styles.innerTop
                   }
                 />
 
                 <View
                   style={
-                    styles.innerMarkTwo
+                    styles.innerRight
+                  }
+                />
+
+                <View
+                  style={
+                    styles.innerBottom
+                  }
+                />
+
+                <View
+                  style={
+                    styles.innerLeft
                   }
                 />
               </Animated.View>
             </Animated.View>
 
             {/*
-             * CENTER ICON:
-             *
-             * No Animated transform.
-             * Not inside a rotating view.
-             * Completely stationary.
+             * SVG is outside every rotating
+             * component and never moves.
              */}
             <View
               pointerEvents="none"
-
               style={
                 styles.iconContent
               }
@@ -624,7 +599,6 @@ export default function AnimatedSection({
 
             <Text
               numberOfLines={1}
-
               style={[
                 styles.subtitle,
 
@@ -643,7 +617,6 @@ export default function AnimatedSection({
 
           <Animated.View
             pointerEvents="none"
-
             style={[
               styles.arrowStage,
 
@@ -676,11 +649,9 @@ export default function AnimatedSection({
        */}
       <View
         pointerEvents="none"
-
         style={
           styles.measure
         }
-
         onLayout={event => {
           const height =
             event
@@ -702,10 +673,9 @@ export default function AnimatedSection({
                 1
               );
 
-              contentMotion
-                .setValue(
-                  1
-                );
+              reveal.setValue(
+                1
+              );
             }
           }
         }}
@@ -730,7 +700,6 @@ export default function AnimatedSection({
             ? 'auto'
             : 'none'
         }
-
         style={[
           styles.panel,
 
@@ -749,12 +718,17 @@ export default function AnimatedSection({
                 colors.border,
 
               opacity:
-                contentMotion,
+                reveal,
 
               transform: [
                 {
                   translateY:
                     contentY
+                },
+
+                {
+                  scale:
+                    contentScale
                 }
               ]
             }
@@ -770,303 +744,208 @@ export default function AnimatedSection({
 const styles =
   StyleSheet.create({
     section: {
-      position:
-        'relative',
-
-      overflow:
-        'hidden',
-
+      position: 'relative',
+      overflow: 'hidden',
       borderWidth: 1,
-
       borderRadius: 14
     },
 
-    pressMotion: {
+    pressLayer: {
       width: '100%'
     },
 
     bar: {
       minHeight: 67,
-
       paddingHorizontal: 14,
-
       paddingVertical: 11,
-
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center'
+      flexDirection: 'row',
+      alignItems: 'center'
     },
 
     iconStage: {
-      position:
-        'relative',
-
-      width: 44,
-
-      height: 44,
-
+      position: 'relative',
+      width: 46,
+      height: 46,
       flexShrink: 0,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
+      justifyContent: 'center',
+      alignItems: 'center'
     },
 
-    /*
-     * JS-driven morph layer.
-     */
-    outerMorph: {
-      position:
-        'absolute',
-
+    outerClip: {
+      position: 'absolute',
       width: 42,
-
       height: 42,
-
-      overflow:
-        'hidden'
+      overflow: 'hidden'
     },
 
     /*
-     * Native-driven transform layer.
-     * Slightly larger than its clipping
-     * wrapper so rotation doesn't expose
-     * empty corners.
+     * Larger rotating surface lets its
+     * asymmetric highlights visibly travel
+     * inside the clipping shape.
      */
     outerSpin: {
-      position:
-        'absolute',
-
-      left: -9,
-
-      top: -9,
-
-      width: 60,
-
-      height: 60
+      position: 'absolute',
+      left: -10,
+      top: -10,
+      width: 62,
+      height: 62
     },
 
-    /*
-     * Very subtle asymmetric details.
-     * The center SVG remains untouched.
-     */
-    outerMarkOne: {
-      position:
-        'absolute',
-
-      width: 13,
-
-      height: 3,
-
-      top: 10,
-
-      right: 10,
-
-      borderRadius: 99,
-
-      backgroundColor:
-        'rgba(255,255,255,.24)'
-    },
-
-    outerMarkTwo: {
-      position:
-        'absolute',
-
-      width: 5,
-
+    outerAccentA: {
+      position: 'absolute',
+      top: 7,
+      left: 14,
+      width: 24,
       height: 5,
-
-      left: 12,
-
-      bottom: 11,
-
-      borderRadius: 3,
-
-      backgroundColor:
-        'rgba(255,255,255,.13)'
-    },
-
-    /*
-     * Inner shape is close to the
-     * outer edge as requested.
-     */
-    innerMorph: {
-      position:
-        'absolute',
-
-      width: 38,
-
-      height: 38,
-
-      overflow:
-        'hidden',
-
-      borderWidth: 1.35,
-
-      borderColor:
-        'rgba(255,255,255,.38)'
-    },
-
-    innerSpin: {
-      position:
-        'absolute',
-
-      left: -7,
-
-      top: -7,
-
-      width: 50,
-
-      height: 50
-    },
-
-    innerMarkOne: {
-      position:
-        'absolute',
-
-      width: 10,
-
-      height: 2,
-
-      left: 8,
-
-      top: 8,
-
       borderRadius: 99,
-
       backgroundColor:
-        'rgba(255,255,255,.52)'
+        'rgba(255,255,255,.27)'
     },
 
-    innerMarkTwo: {
-      position:
-        'absolute',
-
-      width: 4,
-
-      height: 4,
-
-      right: 8,
-
-      bottom: 8,
-
-      borderRadius: 2,
-
+    outerAccentB: {
+      position: 'absolute',
+      right: 9,
+      bottom: 12,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
       backgroundColor:
-        'rgba(255,255,255,.30)'
+        'rgba(255,255,255,.14)'
+    },
+
+    innerClip: {
+      position: 'absolute',
+      width: 38,
+      height: 38,
+      overflow: 'hidden',
+      borderRadius: 7
     },
 
     /*
-     * Stationary SVG layer.
+     * The outline itself rotates here.
+     * Border pieces are deliberately not
+     * symmetrical, making direction visible.
      */
+    innerSpin: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      width: 38,
+      height: 38
+    },
+
+    innerTop: {
+      position: 'absolute',
+      left: 2,
+      top: 1,
+      width: 24,
+      height: 1.5,
+      borderRadius: 99,
+      backgroundColor:
+        'rgba(255,255,255,.62)'
+    },
+
+    innerRight: {
+      position: 'absolute',
+      right: 1,
+      top: 7,
+      width: 1.5,
+      height: 26,
+      borderRadius: 99,
+      backgroundColor:
+        'rgba(255,255,255,.34)'
+    },
+
+    innerBottom: {
+      position: 'absolute',
+      right: 4,
+      bottom: 1,
+      width: 19,
+      height: 1.5,
+      borderRadius: 99,
+      backgroundColor:
+        'rgba(255,255,255,.48)'
+    },
+
+    innerLeft: {
+      position: 'absolute',
+      left: 1,
+      bottom: 4,
+      width: 1.5,
+      height: 17,
+      borderRadius: 99,
+      backgroundColor:
+        'rgba(255,255,255,.27)'
+    },
+
     iconContent: {
-      position:
-        'absolute',
-
-      zIndex: 10,
-
-      width: 44,
-
-      height: 44,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
+      position: 'absolute',
+      zIndex: 20,
+      width: 46,
+      height: 46,
+      justifyContent: 'center',
+      alignItems: 'center'
     },
 
     copy: {
       flex: 1,
-
       minWidth: 0,
-
       paddingHorizontal: 12,
-
-      justifyContent:
-        'center'
+      justifyContent: 'center'
     },
 
     title: {
       fontSize: 14,
-
       lineHeight: 19
     },
 
     subtitle: {
       marginTop: 1,
-
       fontSize: 10,
-
       lineHeight: 14
     },
 
     arrowStage: {
       width: 28,
-
       height: 28,
-
       flexShrink: 0,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
+      justifyContent: 'center',
+      alignItems: 'center'
     },
 
     arrow: {
       width: 10,
-
       height: 10,
-
       borderRightWidth: 2,
-
       borderBottomWidth: 2,
-
       transform: [
         {
-          rotate:
-            '45deg'
+          rotate: '45deg'
         }
       ]
     },
 
     measure: {
-      position:
-        'absolute',
-
+      position: 'absolute',
       left: 0,
-
       right: 0,
-
       top: 67,
-
       zIndex: -50,
-
       opacity: 0
     },
 
     measureBody: {
       width: '100%',
-
       borderTopWidth: 1
     },
 
     panel: {
       width: '100%',
-
-      overflow:
-        'hidden'
+      overflow: 'hidden'
     },
 
     body: {
       width: '100%',
-
       borderTopWidth: 1
     }
   });
