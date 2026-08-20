@@ -80,6 +80,18 @@ export default function SettingsPanel({
     height
   } = useWindowDimensions();
 
+  const panelWidth =
+    Math.min(
+      350,
+      width - 20
+    );
+
+  /*
+   * 0 = completely outside right edge
+   * 1 = final visible position
+   *
+   * No opacity is applied to the panel.
+   */
   const motion =
     useRef(
       new Animated.Value(
@@ -100,11 +112,18 @@ export default function SettingsPanel({
 
         duration:
           visible
-            ? 480
-            : 360,
+            ? 540
+            : 460,
 
         easing:
-          EASE,
+          visible
+            ? EASE
+            : Easing.bezier(
+                0.4,
+                0,
+                0.6,
+                1
+              ),
 
         useNativeDriver:
           true
@@ -121,31 +140,33 @@ export default function SettingsPanel({
       true
     );
 
-  const panelWidth =
-    Math.min(
-      350,
-      width - 20
-    );
-
+  /*
+   * Add extra distance so the whole panel,
+   * including its border/shadow, is beyond
+   * the physical right edge.
+   */
   const translateX =
     motion.interpolate({
       inputRange:
         [0, 1],
 
       outputRange: [
-        panelWidth *
-          0.42,
+        panelWidth + 28,
         0
       ]
     });
 
-  const translateY =
+  /*
+   * Backdrop may softly appear, but the
+   * Settings PANEL itself never fades.
+   */
+  const backdropOpacity =
     motion.interpolate({
       inputRange:
         [0, 1],
 
       outputRange:
-        [-10, 0]
+        [0, 1]
     });
 
   return (
@@ -170,7 +191,7 @@ export default function SettingsPanel({
 
           {
             opacity:
-              motion
+              backdropOpacity
           }
         ]}
       >
@@ -198,6 +219,10 @@ export default function SettingsPanel({
               insets.top +
               62,
 
+            /*
+             * Final position is flush with
+             * physical right edge.
+             */
             right: 0,
 
             width:
@@ -215,16 +240,9 @@ export default function SettingsPanel({
             borderColor:
               colors.border,
 
-            opacity:
-              motion,
-
             transform: [
               {
                 translateX
-              },
-
-              {
-                translateY
               }
             ]
           }
@@ -891,7 +909,9 @@ const styles =
     root: {
       ...StyleSheet.absoluteFillObject,
 
-      zIndex: 900
+      zIndex: 900,
+
+      overflow: 'hidden'
     },
 
     backdrop: {
@@ -902,11 +922,12 @@ const styles =
     },
 
     panel: {
-      position:
-        'absolute',
+      position: 'absolute',
 
-      overflow:
-        'hidden',
+      /*
+       * No connector/pill behind hamburger.
+       */
+      overflow: 'hidden',
 
       borderWidth: 1,
 
@@ -932,14 +953,12 @@ const styles =
     header: {
       paddingBottom: 14,
 
-      flexDirection:
-        'row',
+      flexDirection: 'row',
 
       justifyContent:
         'space-between',
 
-      alignItems:
-        'center',
+      alignItems: 'center',
 
       gap: 12,
 
@@ -965,11 +984,9 @@ const styles =
 
       paddingHorizontal: 9,
 
-      flexDirection:
-        'row',
+      flexDirection: 'row',
 
-      alignItems:
-        'center',
+      alignItems: 'center',
 
       gap: 5,
 
@@ -991,11 +1008,9 @@ const styles =
     appearanceRow: {
       paddingVertical: 16,
 
-      flexDirection:
-        'row',
+      flexDirection: 'row',
 
-      alignItems:
-        'center',
+      alignItems: 'center',
 
       justifyContent:
         'space-between',
@@ -1029,8 +1044,7 @@ const styles =
     },
 
     switchTrack: {
-      position:
-        'relative',
+      position: 'relative',
 
       width: 53,
 
@@ -1040,8 +1054,7 @@ const styles =
     },
 
     switchKnob: {
-      position:
-        'absolute',
+      position: 'absolute',
 
       top: 4,
 
@@ -1052,7 +1065,7 @@ const styles =
       borderRadius: 10,
 
       backgroundColor:
-        '#fff',
+        '#ffffff',
 
       elevation: 2
     },
@@ -1074,11 +1087,9 @@ const styles =
 
       paddingHorizontal: 10,
 
-      flexDirection:
-        'row',
+      flexDirection: 'row',
 
-      alignItems:
-        'center',
+      alignItems: 'center',
 
       gap: 10,
 
@@ -1135,11 +1146,9 @@ const styles =
     fontGrid: {
       marginTop: 11,
 
-      flexDirection:
-        'row',
+      flexDirection: 'row',
 
-      flexWrap:
-        'wrap',
+      flexWrap: 'wrap',
 
       justifyContent:
         'space-between',
@@ -1154,11 +1163,9 @@ const styles =
 
       paddingHorizontal: 7,
 
-      flexDirection:
-        'row',
+      flexDirection: 'row',
 
-      alignItems:
-        'center',
+      alignItems: 'center',
 
       gap: 7,
 
