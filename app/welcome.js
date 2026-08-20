@@ -62,17 +62,20 @@ export default function Welcome() {
     setDescriptionIndex
   ] = useState(0);
 
-  const entrance = useRef(
-    new Animated.Value(0)
-  ).current;
+  const entrance =
+    useRef(
+      new Animated.Value(0)
+    ).current;
 
-  const glowOne = useRef(
-    new Animated.Value(0)
-  ).current;
+  const glowOne =
+    useRef(
+      new Animated.Value(0)
+    ).current;
 
-  const glowTwo = useRef(
-    new Animated.Value(0)
-  ).current;
+  const glowTwo =
+    useRef(
+      new Animated.Value(0)
+    ).current;
 
   const descriptionMotion =
     useRef(
@@ -94,7 +97,8 @@ export default function Welcome() {
             1
           ),
 
-        useNativeDriver: true
+        useNativeDriver:
+          true
       }
     ).start();
 
@@ -112,7 +116,8 @@ export default function Welcome() {
                   Easing.ease
                 ),
 
-              useNativeDriver: true
+              useNativeDriver:
+                true
             }
           ),
 
@@ -127,7 +132,8 @@ export default function Welcome() {
                   Easing.ease
                 ),
 
-              useNativeDriver: true
+              useNativeDriver:
+                true
             }
           )
         ])
@@ -147,7 +153,8 @@ export default function Welcome() {
                   Easing.ease
                 ),
 
-              useNativeDriver: true
+              useNativeDriver:
+                true
             }
           ),
 
@@ -162,7 +169,8 @@ export default function Welcome() {
                   Easing.ease
                 ),
 
-              useNativeDriver: true
+              useNativeDriver:
+                true
             }
           )
         ])
@@ -172,59 +180,68 @@ export default function Welcome() {
     second.start();
 
     const timer =
-      setInterval(() => {
-        Animated.timing(
-          descriptionMotion,
-          {
-            toValue: 0,
-            duration: 260,
-            useNativeDriver: true
-          }
-        ).start(() => {
-          setDescriptionIndex(
-            value =>
-              (
-                value + 1
-              ) %
-              descriptions.length
-          );
-
-          descriptionMotion
-            .setValue(0);
-
+      setInterval(
+        () => {
           Animated.timing(
             descriptionMotion,
             {
-              toValue: 1,
-              duration: 650,
-
-              easing:
-                Easing.bezier(
-                  0.22,
-                  1,
-                  0.36,
-                  1
-                ),
-
-              useNativeDriver: true
+              toValue: 0,
+              duration: 260,
+              useNativeDriver:
+                true
             }
-          ).start();
-        });
-      }, 6800);
+          ).start(() => {
+            setDescriptionIndex(
+              value =>
+                (
+                  value + 1
+                ) %
+                descriptions.length
+            );
+
+            descriptionMotion
+              .setValue(0);
+
+            Animated.timing(
+              descriptionMotion,
+              {
+                toValue: 1,
+                duration: 650,
+
+                easing:
+                  Easing.bezier(
+                    0.22,
+                    1,
+                    0.36,
+                    1
+                  ),
+
+                useNativeDriver:
+                  true
+              }
+            ).start();
+          });
+        },
+        6800
+      );
 
     return () => {
       first.stop();
       second.stop();
-      clearInterval(timer);
+
+      clearInterval(
+        timer
+      );
     };
   }, []);
 
   async function enterApp() {
     try {
-      await AsyncStorage.setItem(
-        WELCOME_KEY,
-        '1'
-      );
+      await AsyncStorage
+        .setItem(
+          WELCOME_KEY,
+          '1'
+        );
     } catch {}
 
     router.replace(
@@ -248,7 +265,19 @@ export default function Welcome() {
       .openURL(
         'https://github.com/lxzrvi'
       )
-      .catch(() => {});
+      .catch(
+        () => {}
+      );
+  }
+
+  function openWebsite() {
+    Linking
+      .openURL(
+        'https://lxzrvi.github.io/NMIX/'
+      )
+      .catch(
+        () => {}
+      );
   }
 
   if (
@@ -259,6 +288,7 @@ export default function Welcome() {
       <View
         style={{
           flex: 1,
+
           backgroundColor:
             '#07110f'
         }}
@@ -279,25 +309,15 @@ export default function Welcome() {
       ? '#aab6b1'
       : '#66706c';
 
-  /*
-   * Start + Share now use the same glass/color
-   * family as the More Info card instead of a
-   * separate solid white/black treatment.
-   */
-  const buttonBackground =
+  const glassBackground =
     dark
       ? 'rgba(15,22,19,.82)'
       : 'rgba(241,248,245,.88)';
 
-  const buttonBorder =
+  const glassBorder =
     dark
       ? 'rgba(255,255,255,.075)'
       : 'rgba(255,255,255,.42)';
-
-  const cardBackground =
-    dark
-      ? 'rgba(15,22,19,.82)'
-      : 'rgba(241,248,245,.88)';
 
   const innerBackground =
     dark
@@ -328,7 +348,9 @@ export default function Welcome() {
         x: 1,
         y: 1
       }}
-      style={styles.page}
+      style={
+        styles.page
+      }
     >
       <View
         pointerEvents="none"
@@ -339,6 +361,7 @@ export default function Welcome() {
         <Animated.View
           style={[
             styles.glowA,
+
             {
               opacity:
                 glowOne.interpolate({
@@ -403,6 +426,7 @@ export default function Welcome() {
         <Animated.View
           style={[
             styles.glowB,
+
             {
               opacity:
                 glowTwo.interpolate({
@@ -457,6 +481,7 @@ export default function Welcome() {
       <Animated.View
         style={[
           styles.content,
+
           {
             opacity:
               entrance,
@@ -476,10 +501,15 @@ export default function Welcome() {
           }
         ]}
       >
-        <View style={styles.brand}>
+        <View
+          style={
+            styles.brand
+          }
+        >
           <Text
             style={[
               styles.subtitle,
+
               {
                 color:
                   theme.accentLight
@@ -489,27 +519,40 @@ export default function Welcome() {
             EVERYTHING WITH NUMBERS
           </Text>
 
-          <View style={styles.logoFix}>
+          <View
+            style={
+              styles.logoFix
+            }
+          >
             <Text
               numberOfLines={1}
-              style={styles.logo}
+              style={
+                styles.logo
+              }
             >
               NMIX
             </Text>
           </View>
         </View>
 
-        <View style={styles.actions}>
+        <View
+          style={
+            styles.actions
+          }
+        >
           <MotionPressable
-            onPress={enterApp}
+            onPress={
+              enterApp
+            }
             style={[
               styles.actionButton,
+
               {
                 backgroundColor:
-                  buttonBackground,
+                  glassBackground,
 
                 borderColor:
-                  buttonBorder
+                  glassBorder
               }
             ]}
           >
@@ -529,8 +572,10 @@ export default function Welcome() {
             <Text
               style={[
                 styles.actionText,
+
                 {
-                  color: accent
+                  color:
+                    accent
                 }
               ]}
             >
@@ -539,15 +584,18 @@ export default function Welcome() {
           </MotionPressable>
 
           <MotionPressable
-            onPress={shareApp}
+            onPress={
+              shareApp
+            }
             style={[
               styles.actionButton,
+
               {
                 backgroundColor:
-                  buttonBackground,
+                  glassBackground,
 
                 borderColor:
-                  buttonBorder
+                  glassBorder
               }
             ]}
           >
@@ -567,8 +615,10 @@ export default function Welcome() {
             <Text
               style={[
                 styles.actionText,
+
                 {
-                  color: accent
+                  color:
+                    accent
                 }
               ]}
             >
@@ -580,9 +630,10 @@ export default function Welcome() {
         <View
           style={[
             styles.infoCard,
+
             {
               backgroundColor:
-                cardBackground
+                glassBackground
             }
           ]}
         >
@@ -601,18 +652,25 @@ export default function Welcome() {
           <Text
             style={[
               styles.heading,
+
               {
-                color: text
+                color:
+                  text
               }
             ]}
           >
             More Info
           </Text>
 
-          <View style={styles.columns}>
+          <View
+            style={
+              styles.columns
+            }
+          >
             <View
               style={[
                 styles.appBox,
+
                 {
                   backgroundColor:
                     innerBackground,
@@ -633,6 +691,7 @@ export default function Welcome() {
                   numberOfLines={1}
                   style={[
                     styles.appName,
+
                     {
                       color:
                         accent
@@ -646,8 +705,10 @@ export default function Welcome() {
               <Animated.Text
                 style={[
                   styles.description,
+
                   {
-                    color: muted,
+                    color:
+                      muted,
 
                     opacity:
                       descriptionMotion,
@@ -679,6 +740,7 @@ export default function Welcome() {
             <View
               style={[
                 styles.detailsBox,
+
                 {
                   backgroundColor:
                     innerBackground,
@@ -693,102 +755,161 @@ export default function Welcome() {
               <Text
                 style={[
                   styles.detailsHeading,
+
                   {
-                    color: text
+                    color:
+                      text
                   }
                 ]}
               >
                 App Details
               </Text>
 
-              <View style={styles.chips}>
+              <View
+                style={
+                  styles.chips
+                }
+              >
                 {[
                   'React Native',
                   'Expo',
                   'JavaScript'
-                ].map(item => (
-                  <Chip
-                    key={item}
-                    text={item}
-                    accent={accent}
-                    color={
-                      dark
-                        ? theme.accentLight
-                        : theme.accentDark
-                    }
-                  />
-                ))}
+                ].map(
+                  item => (
+                    <Chip
+                      key={
+                        item
+                      }
+                      text={
+                        item
+                      }
+                      accent={
+                        accent
+                      }
+                      color={
+                        dark
+                          ? theme.accentLight
+                          : theme.accentDark
+                      }
+                    />
+                  )
+                )}
               </View>
 
               <Text
                 style={[
                   styles.builtFor,
+
                   {
-                    color: muted
+                    color:
+                      muted
                   }
                 ]}
               >
                 Built For
               </Text>
 
-              <View style={styles.chips}>
+              <View
+                style={
+                  styles.chips
+                }
+              >
                 {[
                   'Android',
                   'Offline Tools',
                   'Native UI'
-                ].map(item => (
-                  <Chip
-                    key={item}
-                    text={item}
-                    accent={accent}
-                    color={
-                      dark
-                        ? theme.accentLight
-                        : theme.accentDark
-                    }
-                  />
-                ))}
+                ].map(
+                  item => (
+                    <Chip
+                      key={
+                        item
+                      }
+                      text={
+                        item
+                      }
+                      accent={
+                        accent
+                      }
+                      color={
+                        dark
+                          ? theme.accentLight
+                          : theme.accentDark
+                      }
+                    />
+                  )
+                )}
               </View>
             </View>
           </View>
 
-          <MotionPressable
-            onPress={
-              openGithub
+          <View
+            style={
+              styles.infoActions
             }
-            style={[
-              styles.github,
-              {
-                backgroundColor:
-                  accent
-              }
-            ]}
           >
-            <Text
-              style={
-                styles.githubText
+            <MotionPressable
+              onPress={
+                openWebsite
               }
+              style={[
+                styles.infoActionButton,
+
+                {
+                  backgroundColor:
+                    accent
+                }
+              ]}
             >
-              GitHub
-            </Text>
-          </MotionPressable>
+              <Text
+                style={
+                  styles.infoActionText
+                }
+              >
+                Web
+              </Text>
+            </MotionPressable>
+
+            <MotionPressable
+              onPress={
+                openGithub
+              }
+              style={[
+                styles.infoActionButton,
+
+                {
+                  backgroundColor:
+                    accent
+                }
+              ]}
+            >
+              <Text
+                style={
+                  styles.infoActionText
+                }
+              >
+                GitHub
+              </Text>
+            </MotionPressable>
+          </View>
         </View>
       </Animated.View>
 
-      {/*
-       * Bottom starting-screen branding.
-       * Kept above copyright footer so they do
-       * not overlap on smaller Android screens.
-       */}
       <View
         pointerEvents="none"
-        style={styles.bottomBrand}
+        style={
+          styles.bottomBrand
+        }
       >
-        <View style={styles.bottomLogoFix}>
+        <View
+          style={
+            styles.bottomLogoFix
+          }
+        >
           <Text
             numberOfLines={1}
             style={[
               styles.bottomLogo,
+
               {
                 color:
                   theme.accentLight
@@ -800,7 +921,11 @@ export default function Welcome() {
         </View>
       </View>
 
-      <View style={styles.footer}>
+      <View
+        style={
+          styles.footer
+        }
+      >
         <Text
           style={
             styles.footerMain
@@ -830,6 +955,7 @@ function Chip({
     <View
       style={[
         styles.chip,
+
         {
           backgroundColor:
             `${accent}18`,
@@ -842,6 +968,7 @@ function Chip({
       <Text
         style={[
           styles.chipText,
+
           {
             color
           }
@@ -885,49 +1012,49 @@ const styles =
       flex: 1,
       paddingHorizontal: 16,
       paddingTop: 50,
-
-      /*
-       * Gives the new bottom branding/footer
-       * their own visual space.
-       */
       paddingBottom: 76,
-
       justifyContent: 'center',
       alignItems: 'center'
     },
 
     brand: {
       alignItems: 'center',
-      marginBottom: 18
+      marginBottom: 18,
+      overflow: 'visible'
     },
 
     subtitle: {
-      fontFamily:
-        'Poppins-Bold',
+      fontFamily: 'Poppins-Bold',
       fontSize: 10,
       lineHeight: 15,
       letterSpacing: 2.8,
       textAlign: 'center'
     },
 
+    /*
+     * Extra width/padding protects both N
+     * and X from Android font clipping.
+     */
     logoFix: {
-      minWidth: 200,
-      paddingHorizontal: 22,
-      paddingVertical: 4,
+      width: 300,
+      minHeight: 76,
+      paddingHorizontal: 38,
+      paddingVertical: 6,
       overflow: 'visible',
+      justifyContent: 'center',
       alignItems: 'center'
     },
 
     logo: {
-      color: '#fff',
-      fontFamily:
-        logoFont,
+      width: '100%',
+      color: '#ffffff',
+      fontFamily: logoFont,
       fontSize: 46,
-      lineHeight: 60,
+      lineHeight: 64,
       letterSpacing: 5,
+      paddingHorizontal: 10,
       textAlign: 'center',
-      includeFontPadding:
-        false
+      includeFontPadding: false
     },
 
     actions: {
@@ -940,9 +1067,9 @@ const styles =
     actionButton: {
       position: 'relative',
       minHeight: 51,
+      overflow: 'hidden',
       justifyContent: 'center',
       alignItems: 'center',
-      overflow: 'hidden',
       borderWidth: 1,
       borderRadius: 999,
       elevation: 5
@@ -953,8 +1080,7 @@ const styles =
     },
 
     actionText: {
-      fontFamily:
-        'Poppins-Bold',
+      fontFamily: 'Poppins-Bold',
       fontSize: 14
     },
 
@@ -964,7 +1090,7 @@ const styles =
       maxWidth: 460,
       minHeight: 210,
       padding: 13,
-      paddingBottom: 58,
+      paddingBottom: 59,
       overflow: 'hidden',
       borderRadius: 18,
       elevation: 8
@@ -972,8 +1098,7 @@ const styles =
 
     heading: {
       marginBottom: 11,
-      fontFamily:
-        'Poppins-Bold',
+      fontFamily: 'Poppins-Bold',
       fontSize: 14
     },
 
@@ -993,25 +1118,22 @@ const styles =
     },
 
     appNameFix: {
-      minWidth: 95,
-      paddingRight: 10,
+      minWidth: 105,
+      paddingHorizontal: 5,
       overflow: 'visible'
     },
 
     appName: {
-      fontFamily:
-        logoFont,
+      fontFamily: logoFont,
       fontSize: 16,
-      lineHeight: 25,
+      lineHeight: 26,
       letterSpacing: 1,
-      includeFontPadding:
-        false
+      includeFontPadding: false
     },
 
     description: {
       marginTop: 6,
-      fontFamily:
-        'Poppins-Regular',
+      fontFamily: 'Poppins-Regular',
       fontSize: 10.5,
       lineHeight: 16
     },
@@ -1025,15 +1147,13 @@ const styles =
     },
 
     detailsHeading: {
-      fontFamily:
-        'Poppins-Bold',
+      fontFamily: 'Poppins-Bold',
       fontSize: 11.5
     },
 
     builtFor: {
       marginTop: 10,
-      fontFamily:
-        'Poppins-Bold',
+      fontFamily: 'Poppins-Bold',
       fontSize: 9.5
     },
 
@@ -1052,27 +1172,32 @@ const styles =
     },
 
     chipText: {
-      fontFamily:
-        'Poppins-Bold',
+      fontFamily: 'Poppins-Bold',
       fontSize: 8
     },
 
-    github: {
+    infoActions: {
       position: 'absolute',
       left: 13,
+      right: 13,
       bottom: 12,
-      minWidth: 76,
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center'
+    },
+
+    infoActionButton: {
+      minWidth: 80,
       minHeight: 34,
-      paddingHorizontal: 14,
+      paddingHorizontal: 15,
       justifyContent: 'center',
       alignItems: 'center',
       borderRadius: 999
     },
 
-    githubText: {
-      color: '#fff',
-      fontFamily:
-        'Poppins-Bold',
+    infoActionText: {
+      color: '#ffffff',
+      fontFamily: 'Poppins-Bold',
       fontSize: 10
     },
 
@@ -1086,22 +1211,20 @@ const styles =
     },
 
     bottomLogoFix: {
-      minWidth: 80,
-      paddingHorizontal: 12,
+      minWidth: 100,
+      paddingHorizontal: 16,
       paddingVertical: 2,
       overflow: 'visible',
       alignItems: 'center'
     },
 
     bottomLogo: {
-      fontFamily:
-        logoFont,
+      fontFamily: logoFont,
       fontSize: 12,
       lineHeight: 20,
       letterSpacing: 2.2,
       textAlign: 'center',
-      includeFontPadding:
-        false,
+      includeFontPadding: false,
       opacity: 0.78
     },
 
@@ -1114,18 +1237,14 @@ const styles =
     },
 
     footerMain: {
-      color:
-        'rgba(255,255,255,.72)',
-      fontFamily:
-        'Poppins-Regular',
+      color: 'rgba(255,255,255,.72)',
+      fontFamily: 'Poppins-Regular',
       fontSize: 10
     },
 
     footerSub: {
-      color:
-        'rgba(255,255,255,.52)',
-      fontFamily:
-        'Poppins-Regular',
+      color: 'rgba(255,255,255,.52)',
+      fontFamily: 'Poppins-Regular',
       fontSize: 8
     }
   });
