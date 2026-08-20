@@ -21,10 +21,17 @@ import {
 } from './icons';
 
 const ICONS = {
-  calculator: CalculatorIcon,
-  clock: ClockIcon,
-  counter: CounterIcon,
-  instructions: HelpIcon
+  calculator:
+    CalculatorIcon,
+
+  clock:
+    ClockIcon,
+
+  counter:
+    CounterIcon,
+
+  instructions:
+    HelpIcon
 };
 
 const EASE =
@@ -56,7 +63,7 @@ export default function AnimatedSection({
   ] = useState(0);
 
   /*
-   * Native-driver transforms only.
+   * Native transforms only.
    */
   const spin =
     useRef(
@@ -66,7 +73,7 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * JS-driver radius only.
+   * JS geometry only.
    */
   const morph =
     useRef(
@@ -76,7 +83,7 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * JS-driver accordion height only.
+   * JS accordion height.
    */
   const panel =
     useRef(
@@ -86,7 +93,7 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * Native-driver content reveal only.
+   * Native content reveal.
    */
   const reveal =
     useRef(
@@ -95,9 +102,6 @@ export default function AnimatedSection({
       )
     ).current;
 
-  /*
-   * Native-driver press response.
-   */
   const press =
     useRef(
       new Animated.Value(1)
@@ -116,7 +120,7 @@ export default function AnimatedSection({
               ? 1
               : 0,
 
-          duration: 740,
+          duration: 760,
 
           easing:
             Easing.inOut(
@@ -150,7 +154,8 @@ export default function AnimatedSection({
 
   useEffect(() => {
     if (
-      contentHeight <= 0
+      contentHeight <=
+      0
     ) {
       return;
     }
@@ -158,75 +163,58 @@ export default function AnimatedSection({
     panel.stopAnimation();
     reveal.stopAnimation();
 
-    if (active) {
-      Animated.parallel([
-        Animated.timing(
-          panel,
-          {
-            toValue: 1,
+    Animated.parallel([
+      Animated.timing(
+        panel,
+        {
+          toValue:
+            active
+              ? 1
+              : 0,
 
-            duration: 580,
+          duration:
+            active
+              ? 580
+              : 520,
 
-            easing:
-              EASE,
+          easing:
+            EASE,
 
-            useNativeDriver:
-              false
-          }
-        ),
+          useNativeDriver:
+            false
+        }
+      ),
 
-        Animated.timing(
-          reveal,
-          {
-            toValue: 1,
+      Animated.timing(
+        reveal,
+        {
+          toValue:
+            active
+              ? 1
+              : 0,
 
-            duration: 460,
+          duration:
+            active
+              ? 460
+              : 300,
 
-            delay: 55,
+          delay:
+            active
+              ? 55
+              : 0,
 
-            easing:
-              EASE,
+          easing:
+            active
+              ? EASE
+              : Easing.inOut(
+                  Easing.ease
+                ),
 
-            useNativeDriver:
-              true
-          }
-        )
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(
-          panel,
-          {
-            toValue: 0,
-
-            duration: 520,
-
-            easing:
-              EASE,
-
-            useNativeDriver:
-              false
-          }
-        ),
-
-        Animated.timing(
-          reveal,
-          {
-            toValue: 0,
-
-            duration: 300,
-
-            easing:
-              Easing.inOut(
-                Easing.ease
-              ),
-
-            useNativeDriver:
-              true
-          }
-        )
-      ]).start();
-    }
+          useNativeDriver:
+            true
+        }
+      )
+    ]).start();
   }, [
     active,
     contentHeight
@@ -276,12 +264,8 @@ export default function AnimatedSection({
     HelpIcon;
 
   /*
-   * OUTER:
-   * Clockwise.
-   *
-   * CLOSE:
-   * Same animated value travels 1 -> 0,
-   * therefore motion visibly reverses.
+   * Clearly visible rotations.
+   * Close automatically reverses.
    */
   const outerRotate =
     spin.interpolate({
@@ -294,10 +278,6 @@ export default function AnimatedSection({
       ]
     });
 
-  /*
-   * INNER:
-   * Counter-clockwise.
-   */
   const innerRotate =
     spin.interpolate({
       inputRange:
@@ -321,40 +301,8 @@ export default function AnimatedSection({
     });
 
   /*
-   * Slight breathing while rotating.
-   */
-  const outerScale =
-    spin.interpolate({
-      inputRange: [
-        0,
-        0.48,
-        1
-      ],
-
-      outputRange: [
-        1,
-        1.055,
-        1
-      ]
-    });
-
-  const innerScale =
-    spin.interpolate({
-      inputRange: [
-        0,
-        0.52,
-        1
-      ],
-
-      outputRange: [
-        1,
-        0.945,
-        1
-      ]
-    });
-
-  /*
-   * Square -> circle.
+   * Actual outer and inner geometry
+   * both morph into circles.
    */
   const outerRadius =
     morph.interpolate({
@@ -362,7 +310,7 @@ export default function AnimatedSection({
         [0, 1],
 
       outputRange: [
-        8,
+        9,
         21
       ]
     });
@@ -374,7 +322,7 @@ export default function AnimatedSection({
 
       outputRange: [
         6,
-        18
+        18.5
       ]
     });
 
@@ -394,10 +342,8 @@ export default function AnimatedSection({
       inputRange:
         [0, 1],
 
-      outputRange: [
-        -10,
-        0
-      ]
+      outputRange:
+        [-10, 0]
     });
 
   return (
@@ -432,12 +378,15 @@ export default function AnimatedSection({
           onPress={() =>
             toggle(name)
           }
+
           onPressIn={
             pressIn
           }
+
           onPressOut={
             pressOut
           }
+
           style={
             styles.bar
           }
@@ -448,126 +397,102 @@ export default function AnimatedSection({
             }
           >
             {/*
-             * OUTER MORPH WRAPPER
+             * Native clockwise rotator.
              *
-             * JS driver only.
-             * No transforms here.
+             * It rotates a JS-morphing shape
+             * nested inside it.
              */}
             <Animated.View
               pointerEvents="none"
+
               style={[
-                styles.outerMorph,
+                styles.outerRotator,
 
                 {
-                  borderRadius:
-                    outerRadius
+                  transform: [
+                    {
+                      rotate:
+                        outerRotate
+                    }
+                  ]
                 }
               ]}
             >
-              {/*
-               * OUTER ROTATION LAYER
-               *
-               * Native transforms only.
-               */}
               <Animated.View
                 style={[
-                  styles.outerSpin,
+                  styles.outerShape,
 
                   {
-                    transform: [
-                      {
-                        rotate:
-                          outerRotate
-                      },
+                    backgroundColor:
+                      accent,
 
-                      {
-                        scale:
-                          outerScale
-                      }
-                    ]
+                    borderRadius:
+                      outerRadius
                   }
                 ]}
               >
                 <View
-                  style={[
-                    styles.outerSurface,
-
-                    {
-                      backgroundColor:
-                        accent
-                    }
-                  ]}
-                />
-
-                {/*
-                 * Soft directional shading makes
-                 * the rotation visible without
-                 * broken decorative lines.
-                 */}
-                <View
                   style={
-                    styles.outerShade
+                    styles.outerHighlight
                   }
                 />
               </Animated.View>
             </Animated.View>
 
             {/*
-             * INNER MORPH WRAPPER
-             *
-             * JS radius only.
+             * Counter-clockwise rotator.
              */}
             <Animated.View
               pointerEvents="none"
+
               style={[
-                styles.innerMorph,
+                styles.innerRotator,
 
                 {
-                  borderRadius:
-                    innerRadius
+                  transform: [
+                    {
+                      rotate:
+                        innerRotate
+                    }
+                  ]
                 }
               ]}
             >
               {/*
-               * Complete continuous outline
-               * rotates counter-clockwise.
+               * THIS actual outline now morphs
+               * from rounded square -> circle.
                */}
               <Animated.View
                 style={[
-                  styles.innerSpin,
+                  styles.innerShape,
 
                   {
-                    borderColor:
-                      'rgba(255,255,255,.52)',
-
-                    transform: [
-                      {
-                        rotate:
-                          innerRotate
-                      },
-
-                      {
-                        scale:
-                          innerScale
-                      }
-                    ]
+                    borderRadius:
+                      innerRadius
                   }
                 ]}
-              />
+              >
+                <View
+                  style={
+                    styles.innerMarker
+                  }
+                />
+              </Animated.View>
             </Animated.View>
 
             {/*
-             * Completely stationary SVG.
-             * It never enters a rotating parent.
+             * Stationary center icon.
              */}
             <View
               pointerEvents="none"
+
               style={
                 styles.iconContent
               }
             >
               <Icon
                 size={21}
+
                 color="#ffffff"
               />
             </View>
@@ -596,6 +521,7 @@ export default function AnimatedSection({
 
             <Text
               numberOfLines={1}
+
               style={[
                 styles.subtitle,
 
@@ -614,6 +540,7 @@ export default function AnimatedSection({
 
           <Animated.View
             pointerEvents="none"
+
             style={[
               styles.arrowStage,
 
@@ -641,15 +568,13 @@ export default function AnimatedSection({
         </Pressable>
       </Animated.View>
 
-      {/*
-       * Invisible content copy used only
-       * to measure natural panel height.
-       */}
       <View
         pointerEvents="none"
+
         style={
           styles.measure
         }
+
         onLayout={
           event => {
             const height =
@@ -659,7 +584,8 @@ export default function AnimatedSection({
                 .height;
 
             if (
-              height > 0 &&
+              height >
+                0 &&
               height !==
                 contentHeight
             ) {
@@ -700,6 +626,7 @@ export default function AnimatedSection({
             ? 'auto'
             : 'none'
         }
+
         style={[
           styles.panel,
 
@@ -740,8 +667,11 @@ const styles =
   StyleSheet.create({
     section: {
       position: 'relative',
+
       overflow: 'hidden',
+
       borderWidth: 1,
+
       borderRadius: 14
     },
 
@@ -776,11 +706,22 @@ const styles =
     },
 
     /*
-     * OUTER square/circle clipping shape.
+     * These wrappers contain ONLY native
+     * transform animation.
      */
-    outerMorph: {
+    outerRotator: {
       position: 'absolute',
 
+      width: 42,
+
+      height: 42,
+
+      justifyContent: 'center',
+
+      alignItems: 'center'
+    },
+
+    outerShape: {
       width: 42,
 
       height: 42,
@@ -789,82 +730,72 @@ const styles =
     },
 
     /*
-     * Oversized rotating layer prevents empty
-     * corners from appearing while square.
+     * Asymmetric highlight travels with
+     * the shape so clockwise spin is visible.
      */
-    outerSpin: {
+    outerHighlight: {
       position: 'absolute',
 
-      left: -10,
+      width: 18,
 
-      top: -10,
-
-      width: 62,
-
-      height: 62
-    },
-
-    outerSurface: {
-      ...StyleSheet.absoluteFillObject
-    },
-
-    /*
-     * A soft asymmetric area instead of broken
-     * line fragments. Because this is attached
-     * to outerSpin, rotation direction is visible.
-     */
-    outerShade: {
-      position: 'absolute',
-
-      top: 4,
+      height: 5,
 
       right: 4,
 
-      width: 31,
+      top: 4,
 
-      height: 31,
-
-      borderRadius: 16,
+      borderRadius: 99,
 
       backgroundColor:
-        'rgba(255,255,255,.13)'
+        'rgba(255,255,255,.22)'
     },
 
-    /*
-     * Inner layer remains close to outer edge.
-     */
-    innerMorph: {
+    innerRotator: {
       position: 'absolute',
 
       width: 37,
 
       height: 37,
-
-      overflow: 'visible',
 
       justifyContent: 'center',
 
       alignItems: 'center'
     },
 
-    /*
-     * One continuous outline.
-     * No disconnected top/right/bottom pieces.
-     */
-    innerSpin: {
+    innerShape: {
+      position: 'relative',
+
       width: 37,
 
       height: 37,
 
       borderWidth: 1.5,
 
-      borderRadius: 7
+      borderColor:
+        'rgba(255,255,255,.52)'
     },
 
     /*
-     * SVG is totally independent of
-     * both rotating layers.
+     * Marker stays attached to the complete
+     * outline, making counter-spin readable.
      */
+    innerMarker: {
+      position: 'absolute',
+
+      width: 9,
+
+      height: 3,
+
+      top: -2.2,
+
+      left: 14,
+
+      borderRadius: 99,
+
+      backgroundColor:
+        'rgba(255,255,255,.95)'
+    },
+
     iconContent: {
       position: 'absolute',
 
