@@ -96,15 +96,10 @@ const instructions = [
 ];
 
 export default function Main() {
-  const insets =
-    useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
 
-  const {
-    width
-  } = useWindowDimensions();
-
-  const fontsLoaded =
-    useNMixFonts();
+  const fontsLoaded = useNMixFonts();
 
   const {
     loaded,
@@ -401,8 +396,7 @@ export default function Main() {
             );
 
             if (
-              remaining <=
-              0
+              remaining <= 0
             ) {
               setTimerRunning(
                 false
@@ -2085,10 +2079,14 @@ export default function Main() {
           }
           style={[
             styles.controlButton,
+            styles.settingsControl,
 
             {
               backgroundColor:
-                accent
+                accent,
+
+              borderColor:
+                `${theme.accentLight}45`
             }
           ]}
         >
@@ -2906,6 +2904,10 @@ function ExpressionBox({
   );
 }
 
+/*
+ * Fullscreen control is now OUTSIDE the
+ * main ModeButton press target.
+ */
 function ModeButton({
   Icon,
   title,
@@ -2920,18 +2922,9 @@ function ModeButton({
   extra
 }) {
   return (
-    <MotionPressable
-      onPress={
-        onPress
-      }
-      onLongPress={
-        onLongPress
-      }
-      delayLongPress={
-        HOLD
-      }
+    <View
       style={[
-        styles.modeButton,
+        styles.modeShell,
 
         {
           backgroundColor:
@@ -2941,73 +2934,96 @@ function ModeButton({
         }
       ]}
     >
-      <View
-        style={[
-          styles.modeIcon,
-
-          {
-            backgroundColor:
-              active
-                ? '#ffffff'
-                : accent
-          }
-        ]}
-      >
-        <Icon
-          size={21}
-
-          color={
-            active
-              ? accent
-              : '#ffffff'
-          }
-        />
-      </View>
-
-      <View
+      <MotionPressable
+        onPress={
+          onPress
+        }
+        onLongPress={
+          onLongPress
+        }
+        delayLongPress={
+          HOLD
+        }
         style={
-          styles.modeCopy
+          styles.modeButton
         }
       >
-        <Text
+        <View
           style={[
-            styles.modeTitle,
+            styles.modeIcon,
 
             {
-              color:
+              backgroundColor:
                 active
                   ? '#ffffff'
-                  : colors.text,
-
-              fontFamily:
-                bold
+                  : accent
             }
           ]}
         >
-          {title}
-        </Text>
+          <Icon
+            size={21}
 
-        <Text
-          style={[
-            styles.modeSubtitle,
-
-            {
-              color:
-                active
-                  ? 'rgba(255,255,255,.8)'
-                  : colors.muted,
-
-              fontFamily:
-                regular
+            color={
+              active
+                ? accent
+                : '#ffffff'
             }
-          ]}
-        >
-          {subtitle}
-        </Text>
-      </View>
+          />
+        </View>
 
-      {extra}
-    </MotionPressable>
+        <View
+          style={
+            styles.modeCopy
+          }
+        >
+          <Text
+            style={[
+              styles.modeTitle,
+
+              {
+                color:
+                  active
+                    ? '#ffffff'
+                    : colors.text,
+
+                fontFamily:
+                  bold
+              }
+            ]}
+          >
+            {title}
+          </Text>
+
+          <Text
+            style={[
+              styles.modeSubtitle,
+
+              {
+                color:
+                  active
+                    ? 'rgba(255,255,255,.8)'
+                    : colors.muted,
+
+                fontFamily:
+                  regular
+              }
+            ]}
+          >
+            {subtitle}
+          </Text>
+        </View>
+      </MotionPressable>
+
+      {extra && (
+        <View
+          style={
+            styles.modeExtra
+          }
+        >
+          {extra}
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -3201,13 +3217,9 @@ const styles =
 
     top: {
       height: 330,
-
       paddingHorizontal: 10,
-
       paddingBottom: 10,
-
       borderBottomLeftRadius: 22,
-
       borderBottomRightRadius: 22
     },
 
@@ -3217,329 +3229,212 @@ const styles =
 
     logoArea: {
       height: 66,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
+      justifyContent: 'center',
+      alignItems: 'center'
     },
 
     logoSub: {
-      color:
-        '#ddf8ef',
-
+      color: '#ddf8ef',
       fontSize: 8,
-
       lineHeight: 12,
-
       letterSpacing: 2,
-
-      textAlign:
-        'center',
-
-      includeFontPadding:
-        false
+      textAlign: 'center',
+      includeFontPadding: false
     },
 
     logoFix: {
       minWidth: 165,
-
       paddingHorizontal: 15,
-
-      overflow:
-        'visible',
-
-      alignItems:
-        'center'
+      overflow: 'visible',
+      alignItems: 'center'
     },
 
     logo: {
-      color:
-        '#ffffff',
-
+      color: '#ffffff',
       fontSize: 27,
-
       lineHeight: 38,
-
       letterSpacing: 4,
-
-      textAlign:
-        'center',
-
-      includeFontPadding:
-        false
+      textAlign: 'center',
+      includeFontPadding: false
     },
 
     expression: {
       height: 76,
-
       marginBottom: 8,
-
       padding: 9,
-
-      flexDirection:
-        'row',
-
+      flexDirection: 'row',
       gap: 7,
-
       borderRadius: 12
     },
 
     expressionBox: {
       flex: 1,
-
-      justifyContent:
-        'center',
-
+      justifyContent: 'center',
       borderWidth: 1,
-
       borderRadius: 8
     },
 
     operatorBox: {
       width: 60,
-
-      justifyContent:
-        'center',
-
+      justifyContent: 'center',
       borderWidth: 1,
-
       borderRadius: 8
     },
 
     expressionText: {
       paddingHorizontal: 5,
-
       fontSize: 18,
-
       lineHeight: 24,
-
-      textAlign:
-        'center',
-
-      textAlignVertical:
-        'center',
-
-      includeFontPadding:
-        false
+      textAlign: 'center',
+      textAlignVertical: 'center',
+      includeFontPadding: false
     },
 
     result: {
       flex: 1,
-
-      position:
-        'relative',
-
-      overflow:
-        'hidden',
-
-      justifyContent:
-        'center',
-
+      position: 'relative',
+      overflow: 'hidden',
+      justifyContent: 'center',
       borderRadius: 15
     },
 
     glowA: {
-      position:
-        'absolute',
-
+      position: 'absolute',
       width: 370,
-
       height: 330,
-
       left: -170,
-
       top: -145
     },
 
     glowB: {
-      position:
-        'absolute',
-
+      position: 'absolute',
       width: 420,
-
       height: 370,
-
       right: -200,
-
       bottom: -190
     },
 
     glowFill: {
       flex: 1,
-
       borderRadius: 240
     },
 
     resultRow: {
       flex: 1,
-
-      position:
-        'relative',
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
+      position: 'relative',
+      justifyContent: 'center',
+      alignItems: 'center'
     },
 
     timerLeft: {
-      position:
-        'absolute',
-
+      position: 'absolute',
       zIndex: 10,
-
       left: 9,
-
       top: '50%',
-
       marginTop: -24
     },
 
     timerRight: {
-      position:
-        'absolute',
-
+      position: 'absolute',
       zIndex: 10,
-
       right: 9,
-
       top: '50%',
-
       marginTop: -24
     },
 
     timerAdjust: {
       width: 48,
-
       height: 48,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center',
-
+      justifyContent: 'center',
+      alignItems: 'center',
       borderRadius: 24
     },
 
     timerText: {
       width: 48,
-
       height: 48,
-
-      color:
-        '#ffffff',
-
+      color: '#ffffff',
       fontSize: 27,
-
       lineHeight: 48,
-
-      textAlign:
-        'center',
-
-      textAlignVertical:
-        'center',
-
-      includeFontPadding:
-        false
+      textAlign: 'center',
+      textAlignVertical: 'center',
+      includeFontPadding: false
     },
 
     mainDisplay: {
       width: '78%',
-
-      alignSelf:
-        'center',
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
+      alignSelf: 'center',
+      justifyContent: 'center',
+      alignItems: 'center'
     },
 
     displayLabel: {
       fontSize: 9,
-
       lineHeight: 14,
-
       letterSpacing: 2.5,
-
-      textAlign:
-        'center'
+      textAlign: 'center'
     },
 
     display: {
       width: '100%',
-
       fontSize: 40,
-
       lineHeight: 50,
-
-      textAlign:
-        'center',
-
-      textAlignVertical:
-        'center',
-
-      includeFontPadding:
-        false
+      textAlign: 'center',
+      textAlignVertical: 'center',
+      includeFontPadding: false
     },
 
     status: {
-      position:
-        'absolute',
-
+      position: 'absolute',
       zIndex: 20,
-
       left: '3%',
-
       right: '3%',
-
       bottom: 7,
-
       fontSize: 10,
-
       lineHeight: 14,
-
-      textAlign:
-        'center'
+      textAlign: 'center'
     },
 
     controls: {
-      position:
-        'absolute',
-
+      position: 'absolute',
       zIndex: 1000,
-
       left: 14,
-
       right: 14,
-
-      flexDirection:
-        'row',
-
-      justifyContent:
-        'space-between',
-
-      pointerEvents:
-        'box-none'
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      pointerEvents: 'box-none'
     },
 
     controlButton: {
       width: 43,
+      height: 43,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: 22,
+      elevation: 8
+    },
 
+    /*
+     * The settings control is attached to the
+     * right edge instead of looking like a
+     * detached circular bubble.
+     */
+    settingsControl: {
+      width: 49,
       height: 43,
 
-      justifyContent:
-        'center',
+      marginRight: -14,
 
-      alignItems:
-        'center',
+      paddingRight: 6,
 
-      borderRadius: 22,
+      borderWidth: 1,
+      borderRightWidth: 0,
+
+      borderTopRightRadius: 0,
+      borderBottomRightRadius: 0,
+
+      borderTopLeftRadius: 22,
+      borderBottomLeftRadius: 22,
 
       elevation: 8
     },
@@ -3550,223 +3445,160 @@ const styles =
 
     content: {
       width: '100%',
-
       maxWidth: 1100,
-
-      alignSelf:
-        'center',
-
+      alignSelf: 'center',
       padding: 10,
-
       paddingTop: 18,
-
       paddingBottom: 0,
-
       gap: 13
     },
 
     calculatorGrid: {
       paddingHorizontal: 8,
-
       paddingVertical: 17,
-
-      flexDirection:
-        'row',
-
-      flexWrap:
-        'wrap',
-
-      justifyContent:
-        'space-evenly',
-
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-evenly',
       gap: 10
     },
 
     calcKey: {
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
+      justifyContent: 'center',
+      alignItems: 'center'
     },
 
     calcText: {
       width: '100%',
-
       fontSize: 17,
-
       lineHeight: 22,
-
-      textAlign:
-        'center',
-
-      textAlignVertical:
-        'center',
-
-      includeFontPadding:
-        false
+      textAlign: 'center',
+      textAlignVertical: 'center',
+      includeFontPadding: false
     },
 
     clockGrid: {
       padding: 14,
-
       gap: 10
     },
 
-    modeButton: {
-      position:
-        'relative',
-
+    /*
+     * New stable shell owns the background
+     * and the right-side fullscreen control.
+     */
+    modeShell: {
+      position: 'relative',
       width: '100%',
-
       minHeight: 76,
-
-      padding: 12,
-
-      paddingRight: 58,
-
-      flexDirection:
-        'row',
-
-      alignItems:
-        'center',
-
-      gap: 10,
-
+      overflow: 'hidden',
       borderRadius: 13
+    },
+
+    modeButton: {
+      width: '100%',
+      minHeight: 76,
+      padding: 12,
+      paddingRight: 64,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10
     },
 
     modeIcon: {
       width: 40,
-
       height: 40,
-
       flexShrink: 0,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center',
-
+      justifyContent: 'center',
+      alignItems: 'center',
       borderRadius: 20
     },
 
     modeCopy: {
       flex: 1,
-
-      justifyContent:
-        'center'
+      justifyContent: 'center'
     },
 
     modeTitle: {
       fontSize: 13,
-
       lineHeight: 18
     },
 
     modeSubtitle: {
       marginTop: 2,
-
       fontSize: 10,
-
       lineHeight: 14
     },
 
-    fullscreen: {
-      position:
-        'absolute',
-
-      zIndex: 20,
-
+    /*
+     * Exact full-height right slot means the
+     * fullscreen button is always vertically
+     * centered in the Clock row.
+     */
+    modeExtra: {
+      position: 'absolute',
+      zIndex: 30,
       right: 10,
+      top: 0,
+      bottom: 0,
+      width: 40,
+      justifyContent: 'center',
+      alignItems: 'center'
+    },
 
-      top: '50%',
-
+    fullscreen: {
       width: 38,
-
       height: 38,
-
-      marginTop: -19,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center',
-
-      borderRadius: 10
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderRadius: 11,
+      elevation: 3
     },
 
     counterGrid: {
       padding: 14,
-
-      flexDirection:
-        'row',
-
-      flexWrap:
-        'wrap',
-
-      justifyContent:
-        'space-between',
-
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
       rowGap: 10
     },
 
     counterButton: {
       width: '48.5%',
-
       minHeight: 73,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center',
-
+      justifyContent: 'center',
+      alignItems: 'center',
       borderRadius: 12
     },
 
     counterTitle: {
       fontSize: 13,
-
       lineHeight: 18,
-
-      textAlign:
-        'center'
+      textAlign: 'center'
     },
 
     instructions: {
       padding: 13,
-
       gap: 9
     },
 
     instruction: {
       padding: 12,
-
       borderRadius: 10
     },
 
     instructionTitle: {
       fontSize: 12,
-
       lineHeight: 17
     },
 
     instructionText: {
       marginTop: 5,
-
       fontSize: 11,
-
       lineHeight: 17
     },
 
     contributor: {
       padding: 14,
-
       borderWidth: 1,
-
       borderRadius: 16
     },
 
@@ -3776,45 +3608,32 @@ const styles =
 
     contributorName: {
       marginTop: 10,
-
       fontSize: 16,
-
       lineHeight: 24
     },
 
     bio: {
       marginTop: 7,
-
       fontSize: 11,
-
       lineHeight: 17
     },
 
     learning: {
       marginTop: 12,
-
       fontSize: 10
     },
 
     chips: {
       marginTop: 8,
-
-      flexDirection:
-        'row',
-
-      flexWrap:
-        'wrap',
-
+      flexDirection: 'row',
+      flexWrap: 'wrap',
       gap: 6
     },
 
     chip: {
       paddingHorizontal: 8,
-
       paddingVertical: 5,
-
       borderWidth: 1,
-
       borderRadius: 999
     },
 
@@ -3823,62 +3642,36 @@ const styles =
     },
 
     back: {
-      alignSelf:
-        'center',
-
+      alignSelf: 'center',
       minHeight: 52,
-
       paddingLeft: 9,
-
       paddingRight: 18,
-
-      flexDirection:
-        'row',
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center',
-
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
       gap: 8,
-
       borderRadius: 999
     },
 
     backIcon: {
       width: 35,
-
       height: 35,
-
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center'
+      justifyContent: 'center',
+      alignItems: 'center'
     },
 
     backText: {
-      color:
-        '#ffffff',
-
+      color: '#ffffff',
       fontSize: 11,
-
       lineHeight: 16
     },
 
     footer: {
       minHeight: 90,
-
       paddingTop: 18,
-
       paddingBottom: 10,
-
-      justifyContent:
-        'flex-end',
-
-      alignItems:
-        'center'
+      justifyContent: 'flex-end',
+      alignItems: 'center'
     },
 
     footerMain: {
@@ -3887,10 +3680,7 @@ const styles =
 
     footerSub: {
       marginTop: 2,
-
       fontSize: 8,
-
-      textAlign:
-        'center'
+      textAlign: 'center'
     }
   });
