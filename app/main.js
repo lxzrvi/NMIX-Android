@@ -44,6 +44,14 @@ import {
 
 const HOLD = 520;
 
+const EASE =
+  Easing.bezier(
+    0.22,
+    1,
+    0.36,
+    1
+  );
+
 const instructions = [
   [
     'Calculator',
@@ -91,15 +99,20 @@ const instructions = [
   ],
   [
     'Fullscreen Clock',
-    'Tap the clock in fullscreen to cycle display styles. Tap the empty background to hide or show controls.'
+    'Use the side arrows to change clock style and color. Use Hide for a clean clock view.'
   ]
 ];
 
 export default function Main() {
-  const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const insets =
+    useSafeAreaInsets();
 
-  const fontsLoaded = useNMixFonts();
+  const {
+    width
+  } = useWindowDimensions();
+
+  const fontsLoaded =
+    useNMixFonts();
 
   const {
     loaded,
@@ -221,6 +234,27 @@ export default function Main() {
       new Animated.Value(1)
     ).current;
 
+  const mainEntrance =
+    useRef(
+      new Animated.Value(0)
+    ).current;
+
+  const expressionMotion =
+    useRef(
+      new Animated.Value(0)
+    ).current;
+
+  const sectionMotions =
+    useRef(
+      Array.from(
+        {
+          length: 7
+        },
+        () =>
+          new Animated.Value(0)
+      )
+    ).current;
+
   const accent =
     theme.accent;
 
@@ -266,22 +300,24 @@ export default function Main() {
     displayMotion
       .stopAnimation();
 
+    /*
+     * Short, subtle response.
+     * No large bounce and almost no perceived
+     * delay while entering calculator numbers.
+     */
     displayMotion
-      .setValue(0);
+      .setValue(0.72);
 
     Animated.timing(
       displayMotion,
       {
         toValue: 1,
 
-        duration: 300,
+        duration: 135,
 
         easing:
-          Easing.bezier(
-            0.22,
-            1,
-            0.36,
-            1
+          Easing.out(
+            Easing.quad
           ),
 
         useNativeDriver:
@@ -289,6 +325,50 @@ export default function Main() {
       }
     ).start();
   }
+
+  useEffect(() => {
+    mainEntrance.setValue(
+      0
+    );
+
+    sectionMotions
+      .forEach(
+        value =>
+          value.setValue(
+            0
+          )
+      );
+
+    Animated.parallel([
+      Animated.timing(
+        mainEntrance,
+        {
+          toValue: 1,
+          duration: 650,
+          easing: EASE,
+          useNativeDriver:
+            true
+        }
+      ),
+
+      Animated.stagger(
+        85,
+        sectionMotions.map(
+          value =>
+            Animated.timing(
+              value,
+              {
+                toValue: 1,
+                duration: 590,
+                easing: EASE,
+                useNativeDriver:
+                  true
+              }
+            )
+        )
+      )
+    ]).start();
+  }, []);
 
   useEffect(() => {
     const loop =
@@ -356,11 +436,39 @@ export default function Main() {
   }, [mode]);
 
   useEffect(() => {
+    expressionMotion
+      .stopAnimation();
+
+    Animated.timing(
+      expressionMotion,
+      {
+        toValue:
+          open ===
+          'calculator'
+            ? 1
+            : 0,
+
+        duration:
+          open ===
+          'calculator'
+            ? 460
+            : 300,
+
+        easing: EASE,
+
+        useNativeDriver:
+          true
+      }
+    ).start();
+  }, [open]);
+
+  useEffect(() => {
     const id =
       setInterval(
         () => {
           if (
-            mode === 'clock'
+            mode ===
+            'clock'
           ) {
             setDisplayState(
               formatClock(
@@ -396,7 +504,8 @@ export default function Main() {
             );
 
             if (
-              remaining <= 0
+              remaining <=
+              0
             ) {
               setTimerRunning(
                 false
@@ -434,7 +543,9 @@ export default function Main() {
       );
 
     return () =>
-      clearInterval(id);
+      clearInterval(
+        id
+      );
   }, [
     mode,
     timerRunning,
@@ -513,8 +624,7 @@ export default function Main() {
       );
 
     return () =>
-      subscription
-        .remove();
+      subscription.remove();
   }, [
     mode,
     timerRunning,
@@ -598,7 +708,9 @@ export default function Main() {
         const next =
           num1 + value;
 
-        setNum1(next);
+        setNum1(
+          next
+        );
 
         updateDisplay(
           next
@@ -626,7 +738,9 @@ export default function Main() {
         const next =
           num2 + value;
 
-        setNum2(next);
+        setNum2(
+          next
+        );
 
         updateDisplay(
           next
@@ -670,7 +784,9 @@ export default function Main() {
         value
       );
 
-      setTarget(2);
+      setTarget(
+        2
+      );
 
       updateDisplay(
         value
@@ -715,9 +831,13 @@ export default function Main() {
       if (
         target === 1
       ) {
-        setNum1(next);
+        setNum1(
+          next
+        );
       } else {
-        setNum2(next);
+        setNum2(
+          next
+        );
       }
 
       updateDisplay(
@@ -757,9 +877,13 @@ export default function Main() {
       if (
         target === 1
       ) {
-        setNum1(next);
+        setNum1(
+          next
+        );
       } else {
-        setNum2(next);
+        setNum2(
+          next
+        );
       }
 
       updateDisplay(
@@ -781,9 +905,13 @@ export default function Main() {
         !num2 &&
         operator
       ) {
-        setOperator('');
+        setOperator(
+          ''
+        );
 
-        setTarget(1);
+        setTarget(
+          1
+        );
 
         updateDisplay(
           num1 ||
@@ -811,13 +939,18 @@ export default function Main() {
       if (
         target === 1
       ) {
-        setNum1(next);
+        setNum1(
+          next
+        );
       } else {
-        setNum2(next);
+        setNum2(
+          next
+        );
       }
 
       updateDisplay(
-        next || '0'
+        next ||
+        '0'
       );
 
       setLabel(
@@ -911,7 +1044,9 @@ export default function Main() {
         break;
 
       case '÷':
-        if (b === 0) {
+        if (
+          b === 0
+        ) {
           updateDisplay(
             'Error'
           );
@@ -929,11 +1064,12 @@ export default function Main() {
 
         result =
           a / b;
-
         break;
 
       case '%':
-        if (b === 0) {
+        if (
+          b === 0
+        ) {
           updateDisplay(
             'Error'
           );
@@ -947,7 +1083,6 @@ export default function Main() {
 
         result =
           a % b;
-
         break;
 
       default:
@@ -1005,9 +1140,13 @@ export default function Main() {
       'timer'
     );
 
-    setMode('timer');
+    setMode(
+      'timer'
+    );
 
-    setLabel('TIMER');
+    setLabel(
+      'TIMER'
+    );
 
     updateDisplay(
       formatTimer(
@@ -1027,9 +1166,13 @@ export default function Main() {
       'timer'
     );
 
-    setMode('timer');
+    setMode(
+      'timer'
+    );
 
-    setLabel('TIMER');
+    setLabel(
+      'TIMER'
+    );
 
     if (
       timerRunning
@@ -1317,7 +1460,9 @@ export default function Main() {
     stopwatchStart.current =
       null;
 
-    setStopwatchMs(0);
+    setStopwatchMs(
+      0
+    );
 
     setMode(
       'stopwatch'
@@ -1381,7 +1526,9 @@ export default function Main() {
         ) + 1;
     }
 
-    setCount(next);
+    setCount(
+      next
+    );
 
     setMode(
       'counter'
@@ -1503,527 +1650,585 @@ export default function Main() {
       ]}
     >
       {!screenClosed && (
-        <LinearGradient
-          colors={[
-            theme.topOne,
-            theme.topTwo,
-            theme.topThree
-          ]}
-          start={{
-            x: 0,
-            y: 0
-          }}
-          end={{
-            x: 1,
-            y: 1
-          }}
+        <Animated.View
           style={[
-            styles.top,
+            styles.topMotion,
 
             {
-              paddingTop:
-                insets.top +
-                8
-            },
+              height:
+                calcOpen
+                  ? 415
+                  : 330,
 
-            calcOpen &&
-              styles.topCalculator
+              opacity:
+                mainEntrance,
+
+              transform: [
+                {
+                  translateY:
+                    mainEntrance
+                      .interpolate({
+                        inputRange:
+                          [0, 1],
+
+                        outputRange:
+                          [-22, 0]
+                      })
+                }
+              ]
+            }
           ]}
         >
-          <View
-            style={
-              styles.logoArea
-            }
+          <LinearGradient
+            colors={[
+              theme.topOne,
+              theme.topTwo,
+              theme.topThree
+            ]}
+            start={{
+              x: 0,
+              y: 0
+            }}
+            end={{
+              x: 1,
+              y: 1
+            }}
+            style={[
+              styles.top,
+
+              {
+                paddingTop:
+                  insets.top +
+                  8
+              },
+
+              calcOpen &&
+                styles.topCalculator
+            ]}
           >
-            <Text
-              style={[
-                styles.logoSub,
-
-                {
-                  fontFamily:
-                    bold
-                }
-              ]}
-            >
-              EVERYTHING WITH NUMBERS
-            </Text>
-
             <View
               style={
-                styles.logoFix
+                styles.logoArea
               }
             >
               <Text
-                numberOfLines={1}
                 style={[
-                  styles.logo,
+                  styles.logoSub,
 
                   {
                     fontFamily:
-                      logoFont
+                      bold
                   }
                 ]}
               >
-                NMIX
+                EVERYTHING WITH NUMBERS
               </Text>
-            </View>
-          </View>
-
-          {calcOpen && (
-            <View
-              style={[
-                styles.expression,
-
-                {
-                  backgroundColor:
-                    colors.surface
-                }
-              ]}
-            >
-              <ExpressionBox
-                value={
-                  num1 ||
-                  '_'
-                }
-                colors={
-                  colors
-                }
-                font={
-                  bold
-                }
-              />
 
               <View
+                style={
+                  styles.logoFix
+                }
+              >
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    styles.logo,
+
+                    {
+                      fontFamily:
+                        logoFont
+                    }
+                  ]}
+                >
+                  NMIX
+                </Text>
+              </View>
+            </View>
+
+            {calcOpen && (
+              <Animated.View
                 style={[
-                  styles.operatorBox,
+                  styles.expression,
 
                   {
                     backgroundColor:
-                      colors.surface2,
-
-                    borderColor:
-                      colors.border
-                  }
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.expressionText,
-
-                    {
-                      color:
-                        colors.text,
-
-                      fontFamily:
-                        bold
-                    }
-                  ]}
-                >
-                  {operator ||
-                    'sign'}
-                </Text>
-              </View>
-
-              <ExpressionBox
-                value={
-                  num2 ||
-                  '_'
-                }
-                colors={
-                  colors
-                }
-                font={
-                  bold
-                }
-              />
-            </View>
-          )}
-
-          <View
-            style={[
-              styles.result,
-
-              {
-                backgroundColor:
-                  dark
-                    ? '#121916'
-                    : '#e6ebe8'
-              }
-            ]}
-          >
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                styles.glowA,
-
-                {
-                  opacity:
-                    ambient.interpolate({
-                      inputRange:
-                        [0, 1],
-
-                      outputRange:
-                        [0.28, 0.72]
-                    }),
-
-                  transform: [
-                    {
-                      translateX:
-                        ambient.interpolate({
-                          inputRange:
-                            [0, 1],
-
-                          outputRange:
-                            [-100, 90]
-                        })
-                    },
-
-                    {
-                      translateY:
-                        ambient.interpolate({
-                          inputRange:
-                            [0, 1],
-
-                          outputRange:
-                            [-45, 35]
-                        })
-                    }
-                  ]
-                }
-              ]}
-            >
-              <LinearGradient
-                colors={[
-                  'transparent',
-                  `${theme.accentLight}05`,
-                  `${theme.accentLight}2C`,
-                  `${theme.accentLight}06`,
-                  'transparent'
-                ]}
-                style={
-                  styles.glowFill
-                }
-              />
-            </Animated.View>
-
-            <Animated.View
-              pointerEvents="none"
-              style={[
-                styles.glowB,
-
-                {
-                  opacity:
-                    ambient.interpolate({
-                      inputRange:
-                        [0, 1],
-
-                      outputRange:
-                        [0.58, 0.20]
-                    }),
-
-                  transform: [
-                    {
-                      translateX:
-                        ambient.interpolate({
-                          inputRange:
-                            [0, 1],
-
-                          outputRange:
-                            [80, -95]
-                        })
-                    },
-
-                    {
-                      translateY:
-                        ambient.interpolate({
-                          inputRange:
-                            [0, 1],
-
-                          outputRange:
-                            [35, -30]
-                        })
-                    }
-                  ]
-                }
-              ]}
-            >
-              <LinearGradient
-                colors={[
-                  'transparent',
-                  `${accent}05`,
-                  `${accent}26`,
-                  `${accent}05`,
-                  'transparent'
-                ]}
-                style={
-                  styles.glowFill
-                }
-              />
-            </Animated.View>
-
-            <View
-              style={
-                styles.resultRow
-              }
-            >
-              {mode ===
-                'timer' && (
-                <Animated.View
-                  style={[
-                    styles.timerLeft,
-
-                    {
-                      opacity:
-                        timerMotion,
-
-                      transform: [
-                        {
-                          translateX:
-                            timerMotion.interpolate({
-                              inputRange:
-                                [0, 1],
-
-                              outputRange:
-                                [-18, 0]
-                            })
-                        },
-
-                        {
-                          scale:
-                            timerMotion.interpolate({
-                              inputRange:
-                                [0, 1],
-
-                              outputRange:
-                                [0.5, 1]
-                            })
-                        }
-                      ]
-                    }
-                  ]}
-                >
-                  <MotionPressable
-                    onPress={() =>
-                      changeTimer(
-                        -5
-                      )
-                    }
-                    style={[
-                      styles.timerAdjust,
-
-                      {
-                        backgroundColor:
-                          accent
-                      }
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.timerText,
-
-                        {
-                          fontFamily:
-                            regular
-                        }
-                      ]}
-                    >
-                      −
-                    </Text>
-                  </MotionPressable>
-                </Animated.View>
-              )}
-
-              <MotionPressable
-                onPress={
-                  resultPress
-                }
-                style={
-                  styles.mainDisplay
-                }
-              >
-                <Text
-                  style={[
-                    styles.displayLabel,
-
-                    {
-                      color:
-                        dark
-                          ? theme.accentLight
-                          : theme.accentDark,
-
-                      fontFamily:
-                        bold
-                    }
-                  ]}
-                >
-                  {label}
-                </Text>
-
-                <Animated.View
-                  style={{
-                    width:
-                      '100%',
-
-                    alignItems:
-                      'center',
+                      colors.surface,
 
                     opacity:
-                      displayMotion,
+                      expressionMotion,
 
                     transform: [
                       {
                         translateY:
-                          displayMotion.interpolate({
+                          expressionMotion
+                            .interpolate({
+                              inputRange:
+                                [0, 1],
+
+                              outputRange:
+                                [12, 0]
+                            })
+                      },
+
+                      {
+                        scale:
+                          expressionMotion
+                            .interpolate({
+                              inputRange:
+                                [0, 1],
+
+                              outputRange:
+                                [0.985, 1]
+                            })
+                      }
+                    ]
+                  }
+                ]}
+              >
+                <ExpressionBox
+                  value={
+                    num1 ||
+                    '_'
+                  }
+                  colors={
+                    colors
+                  }
+                  font={
+                    bold
+                  }
+                />
+
+                <View
+                  style={[
+                    styles.operatorBox,
+
+                    {
+                      backgroundColor:
+                        colors.surface2,
+
+                      borderColor:
+                        colors.border
+                    }
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.expressionText,
+
+                      {
+                        color:
+                          colors.text,
+
+                        fontFamily:
+                          bold
+                      }
+                    ]}
+                  >
+                    {operator ||
+                      'sign'}
+                  </Text>
+                </View>
+
+                <ExpressionBox
+                  value={
+                    num2 ||
+                    '_'
+                  }
+                  colors={
+                    colors
+                  }
+                  font={
+                    bold
+                  }
+                />
+              </Animated.View>
+            )}
+
+            <View
+              style={[
+                styles.result,
+
+                {
+                  backgroundColor:
+                    dark
+                      ? '#121916'
+                      : '#e6ebe8'
+                }
+              ]}
+            >
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.glowA,
+
+                  {
+                    opacity:
+                      ambient.interpolate({
+                        inputRange:
+                          [0, 1],
+
+                        outputRange:
+                          [0.28, 0.72]
+                      }),
+
+                    transform: [
+                      {
+                        translateX:
+                          ambient.interpolate({
                             inputRange:
                               [0, 1],
 
                             outputRange:
-                              [7, 0]
+                              [-100, 90]
+                          })
+                      },
+
+                      {
+                        translateY:
+                          ambient.interpolate({
+                            inputRange:
+                              [0, 1],
+
+                            outputRange:
+                              [-45, 35]
                           })
                       }
                     ]
-                  }}
-                >
-                  {mode ===
-                  'clock' ? (
-                    <TimeDisplay
-                      value={
-                        display
-                      }
-
-                      color={
-                        dark
-                          ? '#ffffff'
-                          : '#152c24'
-                      }
-
-                      fontFamily={
-                        bold
-                      }
-
-                      periodFontFamily={
-                        regular
-                      }
-                    />
-                  ) : (
-                    <Text
-                      numberOfLines={
-                        1
-                      }
-                      adjustsFontSizeToFit
-                      minimumFontScale={
-                        0.3
-                      }
-                      style={[
-                        styles.display,
-
-                        {
-                          color:
-                            dark
-                              ? '#ffffff'
-                              : '#152c24',
-
-                          fontFamily:
-                            bold
-                        }
-                      ]}
-                    >
-                      {display}
-                    </Text>
-                  )}
-                </Animated.View>
-              </MotionPressable>
-
-              {mode ===
-                'timer' && (
-                <Animated.View
-                  style={[
-                    styles.timerRight,
-
-                    {
-                      opacity:
-                        timerMotion,
-
-                      transform: [
-                        {
-                          translateX:
-                            timerMotion.interpolate({
-                              inputRange:
-                                [0, 1],
-
-                              outputRange:
-                                [18, 0]
-                            })
-                        },
-
-                        {
-                          scale:
-                            timerMotion.interpolate({
-                              inputRange:
-                                [0, 1],
-
-                              outputRange:
-                                [0.5, 1]
-                            })
-                        }
-                      ]
-                    }
+                  }
+                ]}
+              >
+                <LinearGradient
+                  colors={[
+                    'transparent',
+                    `${theme.accentLight}05`,
+                    `${theme.accentLight}2C`,
+                    `${theme.accentLight}06`,
+                    'transparent'
                   ]}
-                >
-                  <MotionPressable
-                    onPress={() =>
-                      changeTimer(
-                        5
-                      )
-                    }
-                    style={[
-                      styles.timerAdjust,
+                  style={
+                    styles.glowFill
+                  }
+                />
+              </Animated.View>
+
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.glowB,
+
+                  {
+                    opacity:
+                      ambient.interpolate({
+                        inputRange:
+                          [0, 1],
+
+                        outputRange:
+                          [0.58, 0.20]
+                      }),
+
+                    transform: [
+                      {
+                        translateX:
+                          ambient.interpolate({
+                            inputRange:
+                              [0, 1],
+
+                            outputRange:
+                              [80, -95]
+                          })
+                      },
 
                       {
-                        backgroundColor:
-                          accent
+                        translateY:
+                          ambient.interpolate({
+                            inputRange:
+                              [0, 1],
+
+                            outputRange:
+                              [35, -30]
+                          })
+                      }
+                    ]
+                  }
+                ]}
+              >
+                <LinearGradient
+                  colors={[
+                    'transparent',
+                    `${accent}05`,
+                    `${accent}26`,
+                    `${accent}05`,
+                    'transparent'
+                  ]}
+                  style={
+                    styles.glowFill
+                  }
+                />
+              </Animated.View>
+
+              <View
+                style={
+                  styles.resultRow
+                }
+              >
+                {mode ===
+                  'timer' && (
+                  <Animated.View
+                    style={[
+                      styles.timerLeft,
+
+                      {
+                        opacity:
+                          timerMotion,
+
+                        transform: [
+                          {
+                            translateX:
+                              timerMotion
+                                .interpolate({
+                                  inputRange:
+                                    [0, 1],
+
+                                  outputRange:
+                                    [-18, 0]
+                                })
+                          },
+
+                          {
+                            scale:
+                              timerMotion
+                                .interpolate({
+                                  inputRange:
+                                    [0, 1],
+
+                                  outputRange:
+                                    [0.5, 1]
+                                })
+                          }
+                        ]
                       }
                     ]}
                   >
-                    <Text
+                    <MotionPressable
+                      onPress={() =>
+                        changeTimer(
+                          -5
+                        )
+                      }
                       style={[
-                        styles.timerText,
+                        styles.timerAdjust,
 
                         {
-                          fontFamily:
-                            regular
+                          backgroundColor:
+                            accent
                         }
                       ]}
                     >
-                      +
-                    </Text>
-                  </MotionPressable>
-                </Animated.View>
-              )}
+                      <Text
+                        style={[
+                          styles.timerText,
+
+                          {
+                            fontFamily:
+                              regular
+                          }
+                        ]}
+                      >
+                        −
+                      </Text>
+                    </MotionPressable>
+                  </Animated.View>
+                )}
+
+                <MotionPressable
+                  onPress={
+                    resultPress
+                  }
+                  style={
+                    styles.mainDisplay
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.displayLabel,
+
+                      {
+                        color:
+                          dark
+                            ? theme.accentLight
+                            : theme.accentDark,
+
+                        fontFamily:
+                          bold
+                      }
+                    ]}
+                  >
+                    {label}
+                  </Text>
+
+                  <Animated.View
+                    style={[
+                      styles.displayMotion,
+
+                      {
+                        opacity:
+                          displayMotion,
+
+                        transform: [
+                          {
+                            translateY:
+                              displayMotion
+                                .interpolate({
+                                  inputRange:
+                                    [0, 1],
+
+                                  outputRange:
+                                    [2, 0]
+                                })
+                          }
+                        ]
+                      }
+                    ]}
+                  >
+                    {mode ===
+                    'clock' ? (
+                      <TimeDisplay
+                        value={
+                          display
+                        }
+
+                        color={
+                          dark
+                            ? '#ffffff'
+                            : '#152c24'
+                        }
+
+                        fontFamily={
+                          bold
+                        }
+
+                        periodFontFamily={
+                          regular
+                        }
+                      />
+                    ) : (
+                      <Text
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={
+                          0.3
+                        }
+                        style={[
+                          styles.display,
+
+                          {
+                            color:
+                              dark
+                                ? '#ffffff'
+                                : '#152c24',
+
+                            fontFamily:
+                              bold
+                          }
+                        ]}
+                      >
+                        {display}
+                      </Text>
+                    )}
+                  </Animated.View>
+                </MotionPressable>
+
+                {mode ===
+                  'timer' && (
+                  <Animated.View
+                    style={[
+                      styles.timerRight,
+
+                      {
+                        opacity:
+                          timerMotion,
+
+                        transform: [
+                          {
+                            translateX:
+                              timerMotion
+                                .interpolate({
+                                  inputRange:
+                                    [0, 1],
+
+                                  outputRange:
+                                    [18, 0]
+                                })
+                          },
+
+                          {
+                            scale:
+                              timerMotion
+                                .interpolate({
+                                  inputRange:
+                                    [0, 1],
+
+                                  outputRange:
+                                    [0.5, 1]
+                                })
+                          }
+                        ]
+                      }
+                    ]}
+                  >
+                    <MotionPressable
+                      onPress={() =>
+                        changeTimer(
+                          5
+                        )
+                      }
+                      style={[
+                        styles.timerAdjust,
+
+                        {
+                          backgroundColor:
+                            accent
+                        }
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.timerText,
+
+                          {
+                            fontFamily:
+                              regular
+                          }
+                        ]}
+                      >
+                        +
+                      </Text>
+                    </MotionPressable>
+                  </Animated.View>
+                )}
+              </View>
+
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.status,
+
+                  {
+                    color:
+                      dark
+                        ? theme.accentLight
+                        : theme.accentDark,
+
+                    fontFamily:
+                      regular
+                  }
+                ]}
+              >
+                {status}
+              </Text>
             </View>
-
-            <Text
-              numberOfLines={
-                1
-              }
-              style={[
-                styles.status,
-
-                {
-                  color:
-                    dark
-                      ? theme.accentLight
-                      : theme.accentDark,
-
-                  fontFamily:
-                    regular
-                }
-              ]}
-            >
-              {status}
-            </Text>
-          </View>
-        </LinearGradient>
+          </LinearGradient>
+        </Animated.View>
       )}
 
       <View
@@ -2059,9 +2264,7 @@ export default function Main() {
         >
           <ChevronIcon
             size={21}
-
             color="#ffffff"
-
             direction={
               screenClosed
                 ? 'down'
@@ -2094,7 +2297,6 @@ export default function Main() {
             open={
               settingsOpen
             }
-
             color="#ffffff"
           />
         </MotionPressable>
@@ -2117,693 +2319,713 @@ export default function Main() {
           false
         }
       >
-        <AnimatedSection
-          title="Calculator"
-          subtitle="Numbers and operations"
-          name="calculator"
-          open={open}
-          toggle={toggleSection}
-          colors={colors}
-          accent={accent}
-          regular={regular}
-          bold={bold}
+        <EntranceItem
+          motion={
+            sectionMotions[0]
+          }
         >
-          <View
-            style={
-              styles.calculatorGrid
-            }
+          <AnimatedSection
+            title="Calculator"
+            subtitle="Numbers and operations"
+            name="calculator"
+            open={open}
+            toggle={toggleSection}
+            colors={colors}
+            accent={accent}
+            regular={regular}
+            bold={bold}
           >
-            {[
-              '1',
-              '2',
-              '3',
-              '4',
-              '5',
-              '6',
-              '7',
-              '8',
-              '9',
-              '0',
-              '+',
-              '−',
-              '×',
-              '÷',
-              '%',
-              '.',
-              '±',
-              '⌫',
-              'AC',
-              '='
-            ].map(
-              key => {
-                const operatorKey =
-                  [
-                    '+',
-                    '−',
-                    '×',
-                    '÷',
-                    '%',
-                    '='
-                  ].includes(
-                    key
+            <View
+              style={
+                styles.calculatorGrid
+              }
+            >
+              {[
+                '1',
+                '2',
+                '3',
+                '4',
+                '5',
+                '6',
+                '7',
+                '8',
+                '9',
+                '0',
+                '+',
+                '−',
+                '×',
+                '÷',
+                '%',
+                '.',
+                '±',
+                '⌫',
+                'AC',
+                '='
+              ].map(
+                key => {
+                  const operatorKey =
+                    [
+                      '+',
+                      '−',
+                      '×',
+                      '÷',
+                      '%',
+                      '='
+                    ].includes(
+                      key
+                    );
+
+                  const danger =
+                    key ===
+                    'AC';
+
+                  return (
+                    <MotionPressable
+                      key={key}
+                      onPress={() =>
+                        calculatorKey(
+                          key
+                        )
+                      }
+                      style={[
+                        styles.calcKey,
+
+                        {
+                          width:
+                            keySize,
+
+                          height:
+                            keySize,
+
+                          borderRadius:
+                            keySize /
+                            2,
+
+                          backgroundColor:
+                            colors.surface2
+                        },
+
+                        operatorKey && {
+                          backgroundColor:
+                            accent
+                        },
+
+                        danger && {
+                          backgroundColor:
+                            dark
+                              ? '#472225'
+                              : '#f1d5d5'
+                        }
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.calcText,
+
+                          {
+                            color:
+                              colors.text,
+
+                            fontFamily:
+                              bold
+                          },
+
+                          operatorKey && {
+                            color:
+                              '#ffffff'
+                          },
+
+                          danger && {
+                            color:
+                              '#d83939'
+                          }
+                        ]}
+                      >
+                        {key}
+                      </Text>
+                    </MotionPressable>
                   );
+                }
+              )}
+            </View>
+          </AnimatedSection>
+        </EntranceItem>
 
-                const danger =
-                  key ===
-                  'AC';
+        <EntranceItem
+          motion={
+            sectionMotions[1]
+          }
+        >
+          <AnimatedSection
+            title="Clock"
+            subtitle="Timer, clock and stopwatch"
+            name="clock"
+            open={open}
+            toggle={toggleSection}
+            colors={colors}
+            accent={accent}
+            regular={regular}
+            bold={bold}
+          >
+            <View
+              style={
+                styles.clockGrid
+              }
+            >
+              <ModeButton
+                Icon={
+                  TimerIcon
+                }
+                title="Timer"
+                subtitle="Countdown"
+                active={
+                  mode ===
+                  'timer'
+                }
+                onPress={
+                  openTimer
+                }
+                onLongPress={
+                  toggleTimer
+                }
+                colors={
+                  colors
+                }
+                accent={
+                  accent
+                }
+                regular={
+                  regular
+                }
+                bold={
+                  bold
+                }
+              />
 
-                return (
+              <ModeButton
+                Icon={
+                  ClockIcon
+                }
+                title="Clock"
+                subtitle="Local time"
+                active={
+                  mode ===
+                  'clock'
+                }
+                onPress={
+                  openClock
+                }
+                colors={
+                  colors
+                }
+                accent={
+                  accent
+                }
+                regular={
+                  regular
+                }
+                bold={
+                  bold
+                }
+                extra={
                   <MotionPressable
-                    key={key}
-
-                    onPress={() =>
-                      calculatorKey(
-                        key
-                      )
+                    onPress={
+                      openFullscreenClock
                     }
-
+                    hitSlop={10}
                     style={[
-                      styles.calcKey,
+                      styles.fullscreen,
 
                       {
-                        width:
-                          keySize,
+                        backgroundColor:
+                          mode ===
+                          'clock'
+                            ? '#ffffff'
+                            : accent
+                      }
+                    ]}
+                  >
+                    <FullscreenIcon
+                      size={20}
+                      color={
+                        mode ===
+                        'clock'
+                          ? accent
+                          : '#ffffff'
+                      }
+                    />
+                  </MotionPressable>
+                }
+              />
 
-                        height:
-                          keySize,
+              <ModeButton
+                Icon={
+                  StopwatchIcon
+                }
+                title="Stopwatch"
+                subtitle="Track time"
+                active={
+                  mode ===
+                  'stopwatch'
+                }
+                onPress={
+                  tapStopwatch
+                }
+                onLongPress={
+                  resetStopwatch
+                }
+                colors={
+                  colors
+                }
+                accent={
+                  accent
+                }
+                regular={
+                  regular
+                }
+                bold={
+                  bold
+                }
+              />
+            </View>
+          </AnimatedSection>
+        </EntranceItem>
 
-                        borderRadius:
-                          keySize /
-                          2,
+        <EntranceItem
+          motion={
+            sectionMotions[2]
+          }
+        >
+          <AnimatedSection
+            title="Counters"
+            subtitle="Count and generate"
+            name="counter"
+            open={open}
+            toggle={toggleSection}
+            colors={colors}
+            accent={accent}
+            regular={regular}
+            bold={bold}
+          >
+            <View
+              style={
+                styles.counterGrid
+              }
+            >
+              <CounterButton
+                title="Add"
+                subtitle="Increase"
+                onPress={() =>
+                  counter(
+                    'add'
+                  )
+                }
+                colors={
+                  colors
+                }
+                regular={
+                  regular
+                }
+                bold={
+                  bold
+                }
+              />
 
+              <CounterButton
+                title="Reset"
+                subtitle="Back to zero"
+                onPress={() =>
+                  counter(
+                    'reset'
+                  )
+                }
+                colors={
+                  colors
+                }
+                regular={
+                  regular
+                }
+                bold={
+                  bold
+                }
+              />
+
+              <CounterButton
+                title="Random"
+                subtitle="1 – 1000"
+                onPress={() =>
+                  counter(
+                    'random'
+                  )
+                }
+                colors={
+                  colors
+                }
+                regular={
+                  regular
+                }
+                bold={
+                  bold
+                }
+              />
+
+              <CounterButton
+                title="Minus"
+                subtitle="Decrease"
+                onPress={() =>
+                  counter(
+                    'minus'
+                  )
+                }
+                colors={
+                  colors
+                }
+                regular={
+                  regular
+                }
+                bold={
+                  bold
+                }
+              />
+            </View>
+          </AnimatedSection>
+        </EntranceItem>
+
+        <EntranceItem
+          motion={
+            sectionMotions[3]
+          }
+        >
+          <AnimatedSection
+            title="How to use NMIX"
+            subtitle="Instructions and controls"
+            name="instructions"
+            open={open}
+            toggle={toggleSection}
+            colors={colors}
+            accent={accent}
+            regular={regular}
+            bold={bold}
+          >
+            <View
+              style={
+                styles.instructions
+              }
+            >
+              {instructions.map(
+                ([
+                  title,
+                  text
+                ]) => (
+                  <View
+                    key={
+                      title
+                    }
+                    style={[
+                      styles.instruction,
+
+                      {
                         backgroundColor:
                           colors.surface2
-                      },
-
-                      operatorKey && {
-                        backgroundColor:
-                          accent
-                      },
-
-                      danger && {
-                        backgroundColor:
-                          dark
-                            ? '#472225'
-                            : '#f1d5d5'
                       }
                     ]}
                   >
                     <Text
                       style={[
-                        styles.calcText,
+                        styles.instructionTitle,
 
                         {
                           color:
-                            colors.text,
+                            accent,
 
                           fontFamily:
                             bold
-                        },
-
-                        operatorKey && {
-                          color:
-                            '#ffffff'
-                        },
-
-                        danger && {
-                          color:
-                            '#d83939'
                         }
                       ]}
                     >
-                      {key}
+                      {title}
                     </Text>
-                  </MotionPressable>
-                );
-              }
-            )}
-          </View>
-        </AnimatedSection>
 
-        <AnimatedSection
-          title="Clock"
-          subtitle="Timer, clock and stopwatch"
-          name="clock"
-          open={open}
-          toggle={toggleSection}
-          colors={colors}
-          accent={accent}
-          regular={regular}
-          bold={bold}
-        >
-          <View
-            style={
-              styles.clockGrid
-            }
-          >
-            <ModeButton
-              Icon={
-                TimerIcon
-              }
-              title="Timer"
-              subtitle="Countdown"
-              active={
-                mode ===
-                'timer'
-              }
-              onPress={
-                openTimer
-              }
-              onLongPress={
-                toggleTimer
-              }
-              colors={
-                colors
-              }
-              accent={
-                accent
-              }
-              regular={
-                regular
-              }
-              bold={
-                bold
-              }
-            />
+                    <Text
+                      style={[
+                        styles.instructionText,
 
-            <ModeButton
-              Icon={
-                ClockIcon
-              }
-              title="Clock"
-              subtitle="Local time"
-              active={
-                mode ===
-                'clock'
-              }
-              onPress={
-                openClock
-              }
-              colors={
-                colors
-              }
-              accent={
-                accent
-              }
-              regular={
-                regular
-              }
-              bold={
-                bold
-              }
-              extra={
-                <MotionPressable
-                  onPress={
-                    openFullscreenClock
-                  }
-                  hitSlop={
-                    10
-                  }
-                  style={[
-                    styles.fullscreen,
+                        {
+                          color:
+                            colors.muted,
 
-                    {
-                      backgroundColor:
-                        mode ===
-                        'clock'
-                          ? '#ffffff'
-                          : accent
-                    }
-                  ]}
-                >
-                  <FullscreenIcon
-                    size={20}
-
-                    color={
-                      mode ===
-                      'clock'
-                        ? accent
-                        : '#ffffff'
-                    }
-                  />
-                </MotionPressable>
-              }
-            />
-
-            <ModeButton
-              Icon={
-                StopwatchIcon
-              }
-              title="Stopwatch"
-              subtitle="Track time"
-              active={
-                mode ===
-                'stopwatch'
-              }
-              onPress={
-                tapStopwatch
-              }
-              onLongPress={
-                resetStopwatch
-              }
-              colors={
-                colors
-              }
-              accent={
-                accent
-              }
-              regular={
-                regular
-              }
-              bold={
-                bold
-              }
-            />
-          </View>
-        </AnimatedSection>
-
-        <AnimatedSection
-          title="Counters"
-          subtitle="Count and generate"
-          name="counter"
-          open={open}
-          toggle={toggleSection}
-          colors={colors}
-          accent={accent}
-          regular={regular}
-          bold={bold}
-        >
-          <View
-            style={
-              styles.counterGrid
-            }
-          >
-            <CounterButton
-              title="Add"
-              subtitle="Increase"
-              onPress={() =>
-                counter(
-                  'add'
+                          fontFamily:
+                            regular
+                        }
+                      ]}
+                    >
+                      {text}
+                    </Text>
+                  </View>
                 )
-              }
-              colors={
-                colors
-              }
-              regular={
-                regular
-              }
-              bold={
-                bold
-              }
-            />
+              )}
+            </View>
+          </AnimatedSection>
+        </EntranceItem>
 
-            <CounterButton
-              title="Reset"
-              subtitle="Back to zero"
-              onPress={() =>
-                counter(
-                  'reset'
-                )
-              }
-              colors={
-                colors
-              }
-              regular={
-                regular
-              }
-              bold={
-                bold
-              }
-            />
-
-            <CounterButton
-              title="Random"
-              subtitle="1 – 1000"
-              onPress={() =>
-                counter(
-                  'random'
-                )
-              }
-              colors={
-                colors
-              }
-              regular={
-                regular
-              }
-              bold={
-                bold
-              }
-            />
-
-            <CounterButton
-              title="Minus"
-              subtitle="Decrease"
-              onPress={() =>
-                counter(
-                  'minus'
-                )
-              }
-              colors={
-                colors
-              }
-              regular={
-                regular
-              }
-              bold={
-                bold
-              }
-            />
-          </View>
-        </AnimatedSection>
-
-        <AnimatedSection
-          title="How to use NMIX"
-          subtitle="Instructions and controls"
-          name="instructions"
-          open={open}
-          toggle={toggleSection}
-          colors={colors}
-          accent={accent}
-          regular={regular}
-          bold={bold}
-        >
-          <View
-            style={
-              styles.instructions
-            }
-          >
-            {instructions.map(
-              ([
-                title,
-                text
-              ]) => (
-                <View
-                  key={
-                    title
-                  }
-                  style={[
-                    styles.instruction,
-
-                    {
-                      backgroundColor:
-                        colors.surface2
-                    }
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.instructionTitle,
-
-                      {
-                        color:
-                          accent,
-
-                        fontFamily:
-                          bold
-                      }
-                    ]}
-                  >
-                    {title}
-                  </Text>
-
-                  <Text
-                    style={[
-                      styles.instructionText,
-
-                      {
-                        color:
-                          colors.muted,
-
-                        fontFamily:
-                          regular
-                      }
-                    ]}
-                  >
-                    {text}
-                  </Text>
-                </View>
-              )
-            )}
-          </View>
-        </AnimatedSection>
-
-        <View
-          style={[
-            styles.contributor,
-
-            {
-              backgroundColor:
-                colors.surface,
-
-              borderColor:
-                colors.border
-            }
-          ]}
-        >
-          <Text
-            style={[
-              styles.contributorHeading,
-
-              {
-                color:
-                  colors.text,
-
-                fontFamily:
-                  bold
-              }
-            ]}
-          >
-            Contributor
-          </Text>
-
-          <Text
-            style={[
-              styles.contributorName,
-
-              {
-                color:
-                  accent,
-
-                fontFamily:
-                  logoFont
-              }
-            ]}
-          >
-            Alex Ravi
-          </Text>
-
-          <Text
-            style={[
-              styles.bio,
-
-              {
-                color:
-                  colors.muted,
-
-                fontFamily:
-                  regular
-              }
-            ]}
-          >
-            I'm currently doing a diploma in web development and building my skills step by step.
-          </Text>
-
-          <Text
-            style={[
-              styles.learning,
-
-              {
-                color:
-                  colors.muted,
-
-                fontFamily:
-                  bold
-              }
-            ]}
-          >
-            Skills
-          </Text>
-
-          <View
-            style={
-              styles.chips
-            }
-          >
-            {[
-              'HTML',
-              'CSS',
-              'JavaScript',
-              'React Native',
-              'Expo'
-            ].map(
-              item => (
-                <SkillChip
-                  key={
-                    item
-                  }
-
-                  item={
-                    item
-                  }
-
-                  accent={
-                    accent
-                  }
-
-                  color={
-                    dark
-                      ? theme.accentLight
-                      : theme.accentDark
-                  }
-
-                  bold={
-                    bold
-                  }
-                />
-              )
-            )}
-          </View>
-
-          <Text
-            style={[
-              styles.learning,
-
-              {
-                color:
-                  colors.muted,
-
-                fontFamily:
-                  bold
-              }
-            ]}
-          >
-            Learning More
-          </Text>
-
-          <View
-            style={
-              styles.chips
-            }
-          >
-            {[
-              'Responsive Design',
-              'UI / UX',
-              'Web APIs',
-              'Native Apps',
-              'GitHub Actions'
-            ].map(
-              item => (
-                <SkillChip
-                  key={
-                    item
-                  }
-
-                  item={
-                    item
-                  }
-
-                  accent={
-                    accent
-                  }
-
-                  color={
-                    dark
-                      ? theme.accentLight
-                      : theme.accentDark
-                  }
-
-                  bold={
-                    bold
-                  }
-                />
-              )
-            )}
-          </View>
-        </View>
-
-        <MotionPressable
-          onPress={() => {
-            setSettingsOpen(
-              false
-            );
-
-            stopOtherTools();
-
-            router.push(
-              '/welcome'
-            );
-          }}
-          style={[
-            styles.back,
-
-            {
-              backgroundColor:
-                accent
-            }
-          ]}
-        >
-          <View
-            style={
-              styles.backIcon
-            }
-          >
-            <BackIcon
-              size={20}
-              color="#ffffff"
-            />
-          </View>
-
-          <Text
-            style={[
-              styles.backText,
-
-              {
-                fontFamily:
-                  bold
-              }
-            ]}
-          >
-            Back to starting page
-          </Text>
-        </MotionPressable>
-
-        <View
-          style={
-            styles.footer
+        <EntranceItem
+          motion={
+            sectionMotions[4]
           }
         >
-          <Text
+          <View
             style={[
-              styles.footerMain,
+              styles.contributor,
 
               {
-                color:
-                  colors.muted,
+                backgroundColor:
+                  colors.surface,
 
-                fontFamily:
-                  regular
+                borderColor:
+                  colors.border
               }
             ]}
           >
-            © {new Date().getFullYear()} Alex Ravi
-          </Text>
+            <Text
+              style={[
+                styles.contributorHeading,
 
-          <Text
+                {
+                  color:
+                    colors.text,
+
+                  fontFamily:
+                    bold
+                }
+              ]}
+            >
+              Contributor
+            </Text>
+
+            <View
+              style={
+                styles.contributorNameFix
+              }
+            >
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.contributorName,
+
+                  {
+                    color:
+                      accent,
+
+                    fontFamily:
+                      logoFont
+                  }
+                ]}
+              >
+                Alex Ravi
+              </Text>
+            </View>
+
+            <Text
+              style={[
+                styles.bio,
+
+                {
+                  color:
+                    colors.muted,
+
+                  fontFamily:
+                    regular
+                }
+              ]}
+            >
+              I'm currently doing a diploma in web development and building my skills step by step.
+            </Text>
+
+            <Text
+              style={[
+                styles.learning,
+
+                {
+                  color:
+                    colors.muted,
+
+                  fontFamily:
+                    bold
+                }
+              ]}
+            >
+              Skills
+            </Text>
+
+            <View
+              style={
+                styles.chips
+              }
+            >
+              {[
+                'HTML',
+                'CSS',
+                'JavaScript',
+                'React Native',
+                'Expo'
+              ].map(
+                item => (
+                  <SkillChip
+                    key={item}
+                    item={item}
+                    accent={accent}
+                    color={
+                      dark
+                        ? theme.accentLight
+                        : theme.accentDark
+                    }
+                    bold={bold}
+                  />
+                )
+              )}
+            </View>
+
+            <Text
+              style={[
+                styles.learning,
+
+                {
+                  color:
+                    colors.muted,
+
+                  fontFamily:
+                    bold
+                }
+              ]}
+            >
+              Learning More
+            </Text>
+
+            <View
+              style={
+                styles.chips
+              }
+            >
+              {[
+                'Responsive Design',
+                'UI / UX',
+                'Web APIs',
+                'Native Apps',
+                'GitHub Actions'
+              ].map(
+                item => (
+                  <SkillChip
+                    key={item}
+                    item={item}
+                    accent={accent}
+                    color={
+                      dark
+                        ? theme.accentLight
+                        : theme.accentDark
+                    }
+                    bold={bold}
+                  />
+                )
+              )}
+            </View>
+          </View>
+        </EntranceItem>
+
+        <EntranceItem
+          motion={
+            sectionMotions[5]
+          }
+        >
+          <MotionPressable
+            onPress={() => {
+              setSettingsOpen(
+                false
+              );
+
+              stopOtherTools();
+
+              router.push(
+                '/welcome'
+              );
+            }}
             style={[
-              styles.footerSub,
+              styles.back,
 
               {
-                color:
-                  colors.muted,
-
-                fontFamily:
-                  regular
+                backgroundColor:
+                  accent
               }
             ]}
           >
-            All Rights Reserved · NMIX · everything with numbers
-          </Text>
-        </View>
+            <View
+              style={
+                styles.backIcon
+              }
+            >
+              <BackIcon
+                size={20}
+                color="#ffffff"
+              />
+            </View>
+
+            <Text
+              style={[
+                styles.backText,
+
+                {
+                  fontFamily:
+                    bold
+                }
+              ]}
+            >
+              Back to starting page
+            </Text>
+          </MotionPressable>
+        </EntranceItem>
+
+        <EntranceItem
+          motion={
+            sectionMotions[6]
+          }
+        >
+          <View
+            style={
+              styles.footer
+            }
+          >
+            <Text
+              style={[
+                styles.footerMain,
+
+                {
+                  color:
+                    colors.muted,
+
+                  fontFamily:
+                    regular
+                }
+              ]}
+            >
+              © {new Date().getFullYear()} Alex Ravi
+            </Text>
+
+            <Text
+              style={[
+                styles.footerSub,
+
+                {
+                  color:
+                    colors.muted,
+
+                  fontFamily:
+                    regular
+                }
+              ]}
+            >
+              All Rights Reserved · NMIX · everything with numbers
+            </Text>
+          </View>
+        </EntranceItem>
       </ScrollView>
 
       <SettingsPanel
@@ -2864,6 +3086,39 @@ export default function Main() {
   );
 }
 
+function EntranceItem({
+  motion,
+  children
+}) {
+  const translateY =
+    motion.interpolate({
+      inputRange:
+        [0, 1],
+
+      outputRange:
+        [28, 0]
+    });
+
+  return (
+    <Animated.View
+      style={{
+        width: '100%',
+
+        opacity:
+          motion,
+
+        transform: [
+          {
+            translateY
+          }
+        ]
+      }}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
 function ExpressionBox({
   value,
   colors,
@@ -2904,10 +3159,6 @@ function ExpressionBox({
   );
 }
 
-/*
- * Fullscreen control is now OUTSIDE the
- * main ModeButton press target.
- */
 function ModeButton({
   Icon,
   title,
@@ -2962,7 +3213,6 @@ function ModeButton({
         >
           <Icon
             size={21}
-
             color={
               active
                 ? accent
@@ -3127,11 +3377,13 @@ function formatTimer(
 ) {
   const min =
     Math.floor(
-      seconds / 60
+      seconds /
+      60
     );
 
   const sec =
-    seconds % 60;
+    seconds %
+    60;
 
   return `${String(
     min
@@ -3173,22 +3425,27 @@ function formatStopwatch(
 ) {
   const total =
     Math.floor(
-      ms / 1000
+      ms /
+      1000
     );
 
   const min =
     Math.floor(
-      total / 60
+      total /
+      60
     );
 
   const sec =
-    total % 60;
+    total %
+    60;
 
   const hundredths =
     Math.floor(
       (
-        ms % 1000
-      ) / 10
+        ms %
+        1000
+      ) /
+      10
     );
 
   return `${String(
@@ -3215,228 +3472,400 @@ const styles =
       flex: 1
     },
 
+    topMotion: {
+      width: '100%'
+    },
+
     top: {
-      height: 330,
+      flex: 1,
+
       paddingHorizontal: 10,
+
       paddingBottom: 10,
+
       borderBottomLeftRadius: 22,
+
       borderBottomRightRadius: 22
     },
 
-    topCalculator: {
-      height: 415
-    },
+    topCalculator: {},
 
     logoArea: {
       height: 66,
-      justifyContent: 'center',
-      alignItems: 'center'
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center',
+
+      overflow:
+        'visible'
     },
 
     logoSub: {
-      color: '#ddf8ef',
+      color:
+        '#ddf8ef',
+
       fontSize: 8,
+
       lineHeight: 12,
+
       letterSpacing: 2,
-      textAlign: 'center',
-      includeFontPadding: false
+
+      textAlign:
+        'center',
+
+      includeFontPadding:
+        false
     },
 
+    /*
+     * Wider than before so Cinzel's N/X
+     * glyph edges are not clipped.
+     */
     logoFix: {
-      minWidth: 165,
-      paddingHorizontal: 15,
-      overflow: 'visible',
-      alignItems: 'center'
+      width: 240,
+
+      minHeight: 46,
+
+      paddingHorizontal: 30,
+
+      overflow:
+        'visible',
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center'
     },
 
     logo: {
-      color: '#ffffff',
+      width: '100%',
+
+      color:
+        '#ffffff',
+
       fontSize: 27,
-      lineHeight: 38,
+
+      lineHeight: 40,
+
       letterSpacing: 4,
-      textAlign: 'center',
-      includeFontPadding: false
+
+      paddingHorizontal: 8,
+
+      textAlign:
+        'center',
+
+      includeFontPadding:
+        false
     },
 
     expression: {
       height: 76,
+
       marginBottom: 8,
+
       padding: 9,
-      flexDirection: 'row',
+
+      flexDirection:
+        'row',
+
       gap: 7,
+
       borderRadius: 12
     },
 
     expressionBox: {
       flex: 1,
-      justifyContent: 'center',
+
+      justifyContent:
+        'center',
+
       borderWidth: 1,
+
       borderRadius: 8
     },
 
     operatorBox: {
       width: 60,
-      justifyContent: 'center',
+
+      justifyContent:
+        'center',
+
       borderWidth: 1,
+
       borderRadius: 8
     },
 
     expressionText: {
       paddingHorizontal: 5,
+
       fontSize: 18,
+
       lineHeight: 24,
-      textAlign: 'center',
-      textAlignVertical: 'center',
-      includeFontPadding: false
+
+      textAlign:
+        'center',
+
+      textAlignVertical:
+        'center',
+
+      includeFontPadding:
+        false
     },
 
     result: {
       flex: 1,
-      position: 'relative',
-      overflow: 'hidden',
-      justifyContent: 'center',
+
+      position:
+        'relative',
+
+      overflow:
+        'hidden',
+
+      justifyContent:
+        'center',
+
       borderRadius: 15
     },
 
     glowA: {
-      position: 'absolute',
+      position:
+        'absolute',
+
       width: 370,
+
       height: 330,
+
       left: -170,
+
       top: -145
     },
 
     glowB: {
-      position: 'absolute',
+      position:
+        'absolute',
+
       width: 420,
+
       height: 370,
+
       right: -200,
+
       bottom: -190
     },
 
     glowFill: {
       flex: 1,
+
       borderRadius: 240
     },
 
     resultRow: {
       flex: 1,
-      position: 'relative',
-      justifyContent: 'center',
-      alignItems: 'center'
+
+      position:
+        'relative',
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center'
     },
 
     timerLeft: {
-      position: 'absolute',
+      position:
+        'absolute',
+
       zIndex: 10,
+
       left: 9,
+
       top: '50%',
+
       marginTop: -24
     },
 
     timerRight: {
-      position: 'absolute',
+      position:
+        'absolute',
+
       zIndex: 10,
+
       right: 9,
+
       top: '50%',
+
       marginTop: -24
     },
 
     timerAdjust: {
       width: 48,
+
       height: 48,
-      justifyContent: 'center',
-      alignItems: 'center',
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center',
+
       borderRadius: 24
     },
 
     timerText: {
       width: 48,
+
       height: 48,
-      color: '#ffffff',
+
+      color:
+        '#ffffff',
+
       fontSize: 27,
+
       lineHeight: 48,
-      textAlign: 'center',
-      textAlignVertical: 'center',
-      includeFontPadding: false
+
+      textAlign:
+        'center',
+
+      textAlignVertical:
+        'center',
+
+      includeFontPadding:
+        false
     },
 
     mainDisplay: {
       width: '78%',
-      alignSelf: 'center',
-      justifyContent: 'center',
-      alignItems: 'center'
+
+      alignSelf:
+        'center',
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center'
     },
 
     displayLabel: {
       fontSize: 9,
+
       lineHeight: 14,
+
       letterSpacing: 2.5,
-      textAlign: 'center'
+
+      textAlign:
+        'center'
+    },
+
+    displayMotion: {
+      width: '100%',
+
+      alignItems:
+        'center'
     },
 
     display: {
       width: '100%',
+
       fontSize: 40,
+
       lineHeight: 50,
-      textAlign: 'center',
-      textAlignVertical: 'center',
-      includeFontPadding: false
+
+      textAlign:
+        'center',
+
+      textAlignVertical:
+        'center',
+
+      includeFontPadding:
+        false
     },
 
     status: {
-      position: 'absolute',
+      position:
+        'absolute',
+
       zIndex: 20,
+
       left: '3%',
+
       right: '3%',
+
       bottom: 7,
+
       fontSize: 10,
+
       lineHeight: 14,
-      textAlign: 'center'
+
+      textAlign:
+        'center'
     },
 
     controls: {
-      position: 'absolute',
+      position:
+        'absolute',
+
       zIndex: 1000,
+
       left: 14,
+
       right: 14,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      pointerEvents: 'box-none'
+
+      flexDirection:
+        'row',
+
+      justifyContent:
+        'space-between',
+
+      pointerEvents:
+        'box-none'
     },
 
     controlButton: {
       width: 43,
+
       height: 43,
-      justifyContent: 'center',
-      alignItems: 'center',
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center',
+
       borderRadius: 22,
+
       elevation: 8
     },
 
     /*
-     * The settings control is attached to the
-     * right edge instead of looking like a
-     * detached circular bubble.
+     * Settings trigger joins the right edge
+     * and matches the attached SettingsPanel.
      */
     settingsControl: {
-      width: 49,
+      width: 54,
+
       height: 43,
 
       marginRight: -14,
 
-      paddingRight: 6,
+      paddingRight: 8,
 
       borderWidth: 1,
+
       borderRightWidth: 0,
 
       borderTopRightRadius: 0,
+
       borderBottomRightRadius: 0,
 
       borderTopLeftRadius: 22,
-      borderBottomLeftRadius: 22,
 
-      elevation: 8
+      borderBottomLeftRadius: 22
     },
 
     scroll: {
@@ -3445,160 +3874,248 @@ const styles =
 
     content: {
       width: '100%',
+
       maxWidth: 1100,
-      alignSelf: 'center',
+
+      alignSelf:
+        'center',
+
       padding: 10,
+
       paddingTop: 18,
+
       paddingBottom: 0,
+
       gap: 13
     },
 
     calculatorGrid: {
       paddingHorizontal: 8,
+
       paddingVertical: 17,
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-evenly',
+
+      flexDirection:
+        'row',
+
+      flexWrap:
+        'wrap',
+
+      justifyContent:
+        'space-evenly',
+
       gap: 10
     },
 
     calcKey: {
-      justifyContent: 'center',
-      alignItems: 'center'
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center'
     },
 
     calcText: {
       width: '100%',
+
       fontSize: 17,
+
       lineHeight: 22,
-      textAlign: 'center',
-      textAlignVertical: 'center',
-      includeFontPadding: false
+
+      textAlign:
+        'center',
+
+      textAlignVertical:
+        'center',
+
+      includeFontPadding:
+        false
     },
 
     clockGrid: {
       padding: 14,
+
       gap: 10
     },
 
-    /*
-     * New stable shell owns the background
-     * and the right-side fullscreen control.
-     */
     modeShell: {
-      position: 'relative',
+      position:
+        'relative',
+
       width: '100%',
+
       minHeight: 76,
-      overflow: 'hidden',
+
+      overflow:
+        'hidden',
+
       borderRadius: 13
     },
 
     modeButton: {
       width: '100%',
+
       minHeight: 76,
+
       padding: 12,
+
       paddingRight: 64,
-      flexDirection: 'row',
-      alignItems: 'center',
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center',
+
       gap: 10
     },
 
     modeIcon: {
       width: 40,
+
       height: 40,
+
       flexShrink: 0,
-      justifyContent: 'center',
-      alignItems: 'center',
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center',
+
       borderRadius: 20
     },
 
     modeCopy: {
       flex: 1,
-      justifyContent: 'center'
+
+      justifyContent:
+        'center'
     },
 
     modeTitle: {
       fontSize: 13,
+
       lineHeight: 18
     },
 
     modeSubtitle: {
       marginTop: 2,
+
       fontSize: 10,
+
       lineHeight: 14
     },
 
     /*
-     * Exact full-height right slot means the
-     * fullscreen button is always vertically
-     * centered in the Clock row.
+     * Fullscreen control has its own
+     * independent touch area.
      */
     modeExtra: {
-      position: 'absolute',
+      position:
+        'absolute',
+
       zIndex: 30,
+
       right: 10,
+
       top: 0,
+
       bottom: 0,
+
       width: 40,
-      justifyContent: 'center',
-      alignItems: 'center'
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center'
     },
 
     fullscreen: {
       width: 38,
+
       height: 38,
-      justifyContent: 'center',
-      alignItems: 'center',
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center',
+
       borderRadius: 11,
+
       elevation: 3
     },
 
     counterGrid: {
       padding: 14,
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
+
+      flexDirection:
+        'row',
+
+      flexWrap:
+        'wrap',
+
+      justifyContent:
+        'space-between',
+
       rowGap: 10
     },
 
     counterButton: {
       width: '48.5%',
+
       minHeight: 73,
-      justifyContent: 'center',
-      alignItems: 'center',
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center',
+
       borderRadius: 12
     },
 
     counterTitle: {
       fontSize: 13,
+
       lineHeight: 18,
-      textAlign: 'center'
+
+      textAlign:
+        'center'
     },
 
     instructions: {
       padding: 13,
+
       gap: 9
     },
 
     instruction: {
       padding: 12,
+
       borderRadius: 10
     },
 
     instructionTitle: {
       fontSize: 12,
+
       lineHeight: 17
     },
 
     instructionText: {
       marginTop: 5,
+
       fontSize: 11,
+
       lineHeight: 17
     },
 
     contributor: {
       padding: 14,
+
       borderWidth: 1,
+
       borderRadius: 16
     },
 
@@ -3606,34 +4123,61 @@ const styles =
       fontSize: 14
     },
 
+    contributorNameFix: {
+      minWidth: 150,
+
+      paddingHorizontal: 4,
+
+      overflow:
+        'visible'
+    },
+
     contributorName: {
       marginTop: 10,
+
       fontSize: 16,
-      lineHeight: 24
+
+      lineHeight: 27,
+
+      paddingHorizontal: 2,
+
+      includeFontPadding:
+        false
     },
 
     bio: {
       marginTop: 7,
+
       fontSize: 11,
+
       lineHeight: 17
     },
 
     learning: {
       marginTop: 12,
+
       fontSize: 10
     },
 
     chips: {
       marginTop: 8,
-      flexDirection: 'row',
-      flexWrap: 'wrap',
+
+      flexDirection:
+        'row',
+
+      flexWrap:
+        'wrap',
+
       gap: 6
     },
 
     chip: {
       paddingHorizontal: 8,
+
       paddingVertical: 5,
+
       borderWidth: 1,
+
       borderRadius: 999
     },
 
@@ -3642,36 +4186,62 @@ const styles =
     },
 
     back: {
-      alignSelf: 'center',
+      alignSelf:
+        'center',
+
       minHeight: 52,
+
       paddingLeft: 9,
+
       paddingRight: 18,
-      flexDirection: 'row',
-      justifyContent: 'center',
-      alignItems: 'center',
+
+      flexDirection:
+        'row',
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center',
+
       gap: 8,
+
       borderRadius: 999
     },
 
     backIcon: {
       width: 35,
+
       height: 35,
-      justifyContent: 'center',
-      alignItems: 'center'
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center'
     },
 
     backText: {
-      color: '#ffffff',
+      color:
+        '#ffffff',
+
       fontSize: 11,
+
       lineHeight: 16
     },
 
     footer: {
       minHeight: 90,
+
       paddingTop: 18,
+
       paddingBottom: 10,
-      justifyContent: 'flex-end',
-      alignItems: 'center'
+
+      justifyContent:
+        'flex-end',
+
+      alignItems:
+        'center'
     },
 
     footerMain: {
@@ -3680,7 +4250,10 @@ const styles =
 
     footerSub: {
       marginTop: 2,
+
       fontSize: 8,
-      textAlign: 'center'
+
+      textAlign:
+        'center'
     }
   });
