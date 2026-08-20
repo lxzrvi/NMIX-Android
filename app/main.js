@@ -52,6 +52,14 @@ const EASE =
     1
   );
 
+const ENTRANCE_EASE =
+  Easing.bezier(
+    0.16,
+    1,
+    0.3,
+    1
+  );
+
 const instructions = [
   [
     'Calculator',
@@ -99,7 +107,7 @@ const instructions = [
   ],
   [
     'Fullscreen Clock',
-    'Use the side arrows to change clock style and color. Use Hide for a clean clock view.'
+    'Use Style, Color and Font controls to personalize the fullscreen clock.'
   ]
 ];
 
@@ -300,11 +308,6 @@ export default function Main() {
     displayMotion
       .stopAnimation();
 
-    /*
-     * Short, subtle response.
-     * No large bounce and almost no perceived
-     * delay while entering calculator numbers.
-     */
     displayMotion
       .setValue(0.72);
 
@@ -326,10 +329,15 @@ export default function Main() {
     ).start();
   }
 
+  /*
+   * Stronger Main entrance:
+   *
+   * top screen comes from above;
+   * cards rise from below with stagger.
+   */
   useEffect(() => {
-    mainEntrance.setValue(
-      0
-    );
+    mainEntrance
+      .setValue(0);
 
     sectionMotions
       .forEach(
@@ -339,28 +347,41 @@ export default function Main() {
           )
       );
 
-    Animated.parallel([
-      Animated.timing(
-        mainEntrance,
-        {
-          toValue: 1,
-          duration: 650,
-          easing: EASE,
-          useNativeDriver:
-            true
-        }
+    Animated.timing(
+      mainEntrance,
+      {
+        toValue: 1,
+
+        duration: 780,
+
+        easing:
+          ENTRANCE_EASE,
+
+        useNativeDriver:
+          true
+      }
+    ).start();
+
+    Animated.sequence([
+      Animated.delay(
+        160
       ),
 
       Animated.stagger(
-        85,
+        105,
+
         sectionMotions.map(
           value =>
             Animated.timing(
               value,
               {
                 toValue: 1,
-                duration: 590,
-                easing: EASE,
+
+                duration: 650,
+
+                easing:
+                  ENTRANCE_EASE,
+
                 useNativeDriver:
                   true
               }
@@ -504,8 +525,7 @@ export default function Main() {
             );
 
             if (
-              remaining <=
-              0
+              remaining <= 0
             ) {
               setTimerRunning(
                 false
@@ -1064,6 +1084,7 @@ export default function Main() {
 
         result =
           a / b;
+
         break;
 
       case '%':
@@ -1083,6 +1104,7 @@ export default function Main() {
 
         result =
           a % b;
+
         break;
 
       default:
@@ -1216,7 +1238,8 @@ export default function Main() {
     }
 
     if (
-      timerSec <= 0
+      timerSec <=
+      0
     ) {
       setStatus(
         'Add five seconds before starting.'
@@ -1492,7 +1515,8 @@ export default function Main() {
       count;
 
     if (
-      action === 'add'
+      action ===
+      'add'
     ) {
       next += 1;
     }
@@ -1543,7 +1567,8 @@ export default function Main() {
     );
 
     if (
-      action === 'add'
+      action ===
+      'add'
     ) {
       setStatus(
         'Counter increased.'
@@ -1584,6 +1609,7 @@ export default function Main() {
       'calculator'
     ) {
       calculate();
+
       return;
     }
 
@@ -1672,7 +1698,7 @@ export default function Main() {
                           [0, 1],
 
                         outputRange:
-                          [-22, 0]
+                          [-90, 0]
                       })
                 }
               ]
@@ -1700,10 +1726,7 @@ export default function Main() {
                 paddingTop:
                   insets.top +
                   8
-              },
-
-              calcOpen &&
-                styles.topCalculator
+              }
             ]}
           >
             <View
@@ -1863,35 +1886,38 @@ export default function Main() {
 
                   {
                     opacity:
-                      ambient.interpolate({
-                        inputRange:
-                          [0, 1],
+                      ambient
+                        .interpolate({
+                          inputRange:
+                            [0, 1],
 
-                        outputRange:
-                          [0.28, 0.72]
-                      }),
+                          outputRange:
+                            [0.28, 0.72]
+                        }),
 
                     transform: [
                       {
                         translateX:
-                          ambient.interpolate({
-                            inputRange:
-                              [0, 1],
+                          ambient
+                            .interpolate({
+                              inputRange:
+                                [0, 1],
 
-                            outputRange:
-                              [-100, 90]
-                          })
+                              outputRange:
+                                [-100, 90]
+                            })
                       },
 
                       {
                         translateY:
-                          ambient.interpolate({
-                            inputRange:
-                              [0, 1],
+                          ambient
+                            .interpolate({
+                              inputRange:
+                                [0, 1],
 
-                            outputRange:
-                              [-45, 35]
-                          })
+                              outputRange:
+                                [-45, 35]
+                            })
                       }
                     ]
                   }
@@ -1918,35 +1944,38 @@ export default function Main() {
 
                   {
                     opacity:
-                      ambient.interpolate({
-                        inputRange:
-                          [0, 1],
+                      ambient
+                        .interpolate({
+                          inputRange:
+                            [0, 1],
 
-                        outputRange:
-                          [0.58, 0.20]
-                      }),
+                          outputRange:
+                            [0.58, 0.20]
+                        }),
 
                     transform: [
                       {
                         translateX:
-                          ambient.interpolate({
-                            inputRange:
-                              [0, 1],
+                          ambient
+                            .interpolate({
+                              inputRange:
+                                [0, 1],
 
-                            outputRange:
-                              [80, -95]
-                          })
+                              outputRange:
+                                [80, -95]
+                            })
                       },
 
                       {
                         translateY:
-                          ambient.interpolate({
-                            inputRange:
-                              [0, 1],
+                          ambient
+                            .interpolate({
+                              inputRange:
+                                [0, 1],
 
-                            outputRange:
-                              [35, -30]
-                          })
+                              outputRange:
+                                [35, -30]
+                            })
                       }
                     ]
                   }
@@ -2096,17 +2125,14 @@ export default function Main() {
                         value={
                           display
                         }
-
                         color={
                           dark
                             ? '#ffffff'
                             : '#152c24'
                         }
-
                         fontFamily={
                           bold
                         }
-
                         periodFontFamily={
                           regular
                         }
@@ -2620,15 +2646,9 @@ export default function Main() {
                     'add'
                   )
                 }
-                colors={
-                  colors
-                }
-                regular={
-                  regular
-                }
-                bold={
-                  bold
-                }
+                colors={colors}
+                regular={regular}
+                bold={bold}
               />
 
               <CounterButton
@@ -2639,15 +2659,9 @@ export default function Main() {
                     'reset'
                   )
                 }
-                colors={
-                  colors
-                }
-                regular={
-                  regular
-                }
-                bold={
-                  bold
-                }
+                colors={colors}
+                regular={regular}
+                bold={bold}
               />
 
               <CounterButton
@@ -2658,15 +2672,9 @@ export default function Main() {
                     'random'
                   )
                 }
-                colors={
-                  colors
-                }
-                regular={
-                  regular
-                }
-                bold={
-                  bold
-                }
+                colors={colors}
+                regular={regular}
+                bold={bold}
               />
 
               <CounterButton
@@ -2677,15 +2685,9 @@ export default function Main() {
                     'minus'
                   )
                 }
-                colors={
-                  colors
-                }
-                regular={
-                  regular
-                }
-                bold={
-                  bold
-                }
+                colors={colors}
+                regular={regular}
+                bold={bold}
               />
             </View>
           </AnimatedSection>
@@ -2714,12 +2716,12 @@ export default function Main() {
             >
               {instructions.map(
                 ([
-                  title,
-                  text
+                  itemTitle,
+                  itemText
                 ]) => (
                   <View
                     key={
-                      title
+                      itemTitle
                     }
                     style={[
                       styles.instruction,
@@ -2743,7 +2745,7 @@ export default function Main() {
                         }
                       ]}
                     >
-                      {title}
+                      {itemTitle}
                     </Text>
 
                     <Text
@@ -2759,7 +2761,7 @@ export default function Main() {
                         }
                       ]}
                     >
-                      {text}
+                      {itemText}
                     </Text>
                   </View>
                 )
@@ -3038,9 +3040,7 @@ export default function Main() {
           )
         }
         dark={dark}
-        setDark={
-          setDark
-        }
+        setDark={setDark}
         themeName={
           themeName
         }
@@ -3048,15 +3048,9 @@ export default function Main() {
           setThemeName
         }
         font={font}
-        setFont={
-          setFont
-        }
-        colors={
-          colors
-        }
-        accent={
-          accent
-        }
+        setFont={setFont}
+        colors={colors}
+        accent={accent}
       />
 
       <FullscreenClock
@@ -3072,15 +3066,11 @@ export default function Main() {
             'Returned to NMIX clock.'
           );
         }}
-        theme={
-          theme
-        }
+        theme={theme}
         themeName={
           themeName
         }
-        font={
-          font
-        }
+        font={font}
       />
     </View>
   );
@@ -3096,7 +3086,16 @@ function EntranceItem({
         [0, 1],
 
       outputRange:
-        [28, 0]
+        [54, 0]
+    });
+
+  const scale =
+    motion.interpolate({
+      inputRange:
+        [0, 1],
+
+      outputRange:
+        [0.975, 1]
     });
 
   return (
@@ -3110,6 +3109,10 @@ function EntranceItem({
         transform: [
           {
             translateY
+          },
+
+          {
+            scale
           }
         ]
       }}
@@ -3488,8 +3491,6 @@ const styles =
       borderBottomRightRadius: 22
     },
 
-    topCalculator: {},
-
     logoArea: {
       height: 66,
 
@@ -3520,16 +3521,12 @@ const styles =
         false
     },
 
-    /*
-     * Wider than before so Cinzel's N/X
-     * glyph edges are not clipped.
-     */
     logoFix: {
-      width: 240,
+      width: 250,
 
-      minHeight: 46,
+      minHeight: 47,
 
-      paddingHorizontal: 30,
+      paddingHorizontal: 32,
 
       overflow:
         'visible',
@@ -3553,7 +3550,7 @@ const styles =
 
       letterSpacing: 4,
 
-      paddingHorizontal: 8,
+      paddingHorizontal: 10,
 
       textAlign:
         'center',
@@ -3842,10 +3839,6 @@ const styles =
       elevation: 8
     },
 
-    /*
-     * Settings trigger joins the right edge
-     * and matches the attached SettingsPanel.
-     */
     settingsControl: {
       width: 54,
 
@@ -4006,10 +3999,6 @@ const styles =
       lineHeight: 14
     },
 
-    /*
-     * Fullscreen control has its own
-     * independent touch area.
-     */
     modeExtra: {
       position:
         'absolute',
