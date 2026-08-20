@@ -15,18 +15,38 @@ import {
   useWindowDimensions
 } from 'react-native';
 
-import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  LinearGradient
+} from 'expo-linear-gradient';
 
-import SettingsPanel from '../src/SettingsPanel';
-import AnimatedSection from '../src/AnimatedSection';
-import AnimatedMenuIcon from '../src/AnimatedMenuIcon';
-import FullscreenClock from '../src/FullscreenClock';
-import MotionPressable from '../src/MotionPressable';
-import TimeDisplay from '../src/TimeDisplay';
+import {
+  router
+} from 'expo-router';
 
-import useNMixSettings from '../src/useNMixSettings';
+import {
+  useSafeAreaInsets
+} from 'react-native-safe-area-context';
+
+import SettingsPanel
+  from '../src/SettingsPanel';
+
+import AnimatedSection
+  from '../src/AnimatedSection';
+
+import AnimatedMenuIcon
+  from '../src/AnimatedMenuIcon';
+
+import FullscreenClock
+  from '../src/FullscreenClock';
+
+import MotionPressable
+  from '../src/MotionPressable';
+
+import TimeDisplay
+  from '../src/TimeDisplay';
+
+import useNMixSettings
+  from '../src/useNMixSettings';
 
 import useNMixFonts, {
   fontFamily,
@@ -107,7 +127,7 @@ const instructions = [
   ],
   [
     'Fullscreen Clock',
-    'Use Style, Color and Font controls to personalize the fullscreen clock.'
+    'Swipe Style, Color and Font controls to personalize the fullscreen clock.'
   ]
 ];
 
@@ -330,10 +350,9 @@ export default function Main() {
   }
 
   /*
-   * Stronger Main entrance:
-   *
-   * top screen comes from above;
-   * cards rise from below with stagger.
+   * Main screen:
+   * top arrives visibly from above.
+   * Cards follow from below.
    */
   useEffect(() => {
     mainEntrance
@@ -352,7 +371,7 @@ export default function Main() {
       {
         toValue: 1,
 
-        duration: 780,
+        duration: 920,
 
         easing:
           ENTRANCE_EASE,
@@ -364,7 +383,7 @@ export default function Main() {
 
     Animated.sequence([
       Animated.delay(
-        160
+        230
       ),
 
       Animated.stagger(
@@ -442,7 +461,8 @@ export default function Main() {
       timerMotion,
       {
         toValue:
-          mode === 'timer'
+          mode ===
+          'timer'
             ? 1
             : 0,
 
@@ -456,6 +476,10 @@ export default function Main() {
     ).start();
   }, [mode]);
 
+  /*
+   * Calculator expression screen enters
+   * from above instead of appearing.
+   */
   useEffect(() => {
     expressionMotion
       .stopAnimation();
@@ -472,10 +496,11 @@ export default function Main() {
         duration:
           open ===
           'calculator'
-            ? 460
-            : 300,
+            ? 560
+            : 390,
 
-        easing: EASE,
+        easing:
+          EASE,
 
         useNativeDriver:
           true
@@ -525,7 +550,8 @@ export default function Main() {
             );
 
             if (
-              remaining <= 0
+              remaining <=
+              0
             ) {
               setTimerRunning(
                 false
@@ -664,7 +690,8 @@ export default function Main() {
 
     setOpen(
       current =>
-        current === name
+        current ===
+        name
           ? null
           : name
     );
@@ -726,7 +753,8 @@ export default function Main() {
         }
 
         const next =
-          num1 + value;
+          num1 +
+          value;
 
         setNum1(
           next
@@ -756,7 +784,8 @@ export default function Main() {
         }
 
         const next =
-          num2 + value;
+          num2 +
+          value;
 
         setNum2(
           next
@@ -827,7 +856,8 @@ export default function Main() {
       value === '.'
     ) {
       const current =
-        target === 1
+        target ===
+        1
           ? num1
           : num2;
 
@@ -1563,7 +1593,9 @@ export default function Main() {
     );
 
     updateDisplay(
-      String(next)
+      String(
+        next
+      )
     );
 
     if (
@@ -1609,7 +1641,6 @@ export default function Main() {
       'calculator'
     ) {
       calculate();
-
       return;
     }
 
@@ -1698,7 +1729,7 @@ export default function Main() {
                           [0, 1],
 
                         outputRange:
-                          [-90, 0]
+                          [-145, 0]
                       })
                 }
               ]
@@ -1789,7 +1820,7 @@ export default function Main() {
                                 [0, 1],
 
                               outputRange:
-                                [12, 0]
+                                [-24, 0]
                             })
                       },
 
@@ -2125,14 +2156,17 @@ export default function Main() {
                         value={
                           display
                         }
+
                         color={
                           dark
                             ? '#ffffff'
                             : '#152c24'
                         }
+
                         fontFamily={
                           bold
                         }
+
                         periodFontFamily={
                           regular
                         }
@@ -2323,6 +2357,7 @@ export default function Main() {
             open={
               settingsOpen
             }
+
             color="#ffffff"
           />
         </MotionPressable>
@@ -2408,11 +2443,13 @@ export default function Main() {
                   return (
                     <MotionPressable
                       key={key}
+
                       onPress={() =>
                         calculatorKey(
                           key
                         )
                       }
+
                       style={[
                         styles.calcKey,
 
@@ -2646,9 +2683,15 @@ export default function Main() {
                     'add'
                   )
                 }
-                colors={colors}
-                regular={regular}
-                bold={bold}
+                colors={
+                  colors
+                }
+                regular={
+                  regular
+                }
+                bold={
+                  bold
+                }
               />
 
               <CounterButton
@@ -2659,9 +2702,15 @@ export default function Main() {
                     'reset'
                   )
                 }
-                colors={colors}
-                regular={regular}
-                bold={bold}
+                colors={
+                  colors
+                }
+                regular={
+                  regular
+                }
+                bold={
+                  bold
+                }
               />
 
               <CounterButton
@@ -2672,9 +2721,15 @@ export default function Main() {
                     'random'
                   )
                 }
-                colors={colors}
-                regular={regular}
-                bold={bold}
+                colors={
+                  colors
+                }
+                regular={
+                  regular
+                }
+                bold={
+                  bold
+                }
               />
 
               <CounterButton
@@ -2685,9 +2740,15 @@ export default function Main() {
                     'minus'
                   )
                 }
-                colors={colors}
-                regular={regular}
-                bold={bold}
+                colors={
+                  colors
+                }
+                regular={
+                  regular
+                }
+                bold={
+                  bold
+                }
               />
             </View>
           </AnimatedSection>
@@ -3086,7 +3147,7 @@ function EntranceItem({
         [0, 1],
 
       outputRange:
-        [54, 0]
+        [72, 0]
     });
 
   const scale =
@@ -3095,7 +3156,7 @@ function EntranceItem({
         [0, 1],
 
       outputRange:
-        [0.975, 1]
+        [0.972, 1]
     });
 
   return (
