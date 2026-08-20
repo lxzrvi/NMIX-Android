@@ -48,6 +48,9 @@ import TimeDisplay
 import useNMixSettings
   from '../src/useNMixSettings';
 
+import useNMixSounds
+  from '../src/useNMixSounds';
+
 import useNMixFonts, {
   fontFamily,
   logoFont
@@ -123,7 +126,7 @@ const instructions = [
   ],
   [
     'Settings',
-    'Use the top-right control for dark mode, themes and fonts.'
+    'Use the top-right control for dark mode, themes, fonts and sound.'
   ],
   [
     'Fullscreen Clock',
@@ -153,6 +156,13 @@ export default function Main() {
     theme,
     colors
   } = useNMixSettings();
+
+  const {
+    result:
+      playResult,
+
+    timerFinished
+  } = useNMixSounds();
 
   const [
     settingsOpen,
@@ -229,6 +239,13 @@ export default function Main() {
   const timerEnd =
     useRef(null);
 
+  /*
+   * Makes the alarm one-shot even though
+   * the timer interval runs frequently.
+   */
+  const timerAlarmPlayed =
+    useRef(false);
+
   const [
     stopwatchMs,
     setStopwatchMs
@@ -257,6 +274,11 @@ export default function Main() {
       new Animated.Value(0)
     ).current;
 
+  /*
+   * Kept for structural compatibility,
+   * but regular output updates no longer
+   * jump/fade.
+   */
   const displayMotion =
     useRef(
       new Animated.Value(1)
@@ -313,47 +335,24 @@ export default function Main() {
       )
     );
 
+  /*
+   * Immediate display response.
+   * No bounce / translation / delayed reveal.
+   */
   function updateDisplay(
-    value,
-    animate = true
+    value
   ) {
     setDisplayState(
       String(value)
     );
 
-    if (!animate) {
-      return;
-    }
-
     displayMotion
       .stopAnimation();
 
     displayMotion
-      .setValue(0.72);
-
-    Animated.timing(
-      displayMotion,
-      {
-        toValue: 1,
-
-        duration: 135,
-
-        easing:
-          Easing.out(
-            Easing.quad
-          ),
-
-        useNativeDriver:
-          true
-      }
-    ).start();
+      .setValue(1);
   }
 
-  /*
-   * Main screen:
-   * top arrives visibly from above.
-   * Cards follow from below.
-   */
   useEffect(() => {
     mainEntrance
       .setValue(0);
@@ -476,10 +475,6 @@ export default function Main() {
     ).start();
   }, [mode]);
 
-  /*
-   * Calculator expression screen enters
-   * from above instead of appearing.
-   */
   useEffect(() => {
     expressionMotion
       .stopAnimation();
@@ -563,6 +558,17 @@ export default function Main() {
               setStatus(
                 "Time's up!"
               );
+
+              if (
+                !timerAlarmPlayed
+                  .current
+              ) {
+                timerAlarmPlayed
+                  .current =
+                    true;
+
+                timerFinished();
+              }
             }
           }
 
@@ -595,7 +601,8 @@ export default function Main() {
   }, [
     mode,
     timerRunning,
-    stopwatchRunning
+    stopwatchRunning,
+    timerFinished
   ]);
 
   useEffect(() => {
@@ -646,6 +653,32 @@ export default function Main() {
                 remaining
               )
             );
+
+            if (
+              remaining <= 0
+            ) {
+              setTimerRunning(
+                false
+              );
+
+              timerEnd.current =
+                null;
+
+              setStatus(
+                "Time's up!"
+              );
+
+              if (
+                !timerAlarmPlayed
+                  .current
+              ) {
+                timerAlarmPlayed
+                  .current =
+                    true;
+
+                timerFinished();
+              }
+            }
           }
 
           if (
@@ -674,7 +707,8 @@ export default function Main() {
   }, [
     mode,
     timerRunning,
-    stopwatchRunning
+    stopwatchRunning,
+    timerFinished
   ]);
 
   function ensureScreenOpen() {
@@ -856,8 +890,7 @@ export default function Main() {
       value === '.'
     ) {
       const current =
-        target ===
-        1
+        target === 1
           ? num1
           : num2;
 
@@ -1073,23 +1106,23 @@ export default function Main() {
     const b =
       Number(num2);
 
-    let result;
+    let calculation;
 
     switch (
       operator
     ) {
       case '+':
-        result =
+        calculation =
           a + b;
         break;
 
       case '−':
-        result =
+        calculation =
           a - b;
         break;
 
       case '×':
-        result =
+        calculation =
           a * b;
         break;
 
@@ -1112,7 +1145,7 @@ export default function Main() {
           return;
         }
 
-        result =
+        calculation =
           a / b;
 
         break;
@@ -1132,7 +1165,7 @@ export default function Main() {
           return;
         }
 
-        result =
+        calculation =
           a % b;
 
         break;
@@ -1151,7 +1184,7 @@ export default function Main() {
 
     if (
       !Number.isFinite(
-        result
+        calculation
       )
     ) {
       updateDisplay(
@@ -1168,7 +1201,7 @@ export default function Main() {
     updateDisplay(
       String(
         Number(
-          result
+          calculation
             .toPrecision(
               12
             )
@@ -1183,6 +1216,8 @@ export default function Main() {
     setStatus(
       'Calculation complete.'
     );
+
+    playResult();
   }
 
   function openTimer() {
@@ -1268,8 +1303,7 @@ export default function Main() {
     }
 
     if (
-      timerSec <=
-      0
+      timerSec <= 0
     ) {
       setStatus(
         'Add five seconds before starting.'
@@ -1277,6 +1311,10 @@ export default function Main() {
 
       return;
     }
+
+    timerAlarmPlayed
+      .current =
+        false;
 
     timerEnd.current =
       Date.now() +
@@ -1347,6 +1385,18 @@ export default function Main() {
         next
       )
     );
+
+    /*
+     * Any positive timer value means a
+     * future completion can alarm again.
+     */
+    if (
+      next > 0
+    ) {
+      timerAlarmPlayed
+        .current =
+          false;
+    }
 
     if (
       timerRunning
@@ -1593,9 +1643,7 @@ export default function Main() {
     );
 
     updateDisplay(
-      String(
-        next
-      )
+      String(next)
     );
 
     if (
@@ -1641,6 +1689,7 @@ export default function Main() {
       'calculator'
     ) {
       calculate();
+
       return;
     }
 
@@ -2126,29 +2175,10 @@ export default function Main() {
                     {label}
                   </Text>
 
-                  <Animated.View
-                    style={[
-                      styles.displayMotion,
-
-                      {
-                        opacity:
-                          displayMotion,
-
-                        transform: [
-                          {
-                            translateY:
-                              displayMotion
-                                .interpolate({
-                                  inputRange:
-                                    [0, 1],
-
-                                  outputRange:
-                                    [2, 0]
-                                })
-                          }
-                        ]
-                      }
-                    ]}
+                  <View
+                    style={
+                      styles.displayMotion
+                    }
                   >
                     {mode ===
                     'clock' ? (
@@ -2195,7 +2225,7 @@ export default function Main() {
                         {display}
                       </Text>
                     )}
-                  </Animated.View>
+                  </View>
                 </MotionPressable>
 
                 {mode ===
@@ -2683,15 +2713,9 @@ export default function Main() {
                     'add'
                   )
                 }
-                colors={
-                  colors
-                }
-                regular={
-                  regular
-                }
-                bold={
-                  bold
-                }
+                colors={colors}
+                regular={regular}
+                bold={bold}
               />
 
               <CounterButton
@@ -2702,15 +2726,9 @@ export default function Main() {
                     'reset'
                   )
                 }
-                colors={
-                  colors
-                }
-                regular={
-                  regular
-                }
-                bold={
-                  bold
-                }
+                colors={colors}
+                regular={regular}
+                bold={bold}
               />
 
               <CounterButton
@@ -2721,15 +2739,9 @@ export default function Main() {
                     'random'
                   )
                 }
-                colors={
-                  colors
-                }
-                regular={
-                  regular
-                }
-                bold={
-                  bold
-                }
+                colors={colors}
+                regular={regular}
+                bold={bold}
               />
 
               <CounterButton
@@ -2740,15 +2752,9 @@ export default function Main() {
                     'minus'
                   )
                 }
-                colors={
-                  colors
-                }
-                regular={
-                  regular
-                }
-                bold={
-                  bold
-                }
+                colors={colors}
+                regular={regular}
+                bold={bold}
               />
             </View>
           </AnimatedSection>
@@ -2781,9 +2787,7 @@ export default function Main() {
                   itemText
                 ]) => (
                   <View
-                    key={
-                      itemTitle
-                    }
+                    key={itemTitle}
                     style={[
                       styles.instruction,
 
@@ -3102,9 +3106,7 @@ export default function Main() {
         }
         dark={dark}
         setDark={setDark}
-        themeName={
-          themeName
-        }
+        themeName={themeName}
         setThemeName={
           setThemeName
         }
@@ -3128,9 +3130,7 @@ export default function Main() {
           );
         }}
         theme={theme}
-        themeName={
-          themeName
-        }
+        themeName={themeName}
         font={font}
       />
     </View>
@@ -3162,7 +3162,8 @@ function EntranceItem({
   return (
     <Animated.View
       style={{
-        width: '100%',
+        width:
+          '100%',
 
         opacity:
           motion,
@@ -3250,9 +3251,7 @@ function ModeButton({
       ]}
     >
       <MotionPressable
-        onPress={
-          onPress
-        }
+        onPress={onPress}
         onLongPress={
           onLongPress
         }
@@ -3351,9 +3350,7 @@ function CounterButton({
 }) {
   return (
     <MotionPressable
-      onPress={
-        onPress
-      }
+      onPress={onPress}
       style={[
         styles.counterButton,
 
@@ -3543,13 +3540,17 @@ const styles =
     top: {
       flex: 1,
 
-      paddingHorizontal: 10,
+      paddingHorizontal:
+        10,
 
-      paddingBottom: 10,
+      paddingBottom:
+        10,
 
-      borderBottomLeftRadius: 22,
+      borderBottomLeftRadius:
+        22,
 
-      borderBottomRightRadius: 22
+      borderBottomRightRadius:
+        22
     },
 
     logoArea: {
@@ -3587,7 +3588,8 @@ const styles =
 
       minHeight: 47,
 
-      paddingHorizontal: 32,
+      paddingHorizontal:
+        32,
 
       overflow:
         'visible',
@@ -3611,7 +3613,8 @@ const styles =
 
       letterSpacing: 4,
 
-      paddingHorizontal: 10,
+      paddingHorizontal:
+        10,
 
       textAlign:
         'center',
@@ -3658,7 +3661,8 @@ const styles =
     },
 
     expressionText: {
-      paddingHorizontal: 5,
+      paddingHorizontal:
+        5,
 
       fontSize: 18,
 
@@ -3915,11 +3919,13 @@ const styles =
 
       borderTopRightRadius: 0,
 
-      borderBottomRightRadius: 0,
+      borderBottomRightRadius:
+        0,
 
       borderTopLeftRadius: 22,
 
-      borderBottomLeftRadius: 22
+      borderBottomLeftRadius:
+        22
     },
 
     scroll: {
@@ -3944,9 +3950,11 @@ const styles =
     },
 
     calculatorGrid: {
-      paddingHorizontal: 8,
+      paddingHorizontal:
+        8,
 
-      paddingVertical: 17,
+      paddingVertical:
+        17,
 
       flexDirection:
         'row',
@@ -4176,7 +4184,8 @@ const styles =
     contributorNameFix: {
       minWidth: 150,
 
-      paddingHorizontal: 4,
+      paddingHorizontal:
+        4,
 
       overflow:
         'visible'
@@ -4189,7 +4198,8 @@ const styles =
 
       lineHeight: 27,
 
-      paddingHorizontal: 2,
+      paddingHorizontal:
+        2,
 
       includeFontPadding:
         false
@@ -4222,7 +4232,8 @@ const styles =
     },
 
     chip: {
-      paddingHorizontal: 8,
+      paddingHorizontal:
+        8,
 
       paddingVertical: 5,
 
