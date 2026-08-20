@@ -1,393 +1,88 @@
-import {
-  useEffect,
-  useMemo,
-  useState
-} from 'react';
+import { useState, useEffect, createContext, useContext } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import AsyncStorage
-  from '@react-native-async-storage/async-storage';
+const STORAGE_KEY_THEME = 'nmix-theme-accent';
+const STORAGE_KEY_DARK = 'nmix-theme-dark';
+const STORAGE_KEY_FONT = 'nmix-app-font';
+const STORAGE_KEY_ANIM_SPEED = 'nmix-anim-speed';
 
-import {
-  themes,
-  lightColors,
-  darkColors,
-  fontChoices
-} from './theme';
+const SettingsContext = createContext();
 
-const THEME_KEY =
-  'nmix-theme';
-
-const DARK_KEY =
-  'nmix-dark';
-
-const FONT_KEY =
-  'nmix-font';
-
-/*
- * Shared module-level store.
- *
- * Every screen now reads the SAME values.
- * Navigating Welcome <-> Main no longer creates
- * independent settings state that can temporarily
- * overwrite/revert another screen.
- */
-let store = {
-  loaded: false,
-  loading: false,
-
-  themeName:
-    'green',
-
-  dark:
-    false,
-
-  font:
-    'Poppins'
-};
-
-const listeners =
-  new Set();
-
-let loadPromise =
-  null;
-
-function emit() {
-  listeners.forEach(
-    listener => {
-      try {
-        listener();
-      } catch {}
-    }
-  );
-}
-
-function snapshot() {
-  return {
-    loaded:
-      store.loaded,
-
-    themeName:
-      store.themeName,
-
-    dark:
-      store.dark,
-
-    font:
-      store.font
-  };
-}
-
-async function loadSettings() {
-  if (
-    store.loaded
-  ) {
-    return;
-  }
-
-  /*
-   * All hook instances share one hydration
-   * request instead of racing each other.
-   */
-  if (
-    loadPromise
-  ) {
-    return loadPromise;
-  }
-
-  store.loading =
-    true;
-
-  loadPromise =
-    (async () => {
-      try {
-        const values =
-          await AsyncStorage
-            .multiGet([
-              THEME_KEY,
-              DARK_KEY,
-              FONT_KEY
-            ]);
-
-        const saved =
-          Object.fromEntries(
-            values
-          );
-
-        const savedTheme =
-          saved[
-            THEME_KEY
-          ];
-
-        const savedDark =
-          saved[
-            DARK_KEY
-          ];
-
-        const savedFont =
-          saved[
-            FONT_KEY
-          ];
-
-        if (
-          savedTheme &&
-          themes[
-            savedTheme
-          ]
-        ) {
-          store.themeName =
-            savedTheme;
-        }
-
-        if (
-          savedDark ===
-            '1' ||
-          savedDark ===
-            '0'
-        ) {
-          store.dark =
-            savedDark ===
-            '1';
-        }
-
-        if (
-          savedFont &&
-          (
-            !Array.isArray(
-              fontChoices
-            ) ||
-            fontChoices.includes(
-              savedFont
-            )
-          )
-        ) {
-          store.font =
-            savedFont;
-        }
-      } catch {
-        /*
-         * Keep safe defaults if device storage
-         * cannot be read.
-         */
-      } finally {
-        store.loaded =
-          true;
-
-        store.loading =
-          false;
-
-        loadPromise =
-          null;
-
-        emit();
-      }
-    })();
-
-  return loadPromise;
-}
-
-function subscribe(
-  listener
-) {
-  listeners.add(
-    listener
-  );
-
-  return () => {
-    listeners.delete(
-      listener
-    );
-  };
-}
-
-function setThemeName(
-  value
-) {
-  if (
-    !themes[
-      value
-    ]
-  ) {
-    return;
-  }
-
-  if (
-    store.themeName ===
-    value
-  ) {
-    return;
-  }
-
-  /*
-   * Update the shared UI state immediately.
-   * Storage happens in the background.
-   */
-  store.themeName =
-    value;
-
-  emit();
-
-  AsyncStorage
-    .setItem(
-      THEME_KEY,
-      value
-    )
-    .catch(
-      () => {}
-    );
-}
-
-function setDark(
-  value
-) {
-  const next =
-    Boolean(
-      value
-    );
-
-  if (
-    store.dark ===
-    next
-  ) {
-    return;
-  }
-
-  store.dark =
-    next;
-
-  emit();
-
-  AsyncStorage
-    .setItem(
-      DARK_KEY,
-      next
-        ? '1'
-        : '0'
-    )
-    .catch(
-      () => {}
-    );
-}
-
-function setFont(
-  value
-) {
-  if (
-    !value
-  ) {
-    return;
-  }
-
-  if (
-    Array.isArray(
-      fontChoices
-    ) &&
-    !fontChoices.includes(
-      value
-    )
-  ) {
-    return;
-  }
-
-  if (
-    store.font ===
-    value
-  ) {
-    return;
-  }
-
-  store.font =
-    value;
-
-  emit();
-
-  AsyncStorage
-    .setItem(
-      FONT_KEY,
-      value
-    )
-    .catch(
-      () => {}
-    );
-}
-
-export default function useNMixSettings() {
-  const [
-    state,
-    setState
-  ] = useState(
-    snapshot
-  );
+export function SettingsProvider({ children }) {
+  const [accentTheme, setAccentTheme] = useState('green');
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [selectedFont, setSelectedFont] = useState('Poppins');
+  const [animSpeed, setAnimSpeed] = useState(1.0); // 0.5x to 2.0x multiplier
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const unsubscribe =
-      subscribe(
-        () => {
-          setState(
-            snapshot()
-          );
-        }
-      );
+    (async () => {
+      try {
+        const savedTheme = await AsyncStorage.getItem(STORAGE_KEY_THEME);
+        const savedDark = await AsyncStorage.getItem(STORAGE_KEY_DARK);
+        const savedFont = await AsyncStorage.getItem(STORAGE_KEY_FONT);
+        const savedSpeed = await AsyncStorage.getItem(STORAGE_KEY_ANIM_SPEED);
 
-    /*
-     * Synchronize immediately in case another
-     * screen changed settings between render
-     * and effect subscription.
-     */
-    setState(
-      snapshot()
-    );
-
-    loadSettings();
-
-    return unsubscribe;
+        if (savedTheme) setAccentTheme(savedTheme);
+        if (savedDark !== null) setIsDarkMode(savedDark === 'true');
+        if (savedFont) setSelectedFont(savedFont);
+        if (savedSpeed !== null) setAnimSpeed(parseFloat(savedSpeed));
+      } catch (e) {
+        console.error('Failed to load settings from storage', e);
+      } finally {
+        setIsLoaded(true);
+      }
+    })();
   }, []);
 
-  const theme =
-    useMemo(
-      () =>
-        themes[
-          state.themeName
-        ] ||
-        themes.green,
-
-      [
-        state.themeName
-      ]
-    );
-
-  const colors =
-    useMemo(
-      () =>
-        state.dark
-          ? darkColors
-          : lightColors,
-
-      [
-        state.dark
-      ]
-    );
-
-  return {
-    loaded:
-      state.loaded,
-
-    themeName:
-      state.themeName,
-
-    setThemeName,
-
-    dark:
-      state.dark,
-
-    setDark,
-
-    font:
-      state.font,
-
-    setFont,
-
-    theme,
-
-    colors
+  const changeAccentTheme = async (theme) => {
+    setAccentTheme(theme);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_THEME, theme);
+    } catch (e) {}
   };
+
+  const toggleDarkMode = async () => {
+    const nextVal = !isDarkMode;
+    setIsDarkMode(nextVal);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_DARK, String(nextVal));
+    } catch (e) {}
+  };
+
+  const changeSelectedFont = async (font) => {
+    setSelectedFont(font);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_FONT, font);
+    } catch (e) {}
+  };
+
+  const changeAnimSpeed = async (speed) => {
+    setAnimSpeed(speed);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY_ANIM_SPEED, String(speed));
+    } catch (e) {}
+  };
+
+  return (
+    <SettingsContext.Provider
+      value={{
+        accentTheme,
+        changeAccentTheme,
+        isDarkMode,
+        toggleDarkMode,
+        selectedFont,
+        changeSelectedFont,
+        animSpeed,
+        changeAnimSpeed,
+        isLoaded,
+      }}
+    >
+      {children}
+    </SettingsContext.Provider>
+  );
+}
+
+export function useNMixSettings() {
+  return useContext(SettingsContext);
 }
