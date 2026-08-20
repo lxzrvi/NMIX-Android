@@ -68,7 +68,7 @@ jobs:
       # Keep the known-working native dependencies.
       - name: Install NMIX native packages
         run: |
-          npx expo install react-native-svg expo-splash-screen expo-image-picker expo-file-system expo-screen-orientation
+          npx expo install react-native-svg expo-splash-screen expo-image-picker expo-file-system expo-screen-orientation expo-audio
 
       - name: Generate Android project
         run: npx expo prebuild --platform android --no-install
