@@ -1,101 +1,393 @@
-import { useEffect, useMemo, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  useEffect,
+  useMemo,
+  useState
+} from 'react';
+
+import AsyncStorage
+  from '@react-native-async-storage/async-storage';
 
 import {
   themes,
   lightColors,
-  darkColors
+  darkColors,
+  fontChoices
 } from './theme';
 
-const THEME_KEY = 'nmix-theme';
-const DARK_KEY = 'nmix-dark';
-const FONT_KEY = 'nmix-font';
+const THEME_KEY =
+  'nmix-theme';
 
-export default function useNMixSettings() {
-  const [loaded, setLoaded] = useState(false);
-  const [themeName, setThemeState] = useState('green');
-  const [dark, setDarkState] = useState(false);
-  const [font, setFontState] = useState('Poppins');
+const DARK_KEY =
+  'nmix-dark';
 
-  useEffect(() => {
-    async function load() {
+const FONT_KEY =
+  'nmix-font';
+
+/*
+ * Shared module-level store.
+ *
+ * Every screen now reads the SAME values.
+ * Navigating Welcome <-> Main no longer creates
+ * independent settings state that can temporarily
+ * overwrite/revert another screen.
+ */
+let store = {
+  loaded: false,
+  loading: false,
+
+  themeName:
+    'green',
+
+  dark:
+    false,
+
+  font:
+    'Poppins'
+};
+
+const listeners =
+  new Set();
+
+let loadPromise =
+  null;
+
+function emit() {
+  listeners.forEach(
+    listener => {
       try {
-        const values = await AsyncStorage.multiGet([
-          THEME_KEY,
-          DARK_KEY,
-          FONT_KEY
-        ]);
+        listener();
+      } catch {}
+    }
+  );
+}
 
-        const saved = Object.fromEntries(values);
+function snapshot() {
+  return {
+    loaded:
+      store.loaded,
 
-        if (saved[THEME_KEY] && themes[saved[THEME_KEY]]) {
-          setThemeState(saved[THEME_KEY]);
+    themeName:
+      store.themeName,
+
+    dark:
+      store.dark,
+
+    font:
+      store.font
+  };
+}
+
+async function loadSettings() {
+  if (
+    store.loaded
+  ) {
+    return;
+  }
+
+  /*
+   * All hook instances share one hydration
+   * request instead of racing each other.
+   */
+  if (
+    loadPromise
+  ) {
+    return loadPromise;
+  }
+
+  store.loading =
+    true;
+
+  loadPromise =
+    (async () => {
+      try {
+        const values =
+          await AsyncStorage
+            .multiGet([
+              THEME_KEY,
+              DARK_KEY,
+              FONT_KEY
+            ]);
+
+        const saved =
+          Object.fromEntries(
+            values
+          );
+
+        const savedTheme =
+          saved[
+            THEME_KEY
+          ];
+
+        const savedDark =
+          saved[
+            DARK_KEY
+          ];
+
+        const savedFont =
+          saved[
+            FONT_KEY
+          ];
+
+        if (
+          savedTheme &&
+          themes[
+            savedTheme
+          ]
+        ) {
+          store.themeName =
+            savedTheme;
         }
 
-        if (saved[DARK_KEY] !== null) {
-          setDarkState(saved[DARK_KEY] === '1');
+        if (
+          savedDark ===
+            '1' ||
+          savedDark ===
+            '0'
+        ) {
+          store.dark =
+            savedDark ===
+            '1';
         }
 
-        if (saved[FONT_KEY]) {
-          setFontState(saved[FONT_KEY]);
+        if (
+          savedFont &&
+          (
+            !Array.isArray(
+              fontChoices
+            ) ||
+            fontChoices.includes(
+              savedFont
+            )
+          )
+        ) {
+          store.font =
+            savedFont;
         }
       } catch {
+        /*
+         * Keep safe defaults if device storage
+         * cannot be read.
+         */
       } finally {
-        setLoaded(true);
-      }
-    }
+        store.loaded =
+          true;
 
-    load();
+        store.loading =
+          false;
+
+        loadPromise =
+          null;
+
+        emit();
+      }
+    })();
+
+  return loadPromise;
+}
+
+function subscribe(
+  listener
+) {
+  listeners.add(
+    listener
+  );
+
+  return () => {
+    listeners.delete(
+      listener
+    );
+  };
+}
+
+function setThemeName(
+  value
+) {
+  if (
+    !themes[
+      value
+    ]
+  ) {
+    return;
+  }
+
+  if (
+    store.themeName ===
+    value
+  ) {
+    return;
+  }
+
+  /*
+   * Update the shared UI state immediately.
+   * Storage happens in the background.
+   */
+  store.themeName =
+    value;
+
+  emit();
+
+  AsyncStorage
+    .setItem(
+      THEME_KEY,
+      value
+    )
+    .catch(
+      () => {}
+    );
+}
+
+function setDark(
+  value
+) {
+  const next =
+    Boolean(
+      value
+    );
+
+  if (
+    store.dark ===
+    next
+  ) {
+    return;
+  }
+
+  store.dark =
+    next;
+
+  emit();
+
+  AsyncStorage
+    .setItem(
+      DARK_KEY,
+      next
+        ? '1'
+        : '0'
+    )
+    .catch(
+      () => {}
+    );
+}
+
+function setFont(
+  value
+) {
+  if (
+    !value
+  ) {
+    return;
+  }
+
+  if (
+    Array.isArray(
+      fontChoices
+    ) &&
+    !fontChoices.includes(
+      value
+    )
+  ) {
+    return;
+  }
+
+  if (
+    store.font ===
+    value
+  ) {
+    return;
+  }
+
+  store.font =
+    value;
+
+  emit();
+
+  AsyncStorage
+    .setItem(
+      FONT_KEY,
+      value
+    )
+    .catch(
+      () => {}
+    );
+}
+
+export default function useNMixSettings() {
+  const [
+    state,
+    setState
+  ] = useState(
+    snapshot
+  );
+
+  useEffect(() => {
+    const unsubscribe =
+      subscribe(
+        () => {
+          setState(
+            snapshot()
+          );
+        }
+      );
+
+    /*
+     * Synchronize immediately in case another
+     * screen changed settings between render
+     * and effect subscription.
+     */
+    setState(
+      snapshot()
+    );
+
+    loadSettings();
+
+    return unsubscribe;
   }, []);
 
-  async function setThemeName(value) {
-    if (!themes[value]) return;
+  const theme =
+    useMemo(
+      () =>
+        themes[
+          state.themeName
+        ] ||
+        themes.green,
 
-    setThemeState(value);
+      [
+        state.themeName
+      ]
+    );
 
-    try {
-      await AsyncStorage.setItem(THEME_KEY, value);
-    } catch {}
-  }
+  const colors =
+    useMemo(
+      () =>
+        state.dark
+          ? darkColors
+          : lightColors,
 
-  async function setDark(value) {
-    setDarkState(value);
-
-    try {
-      await AsyncStorage.setItem(
-        DARK_KEY,
-        value ? '1' : '0'
-      );
-    } catch {}
-  }
-
-  async function setFont(value) {
-    setFontState(value);
-
-    try {
-      await AsyncStorage.setItem(FONT_KEY, value);
-    } catch {}
-  }
-
-  const theme = useMemo(
-    () => themes[themeName] || themes.green,
-    [themeName]
-  );
-
-  const colors = useMemo(
-    () => (dark ? darkColors : lightColors),
-    [dark]
-  );
+      [
+        state.dark
+      ]
+    );
 
   return {
-    loaded,
-    themeName,
+    loaded:
+      state.loaded,
+
+    themeName:
+      state.themeName,
+
     setThemeName,
-    dark,
+
+    dark:
+      state.dark,
+
     setDark,
-    font,
+
+    font:
+      state.font,
+
     setFont,
+
     theme,
+
     colors
   };
 }
