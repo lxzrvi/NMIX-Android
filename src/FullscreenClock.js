@@ -10,6 +10,7 @@ import {
   Easing,
   Image,
   Modal,
+  PanResponder,
   Pressable,
   StatusBar,
   StyleSheet,
@@ -173,11 +174,6 @@ export default function FullscreenClock({
     setColorIndex
   ] = useState(0);
 
-  /*
-   * Fullscreen clock gets its own persistent
-   * font selection. Initially follows the app
-   * font until a fullscreen preference exists.
-   */
   const [
     clockFont,
     setClockFont
@@ -201,7 +197,16 @@ export default function FullscreenClock({
       new Animated.Value(1)
     ).current;
 
-  const contentMotion =
+  /*
+   * Hidden NMIX branding gets an inverse
+   * animation to the normal chrome.
+   */
+  const hiddenBrand =
+    useRef(
+      new Animated.Value(0)
+    ).current;
+
+  const clockChange =
     useRef(
       new Animated.Value(1)
     ).current;
@@ -238,39 +243,39 @@ export default function FullscreenClock({
           savedWallpaper
         );
 
-        const parsedStyle =
+        const style =
           Number(
             savedStyle
           );
 
         if (
           Number.isInteger(
-            parsedStyle
+            style
           ) &&
-          parsedStyle >= 0 &&
-          parsedStyle <
+          style >= 0 &&
+          style <
             CLOCK_STYLES.length
         ) {
           setClockStyle(
-            parsedStyle
+            style
           );
         }
 
-        const parsedColor =
+        const color =
           Number(
             savedColor
           );
 
         if (
           Number.isInteger(
-            parsedColor
+            color
           ) &&
-          parsedColor >= 0 &&
-          parsedColor <
+          color >= 0 &&
+          color <
             CLOCK_COLORS.length
         ) {
           setColorIndex(
-            parsedColor
+            color
           );
         }
 
@@ -314,6 +319,10 @@ export default function FullscreenClock({
 
     chrome.setValue(
       1
+    );
+
+    hiddenBrand.setValue(
+      0
     );
 
     entrance.setValue(
@@ -404,23 +413,51 @@ export default function FullscreenClock({
 
   useEffect(() => {
     chrome.stopAnimation();
+    hiddenBrand.stopAnimation();
 
-    Animated.timing(
-      chrome,
-      {
-        toValue:
-          chromeVisible
-            ? 1
-            : 0,
+    Animated.parallel([
+      Animated.timing(
+        chrome,
+        {
+          toValue:
+            chromeVisible
+              ? 1
+              : 0,
 
-        duration: 480,
+          duration: 460,
 
-        easing: EASE,
+          easing: EASE,
 
-        useNativeDriver:
-          true
-      }
-    ).start();
+          useNativeDriver:
+            true
+        }
+      ),
+
+      Animated.timing(
+        hiddenBrand,
+        {
+          toValue:
+            chromeVisible
+              ? 0
+              : 1,
+
+          duration:
+            chromeVisible
+              ? 280
+              : 600,
+
+          delay:
+            chromeVisible
+              ? 0
+              : 150,
+
+          easing: EASE,
+
+          useNativeDriver:
+            true
+        }
+      )
+    ]).start();
   }, [
     chromeVisible
   ]);
@@ -468,15 +505,15 @@ export default function FullscreenClock({
   function animateClockChange(
     callback
   ) {
-    contentMotion
+    clockChange
       .stopAnimation();
 
     Animated.timing(
-      contentMotion,
+      clockChange,
       {
         toValue: 0,
 
-        duration: 120,
+        duration: 100,
 
         useNativeDriver:
           true
@@ -484,15 +521,15 @@ export default function FullscreenClock({
     ).start(() => {
       callback();
 
-      contentMotion
+      clockChange
         .setValue(0);
 
       Animated.timing(
-        contentMotion,
+        clockChange,
         {
           toValue: 1,
 
-          duration: 390,
+          duration: 340,
 
           easing: EASE,
 
@@ -503,13 +540,15 @@ export default function FullscreenClock({
     });
   }
 
-  function nextStyle() {
+  function changeStyle(
+    direction
+  ) {
     const next =
-      (
+      wrapIndex(
         clockStyle +
-        1
-      ) %
-      CLOCK_STYLES.length;
+        direction,
+        CLOCK_STYLES.length
+      );
 
     animateClockChange(
       () => {
@@ -529,13 +568,15 @@ export default function FullscreenClock({
     );
   }
 
-  function nextColor() {
+  function changeColor(
+    direction
+  ) {
     const next =
-      (
+      wrapIndex(
         colorIndex +
-        1
-      ) %
-      CLOCK_COLORS.length;
+        direction,
+        CLOCK_COLORS.length
+      );
 
     animateClockChange(
       () => {
@@ -555,22 +596,24 @@ export default function FullscreenClock({
     );
   }
 
-  function nextFont() {
+  function changeFont(
+    direction
+  ) {
     const current =
-      CLOCK_FONTS
-        .indexOf(
-          clockFont
-        );
+      Math.max(
+        0,
+        CLOCK_FONTS
+          .indexOf(
+            clockFont
+          )
+      );
 
     const nextIndex =
-      (
-        Math.max(
-          0,
-          current
-        ) +
-        1
-      ) %
-      CLOCK_FONTS.length;
+      wrapIndex(
+        current +
+        direction,
+        CLOCK_FONTS.length
+      );
 
     const next =
       CLOCK_FONTS[
@@ -647,11 +690,20 @@ export default function FullscreenClock({
     onClose();
   }
 
+  const carouselWidth =
+    Math.min(
+      landscape
+        ? 230
+        : 205,
+      Math.max(
+        175,
+        width * 0.47
+      )
+    );
+
   return (
     <Modal
-      visible={
-        visible
-      }
+      visible={visible}
       animationType="none"
       statusBarTranslucent
       navigationBarTranslucent
@@ -729,20 +781,16 @@ export default function FullscreenClock({
         />
 
         <AmbientTheme
-          motion={
-            ambient
-          }
-          theme={
-            theme
-          }
+          motion={ambient}
+          theme={theme}
           themeName={
             themeName
           }
         />
 
         {/*
-         * When hidden, the full screen becomes
-         * one restore-touch target.
+         * Hidden state:
+         * tap anywhere to restore chrome.
          */}
         {!chromeVisible && (
           <Pressable
@@ -757,7 +805,8 @@ export default function FullscreenClock({
         )}
 
         {/*
-         * Main clock never handles style taps.
+         * TIME + DATE.
+         * Never handles style changing.
          */}
         <Animated.View
           pointerEvents="none"
@@ -767,8 +816,8 @@ export default function FullscreenClock({
             {
               paddingHorizontal:
                 landscape
-                  ? 70
-                  : 20,
+                  ? 78
+                  : 22,
 
               opacity:
                 entrance,
@@ -795,30 +844,30 @@ export default function FullscreenClock({
 
               {
                 opacity:
-                  contentMotion,
+                  clockChange,
 
                 transform: [
                   {
                     translateY:
-                      contentMotion
+                      clockChange
                         .interpolate({
                           inputRange:
                             [0, 1],
 
                           outputRange:
-                            [6, 0]
+                            [5, 0]
                         })
                   },
 
                   {
                     scale:
-                      contentMotion
+                      clockChange
                         .interpolate({
                           inputRange:
                             [0, 1],
 
                           outputRange:
-                            [0.975, 1]
+                            [0.98, 1]
                         })
                   }
                 ]
@@ -829,21 +878,15 @@ export default function FullscreenClock({
               index={
                 clockStyle
               }
-              now={
-                now
-              }
-              parts={
-                parts
-              }
+              now={now}
+              parts={parts}
               landscape={
                 landscape
               }
               regular={
                 regular
               }
-              bold={
-                bold
-              }
+              bold={bold}
               color={
                 clockColor
               }
@@ -851,6 +894,64 @@ export default function FullscreenClock({
           </Animated.View>
         </Animated.View>
 
+        {/*
+         * Hidden-only NMIX branding.
+         */}
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.hiddenBrand,
+
+            {
+              opacity:
+                hiddenBrand,
+
+              transform: [
+                {
+                  translateY:
+                    hiddenBrand
+                      .interpolate({
+                        inputRange:
+                          [0, 1],
+
+                        outputRange:
+                          [14, 0]
+                      })
+                }
+              ]
+            }
+          ]}
+        >
+          <View
+            style={
+              styles.hiddenBrandFix
+            }
+          >
+            <Text
+              numberOfLines={1}
+              style={[
+                styles.hiddenBrandText,
+
+                {
+                  color:
+                    withOpacity(
+                      clockColor,
+                      0.68
+                    ),
+
+                  fontFamily:
+                    logoFont
+                }
+              ]}
+            >
+              NMIX
+            </Text>
+          </View>
+        </Animated.View>
+
+        {/*
+         * Normal chrome.
+         */}
         <Animated.View
           pointerEvents={
             chromeVisible
@@ -866,9 +967,6 @@ export default function FullscreenClock({
             }
           ]}
         >
-          {/*
-           * Branding.
-           */}
           <Animated.View
             style={[
               styles.brand,
@@ -886,9 +984,9 @@ export default function FullscreenClock({
 
                 left:
                   Math.max(
-                    20,
+                    18,
                     insets.left +
-                    16
+                    14
                   ),
 
                 transform: [
@@ -900,7 +998,7 @@ export default function FullscreenClock({
                             [0, 1],
 
                           outputRange:
-                            [-18, 0]
+                            [-16, 0]
                         })
                   }
                 ]
@@ -940,40 +1038,138 @@ export default function FullscreenClock({
               </Text>
             </View>
 
-            <View
-              style={
-                styles.localPill
-              }
+            <Text
+              style={[
+                styles.localTime,
+
+                {
+                  fontFamily:
+                    regular
+                }
+              ]}
             >
-              <View
-                style={[
-                  styles.localDot,
-
-                  {
-                    backgroundColor:
-                      clockColor
-                  }
-                ]}
-              />
-
-              <Text
-                style={[
-                  styles.localText,
-
-                  {
-                    fontFamily:
-                      bold
-                  }
-                ]}
-              >
-                NMIX • LOCAL TIME
-              </Text>
-            </View>
+              NMIX • LOCAL TIME
+            </Text>
           </Animated.View>
 
           {/*
-           * Style name stays ABOVE clock,
-           * separate from the time itself.
+           * Top-right swipe carousels.
+           * Safe below top system area.
+           */}
+          <Animated.View
+            style={[
+              styles.carouselStack,
+
+              {
+                top:
+                  Math.max(
+                    landscape
+                      ? 14
+                      : 20,
+
+                    insets.top +
+                    8
+                  ),
+
+                right:
+                  Math.max(
+                    12,
+                    insets.right +
+                    10
+                  ),
+
+                width:
+                  carouselWidth,
+
+                transform: [
+                  {
+                    translateX:
+                      chrome
+                        .interpolate({
+                          inputRange:
+                            [0, 1],
+
+                          outputRange:
+                            [32, 0]
+                        })
+                  }
+                ]
+              }
+            ]}
+          >
+            <SwipeCarousel
+              label="STYLE"
+              items={
+                CLOCK_STYLES
+              }
+              index={
+                clockStyle
+              }
+              onChange={
+                changeStyle
+              }
+              color={
+                clockColor
+              }
+              regular={
+                regular
+              }
+              bold={bold}
+            />
+
+            <SwipeCarousel
+              label="COLOR"
+              items={
+                CLOCK_COLORS
+                  .map(
+                    item =>
+                      item.name
+                  )
+              }
+              index={
+                colorIndex
+              }
+              onChange={
+                changeColor
+              }
+              color={
+                clockColor
+              }
+              regular={
+                regular
+              }
+              bold={bold}
+            />
+
+            <SwipeCarousel
+              label="FONT"
+              items={
+                CLOCK_FONTS
+              }
+              index={
+                Math.max(
+                  0,
+                  CLOCK_FONTS
+                    .indexOf(
+                      clockFont
+                    )
+                )
+              }
+              onChange={
+                changeFont
+              }
+              color={
+                clockColor
+              }
+              regular={
+                regular
+              }
+              bold={bold}
+            />
+          </Animated.View>
+
+          {/*
+           * Larger metadata, away from time.
            */}
           <View
             pointerEvents="none"
@@ -998,15 +1194,14 @@ export default function FullscreenClock({
             </Text>
 
             <Text
-              numberOfLines={1}
               style={[
-                styles.styleInfoValue,
+                styles.infoValue,
 
                 {
                   color:
                     withOpacity(
                       clockColor,
-                      0.82
+                      0.84
                     ),
 
                   fontFamily:
@@ -1022,9 +1217,6 @@ export default function FullscreenClock({
             </Text>
           </View>
 
-          {/*
-           * Color/font info stays BELOW clock.
-           */}
           <View
             pointerEvents="none"
             style={[
@@ -1053,7 +1245,7 @@ export default function FullscreenClock({
                   color:
                     withOpacity(
                       clockColor,
-                      0.76
+                      0.78
                     ),
 
                   fontFamily:
@@ -1066,99 +1258,6 @@ export default function FullscreenClock({
               {clockFont}
             </Text>
           </View>
-
-          {/*
-           * ONLY three right-side pill
-           * preference controls.
-           */}
-          <Animated.View
-            style={[
-              styles.sideControls,
-
-              {
-                right:
-                  Math.max(
-                    12,
-                    insets.right +
-                    10
-                  ),
-
-                transform: [
-                  {
-                    translateX:
-                      chrome
-                        .interpolate({
-                          inputRange:
-                            [0, 1],
-
-                          outputRange:
-                            [24, 0]
-                        })
-                  }
-                ]
-              }
-            ]}
-          >
-            <PreferenceButton
-              title="Style"
-              value={
-                CLOCK_STYLES[
-                  clockStyle
-                ]
-              }
-              onPress={
-                nextStyle
-              }
-              color={
-                clockColor
-              }
-              regular={
-                regular
-              }
-              bold={
-                bold
-              }
-            />
-
-            <PreferenceButton
-              title="Color"
-              value={
-                selectedColor
-                  .name
-              }
-              onPress={
-                nextColor
-              }
-              color={
-                clockColor
-              }
-              regular={
-                regular
-              }
-              bold={
-                bold
-              }
-            />
-
-            <PreferenceButton
-              title="Font"
-              value={
-                clockFont
-              }
-              onPress={
-                nextFont
-              }
-              color={
-                clockColor
-              }
-              regular={
-                regular
-              }
-              bold={
-                bold
-              }
-            />
-          </Animated.View>
 
           <Animated.View
             style={[
@@ -1269,12 +1368,12 @@ export default function FullscreenClock({
             >
               <View
                 style={
-                  styles.hideEye
+                  styles.eye
                 }
               >
                 <View
                   style={
-                    styles.hideEyeDot
+                    styles.eyeDot
                   }
                 />
               </View>
@@ -1346,9 +1445,7 @@ export default function FullscreenClock({
           onChange={
             setWallpaper
           }
-          theme={
-            theme
-          }
+          theme={theme}
           font={
             clockFont
           }
@@ -1358,45 +1455,298 @@ export default function FullscreenClock({
   );
 }
 
-function PreferenceButton({
-  title,
-  value,
-  onPress,
+/*
+ * Drag/swipe carousel.
+ *
+ * Swipe left  -> next
+ * Swipe right -> previous
+ * Short drag  -> spring back
+ */
+function SwipeCarousel({
+  label,
+  items,
+  index,
+  onChange,
   color,
   regular,
   bold
 }) {
-  return (
-    <MotionPressable
-      onPress={
-        onPress
+  const drag =
+    useRef(
+      new Animated.Value(0)
+    ).current;
+
+  const changing =
+    useRef(false);
+
+  const count =
+    items.length;
+
+  const previous =
+    items[
+      wrapIndex(
+        index - 1,
+        count
+      )
+    ];
+
+  const current =
+    items[index];
+
+  const next =
+    items[
+      wrapIndex(
+        index + 1,
+        count
+      )
+    ];
+
+  function reset() {
+    Animated.spring(
+      drag,
+      {
+        toValue: 0,
+        stiffness: 260,
+        damping: 22,
+        mass: 0.7,
+        useNativeDriver:
+          true
       }
+    ).start();
+  }
+
+  function commit(
+    direction
+  ) {
+    if (
+      changing.current
+    ) {
+      return;
+    }
+
+    changing.current =
+      true;
+
+    const destination =
+      direction > 0
+        ? -70
+        : 70;
+
+    Animated.timing(
+      drag,
+      {
+        toValue:
+          destination,
+
+        duration: 160,
+
+        easing:
+          Easing.out(
+            Easing.quad
+          ),
+
+        useNativeDriver:
+          true
+      }
+    ).start(() => {
+      onChange(
+        direction
+      );
+
+      drag.setValue(
+        -destination *
+        0.30
+      );
+
+      Animated.spring(
+        drag,
+        {
+          toValue: 0,
+          stiffness: 230,
+          damping: 19,
+          mass: 0.72,
+          useNativeDriver:
+            true
+        }
+      ).start(() => {
+        changing.current =
+          false;
+      });
+    });
+  }
+
+  const responder =
+    useRef(
+      PanResponder.create({
+        onMoveShouldSetPanResponder:
+          (
+            _,
+            gesture
+          ) =>
+            Math.abs(
+              gesture.dx
+            ) > 5 &&
+            Math.abs(
+              gesture.dx
+            ) >
+              Math.abs(
+                gesture.dy
+              ),
+
+        onPanResponderGrant:
+          () => {
+            drag.stopAnimation();
+          },
+
+        onPanResponderMove:
+          (
+            _,
+            gesture
+          ) => {
+            if (
+              changing.current
+            ) {
+              return;
+            }
+
+            /*
+             * Resistance keeps gesture smooth
+             * without letting content escape.
+             */
+            const value =
+              Math.max(
+                -76,
+                Math.min(
+                  76,
+                  gesture.dx *
+                    0.72
+                )
+              );
+
+            drag.setValue(
+              value
+            );
+          },
+
+        onPanResponderRelease:
+          (
+            _,
+            gesture
+          ) => {
+            if (
+              changing.current
+            ) {
+              return;
+            }
+
+            const swipe =
+              Math.abs(
+                gesture.dx
+              ) >
+                34 ||
+              Math.abs(
+                gesture.vx
+              ) >
+                0.34;
+
+            if (!swipe) {
+              reset();
+              return;
+            }
+
+            /*
+             * Negative = left = next.
+             */
+            commit(
+              gesture.dx < 0
+                ? 1
+                : -1
+            );
+          },
+
+        onPanResponderTerminate:
+          reset
+      })
+    ).current;
+
+  const centerScale =
+    drag.interpolate({
+      inputRange: [
+        -76,
+        0,
+        76
+      ],
+
+      outputRange: [
+        0.88,
+        1,
+        0.88
+      ],
+
+      extrapolate:
+        'clamp'
+    });
+
+  return (
+    <View
+      {...responder.panHandlers}
       style={[
-        styles.preferenceButton,
+        styles.carousel,
 
         {
           borderColor:
             withOpacity(
               color,
-              0.24
+              0.25
             )
         }
       ]}
     >
-      <View
-        style={
-          styles.preferenceCopy
-        }
+      <Text
+        pointerEvents="none"
+        style={[
+          styles.carouselLabel,
+
+          {
+            color:
+              withOpacity(
+                color,
+                0.58
+              ),
+
+            fontFamily:
+              bold
+          }
+        ]}
+      >
+        {label}
+      </Text>
+
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.carouselValues,
+
+          {
+            transform: [
+              {
+                translateX:
+                  drag
+              }
+            ]
+          }
+        ]}
       >
         <Text
+          numberOfLines={1}
           style={[
-            styles.preferenceTitle,
+            styles.carouselSide,
 
             {
               color:
                 withOpacity(
                   color,
-                  0.62
+                  0.35
                 ),
 
               fontFamily:
@@ -1404,41 +1754,62 @@ function PreferenceButton({
             }
           ]}
         >
-          {title}
+          {previous}
         </Text>
+
+        <Animated.View
+          style={[
+            styles.carouselCurrentWrap,
+
+            {
+              transform: [
+                {
+                  scale:
+                    centerScale
+                }
+              ]
+            }
+          ]}
+        >
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            style={[
+              styles.carouselCurrent,
+
+              {
+                color,
+
+                fontFamily:
+                  bold
+              }
+            ]}
+          >
+            {current}
+          </Text>
+        </Animated.View>
 
         <Text
           numberOfLines={1}
           style={[
-            styles.preferenceValue,
+            styles.carouselSide,
 
             {
-              color,
+              color:
+                withOpacity(
+                  color,
+                  0.35
+                ),
 
               fontFamily:
-                bold
+                regular
             }
           ]}
         >
-          {value}
+          {next}
         </Text>
-      </View>
-
-      <Text
-        style={[
-          styles.preferenceArrow,
-
-          {
-            color,
-
-            fontFamily:
-              regular
-          }
-        ]}
-      >
-        ›
-      </Text>
-    </MotionPressable>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -1496,7 +1867,7 @@ function ClockStyle({
                 color:
                   withOpacity(
                     color,
-                    0.72
+                    0.74
                   ),
 
                 fontFamily:
@@ -2022,7 +2393,7 @@ function DateText({
           color:
             withOpacity(
               color,
-              0.70
+              0.72
             ),
 
           fontFamily:
@@ -2417,6 +2788,20 @@ function AmbientTheme({
   );
 }
 
+function wrapIndex(
+  value,
+  length
+) {
+  return (
+    (
+      value %
+      length
+    ) +
+    length
+  ) %
+  length;
+}
+
 function ambientDuration(
   themeName
 ) {
@@ -2614,84 +2999,120 @@ const styles =
 
     brandSub: {
       color:
-        'rgba(245,247,246,.54)',
-      fontSize: 6,
-      lineHeight: 9,
-      letterSpacing: 1.4
+        'rgba(245,247,246,.55)',
+      fontSize: 7,
+      lineHeight: 10,
+      letterSpacing: 1.5
     },
 
     brandFix: {
-      minWidth: 180,
+      minWidth: 185,
       paddingRight: 28,
       overflow: 'visible'
     },
 
     brandTitle: {
       color: '#F5F7F6',
-      fontSize: 23,
-      lineHeight: 36,
+      fontSize: 24,
+      lineHeight: 37,
       letterSpacing: 4,
       paddingHorizontal: 3,
       includeFontPadding:
         false
     },
 
-    localPill: {
-      minHeight: 25,
-      marginTop: 3,
-      paddingHorizontal: 9,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      borderWidth: 1,
-      borderColor:
-        'rgba(255,255,255,.15)',
-      borderRadius: 999,
-      backgroundColor:
-        'rgba(0,0,0,.22)'
-    },
-
-    localDot: {
-      width: 5,
-      height: 5,
-      borderRadius: 3
-    },
-
-    localText: {
+    localTime: {
+      marginTop: 1,
       color:
-        'rgba(255,255,255,.58)',
-      fontSize: 7.2,
+        'rgba(245,247,246,.48)',
+      fontSize: 7.5,
       lineHeight: 11,
       letterSpacing: 1
     },
 
-    /*
-     * Separate info areas so labels cannot
-     * overlap the clock itself.
-     */
+    carouselStack: {
+      position: 'absolute',
+      zIndex: 75,
+      gap: 8
+    },
+
+    carousel: {
+      position: 'relative',
+      width: '100%',
+      height: 57,
+      overflow: 'hidden',
+      justifyContent: 'flex-end',
+      borderWidth: 1,
+      borderRadius: 999,
+      backgroundColor:
+        'rgba(0,0,0,.35)'
+    },
+
+    carouselLabel: {
+      position: 'absolute',
+      zIndex: 5,
+      top: 5,
+      left: 0,
+      right: 0,
+      fontSize: 7,
+      lineHeight: 9,
+      letterSpacing: 1.3,
+      textAlign: 'center'
+    },
+
+    carouselValues: {
+      height: 39,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent:
+        'center'
+    },
+
+    carouselSide: {
+      width: '28%',
+      fontSize: 8,
+      lineHeight: 12,
+      textAlign: 'center'
+    },
+
+    carouselCurrentWrap: {
+      width: '44%',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+
+    carouselCurrent: {
+      width: '100%',
+      fontSize: 12,
+      lineHeight: 16,
+      textAlign: 'center'
+    },
+
     styleInfo: {
       position: 'absolute',
       zIndex: 50,
-      top: '27%',
-      left: 80,
-      right: 80,
+      top: '25%',
+      left: 70,
+      right: 70,
       alignItems: 'center'
     },
 
     styleInfoLandscape: {
-      top: '16%'
+      top: '14%'
     },
 
     infoCaption: {
       color:
-        'rgba(255,255,255,.36)',
-      fontSize: 6.5,
-      letterSpacing: 1.7
+        'rgba(255,255,255,.42)',
+      fontSize: 8,
+      lineHeight: 11,
+      letterSpacing: 1.8
     },
 
-    styleInfoValue: {
+    infoValue: {
       marginTop: 3,
-      fontSize: 10,
+      fontSize: 13,
+      lineHeight: 18,
       letterSpacing: 1,
       textAlign: 'center'
     },
@@ -2701,91 +3122,64 @@ const styles =
       zIndex: 50,
       left: 70,
       right: 70,
-      bottom: '22%',
+      bottom: '21%',
       flexDirection: 'row',
-      justifyContent:
-        'center',
+      justifyContent: 'center',
       alignItems: 'center',
       gap: 7
     },
 
     lowerInfoLandscape: {
-      bottom: '17%'
+      bottom: '15%'
     },
 
     infoDot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3
+      width: 7,
+      height: 7,
+      borderRadius: 4
     },
 
     lowerInfoText: {
-      fontSize: 8,
-      letterSpacing: 0.7
+      fontSize: 10,
+      lineHeight: 14,
+      letterSpacing: 0.8
     },
 
-    /*
-     * Only 3 preference pills on right.
-     */
-    sideControls: {
+    hiddenBrand: {
       position: 'absolute',
-      zIndex: 70,
-      top: '36%',
-      width: 116,
-      gap: 8
+      zIndex: 110,
+      left: 0,
+      right: 0,
+      top: '67%',
+      alignItems: 'center'
     },
 
-    preferenceButton: {
-      minHeight: 48,
-      paddingLeft: 11,
-      paddingRight: 9,
-      flexDirection: 'row',
-      alignItems: 'center',
-      borderWidth: 1,
-      borderRadius: 999,
-      backgroundColor:
-        'rgba(0,0,0,.34)'
+    hiddenBrandFix: {
+      minWidth: 180,
+      paddingHorizontal: 24,
+      overflow: 'visible',
+      alignItems: 'center'
     },
 
-    preferenceCopy: {
-      flex: 1,
-      minWidth: 0
-    },
-
-    preferenceTitle: {
-      fontSize: 6.5,
-      lineHeight: 9,
-      letterSpacing: 1
-    },
-
-    preferenceValue: {
-      marginTop: 1,
-      fontSize: 8.5,
-      lineHeight: 12
-    },
-
-    preferenceArrow: {
-      marginLeft: 5,
-      fontSize: 22,
-      lineHeight: 24,
+    hiddenBrandText: {
+      fontSize: 19,
+      lineHeight: 32,
+      letterSpacing: 4,
+      textAlign: 'center',
       includeFontPadding:
         false
     },
 
     styleCenter: {
       width: '100%',
-      justifyContent:
-        'center',
-      alignItems:
-        'center'
+      justifyContent: 'center',
+      alignItems: 'center'
     },
 
     classicRow: {
       flexDirection: 'row',
-      justifyContent:
-        'center',
-      alignItems:
-        'flex-end'
+      justifyContent: 'center',
+      alignItems: 'flex-end'
     },
 
     bigTime: {
@@ -2836,8 +3230,7 @@ const styles =
 
     secondsRow: {
       flexDirection: 'row',
-      alignItems:
-        'flex-end'
+      alignItems: 'flex-end'
     },
 
     hoursMinutes: {
@@ -2855,8 +3248,7 @@ const styles =
     splitRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent:
-        'center',
+      justifyContent: 'center',
       gap: 7
     },
 
@@ -2934,16 +3326,14 @@ const styles =
     },
 
     hybrid: {
-      flexDirection:
-        'column',
+      flexDirection: 'column',
       alignItems: 'center',
       gap: 12
     },
 
     hybridLandscape: {
       flexDirection: 'row',
-      justifyContent:
-        'center',
+      justifyContent: 'center',
       gap: 30
     },
 
@@ -2966,8 +3356,7 @@ const styles =
       zIndex: 70,
       flexDirection: 'row',
       flexWrap: 'wrap',
-      justifyContent:
-        'flex-end',
+      justifyContent: 'flex-end',
       alignItems: 'center',
       gap: 7
     },
@@ -2976,8 +3365,7 @@ const styles =
       minHeight: 40,
       paddingHorizontal: 11,
       flexDirection: 'row',
-      justifyContent:
-        'center',
+      justifyContent: 'center',
       alignItems: 'center',
       gap: 6,
       borderWidth: 1,
@@ -3010,20 +3398,17 @@ const styles =
       lineHeight: 20
     },
 
-    hideEye: {
+    eye: {
       width: 17,
       height: 13,
-      justifyContent:
-        'center',
-      alignItems:
-        'center',
+      justifyContent: 'center',
+      alignItems: 'center',
       borderWidth: 1.5,
-      borderColor:
-        '#ffffff',
+      borderColor: '#ffffff',
       borderRadius: 9
     },
 
-    hideEyeDot: {
+    eyeDot: {
       width: 4,
       height: 4,
       borderRadius: 2,
