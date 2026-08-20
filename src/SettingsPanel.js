@@ -52,6 +52,14 @@ const THEME_META = {
   }
 };
 
+const EASE =
+  Easing.bezier(
+    0.22,
+    1,
+    0.36,
+    1
+  );
+
 export default function SettingsPanel({
   visible,
   onClose,
@@ -80,26 +88,21 @@ export default function SettingsPanel({
     ).current;
 
   useEffect(() => {
+    motion.stopAnimation();
+
     Animated.timing(
       motion,
       {
         toValue:
-          visible
-            ? 1
-            : 0,
+          visible ? 1 : 0,
 
         duration:
           visible
-            ? 430
-            : 330,
+            ? 500
+            : 380,
 
         easing:
-          Easing.bezier(
-            0.22,
-            1,
-            0.36,
-            1
-          ),
+          EASE,
 
         useNativeDriver:
           true
@@ -119,45 +122,52 @@ export default function SettingsPanel({
   const panelWidth =
     Math.min(
       350,
-      width - 24
+      width - 20
     );
 
+  /*
+   * Panel emerges directly from
+   * the right edge/corner.
+   */
   const translateX =
     motion.interpolate({
-      inputRange: [0, 1],
+      inputRange: [
+        0,
+        1
+      ],
 
       outputRange: [
-        32,
+        panelWidth * 0.48,
         0
       ]
     });
 
   const translateY =
     motion.interpolate({
-      inputRange: [0, 1],
+      inputRange: [
+        0,
+        1
+      ],
 
       outputRange: [
-        -18,
+        -12,
         0
       ]
     });
 
   const scale =
     motion.interpolate({
-      inputRange: [0, 1],
+      inputRange: [
+        0,
+        1
+      ],
 
       outputRange: [
-        0.94,
+        0.975,
         1
       ]
     });
 
-  /*
-   * Keep the component mounted for
-   * the closing animation, but once
-   * invisible it no longer captures
-   * touches.
-   */
   return (
     <View
       pointerEvents={
@@ -214,12 +224,10 @@ export default function SettingsPanel({
               insets.top +
               62,
 
-            right:
-              Math.max(
-                12,
-                insets.right +
-                12
-              ),
+            /*
+             * Flush against screen edge.
+             */
+            right: 0,
 
             width:
               panelWidth,
@@ -255,6 +263,25 @@ export default function SettingsPanel({
           }
         ]}
       >
+        {/*
+         * Small connector visually joins
+         * the panel to the hamburger/X area.
+         */}
+        <View
+          pointerEvents="none"
+          style={[
+            styles.connector,
+
+            {
+              backgroundColor:
+                colors.surface,
+
+              borderColor:
+                colors.border
+            }
+          ]}
+        />
+
         <ScrollView
           showsVerticalScrollIndicator={
             false
@@ -273,7 +300,11 @@ export default function SettingsPanel({
               }
             ]}
           >
-            <View>
+            <View
+              style={
+                styles.headerCopy
+              }
+            >
               <Text
                 style={[
                   styles.headerTitle,
@@ -464,61 +495,63 @@ export default function SettingsPanel({
             >
               {Object.keys(
                 themes
-              ).map(name => (
-                <ThemeChoice
-                  key={name}
-
-                  name={name}
-
-                  label={
-                    THEME_META[
+              ).map(
+                name => (
+                  <ThemeChoice
+                    key={
                       name
-                    ]?.label ||
-                    name
-                  }
+                    }
 
-                  selected={
-                    themeName ===
-                    name
-                  }
-
-                  color={
-                    themes[
+                    label={
+                      THEME_META[
+                        name
+                      ]?.label ||
                       name
-                    ].accent
-                  }
+                    }
 
-                  textColor={
-                    colors.text
-                  }
-
-                  muted={
-                    colors.muted
-                  }
-
-                  surface={
-                    colors.surface2
-                  }
-
-                  border={
-                    colors.border
-                  }
-
-                  font={
-                    regular
-                  }
-
-                  bold={
-                    bold
-                  }
-
-                  onPress={() =>
-                    setThemeName(
+                    selected={
+                      themeName ===
                       name
-                    )
-                  }
-                />
-              ))}
+                    }
+
+                    color={
+                      themes[
+                        name
+                      ].accent
+                    }
+
+                    textColor={
+                      colors.text
+                    }
+
+                    muted={
+                      colors.muted
+                    }
+
+                    surface={
+                      colors.surface2
+                    }
+
+                    border={
+                      colors.border
+                    }
+
+                    font={
+                      regular
+                    }
+
+                    bold={
+                      bold
+                    }
+
+                    onPress={() =>
+                      setThemeName(
+                        name
+                      )
+                    }
+                  />
+                )
+              )}
             </View>
           </View>
 
@@ -567,7 +600,9 @@ export default function SettingsPanel({
               {fontChoices.map(
                 name => (
                   <MotionPressable
-                    key={name}
+                    key={
+                      name
+                    }
 
                     onPress={() =>
                       setFont(
@@ -614,7 +649,8 @@ export default function SettingsPanel({
                               true
                             ),
 
-                          fontSize: 14
+                          fontSize:
+                            14
                         }}
                       >
                         Aa
@@ -637,7 +673,8 @@ export default function SettingsPanel({
                             name
                           ),
 
-                        fontSize: 10.5
+                        fontSize:
+                          10.5
                       }}
                     >
                       {name}
@@ -701,7 +738,10 @@ function AnimatedSwitch({
 
   const left =
     motion.interpolate({
-      inputRange: [0, 1],
+      inputRange: [
+        0,
+        1
+      ],
 
       outputRange: [
         4,
@@ -711,7 +751,10 @@ function AnimatedSwitch({
 
   const backgroundColor =
     motion.interpolate({
-      inputRange: [0, 1],
+      inputRange: [
+        0,
+        1
+      ],
 
       outputRange: [
         inactive,
@@ -791,7 +834,10 @@ function ThemeChoice({
 
   const scale =
     selection.interpolate({
-      inputRange: [0, 1],
+      inputRange: [
+        0,
+        1
+      ],
 
       outputRange: [
         1,
@@ -902,7 +948,6 @@ const styles =
   StyleSheet.create({
     root: {
       ...StyleSheet.absoluteFillObject,
-
       zIndex: 900
     },
 
@@ -913,41 +958,74 @@ const styles =
         'rgba(0,0,0,.34)'
     },
 
+    /*
+     * Right-hand corners deliberately 0.
+     */
     panel: {
-      position:
-        'absolute',
+      position: 'absolute',
 
-      overflow:
-        'hidden',
+      overflow: 'visible',
 
       borderWidth: 1,
+      borderRightWidth: 0,
 
-      borderRadius: 20,
+      borderTopLeftRadius: 22,
+      borderBottomLeftRadius: 22,
+
+      borderTopRightRadius: 0,
+      borderBottomRightRadius: 0,
 
       elevation: 20
     },
 
+    connector: {
+      position: 'absolute',
+
+      zIndex: 5,
+
+      top: -14,
+      right: 0,
+
+      width: 58,
+      height: 16,
+
+      borderTopWidth: 1,
+      borderLeftWidth: 1,
+
+      borderTopLeftRadius: 14,
+
+      borderTopRightRadius: 0
+    },
+
     scroll: {
+      overflow: 'hidden',
+
       padding: 17,
 
-      paddingBottom: 18
+      paddingBottom: 18,
+
+      borderTopLeftRadius: 22,
+
+      borderBottomLeftRadius: 22
     },
 
     header: {
       paddingBottom: 14,
 
-      flexDirection:
-        'row',
+      flexDirection: 'row',
 
       justifyContent:
         'space-between',
 
-      alignItems:
-        'center',
+      alignItems: 'center',
 
       gap: 12,
 
       borderBottomWidth: 1
+    },
+
+    headerCopy: {
+      flex: 1
     },
 
     headerTitle: {
@@ -956,7 +1034,6 @@ const styles =
 
     headerSub: {
       marginTop: 2,
-
       fontSize: 10
     },
 
@@ -965,11 +1042,9 @@ const styles =
 
       paddingHorizontal: 9,
 
-      flexDirection:
-        'row',
+      flexDirection: 'row',
 
-      alignItems:
-        'center',
+      alignItems: 'center',
 
       gap: 5,
 
@@ -978,9 +1053,7 @@ const styles =
 
     connectedDot: {
       width: 6,
-
       height: 6,
-
       borderRadius: 3
     },
 
@@ -991,11 +1064,9 @@ const styles =
     appearanceRow: {
       paddingVertical: 16,
 
-      flexDirection:
-        'row',
+      flexDirection: 'row',
 
-      alignItems:
-        'center',
+      alignItems: 'center',
 
       justifyContent:
         'space-between',
@@ -1015,57 +1086,45 @@ const styles =
 
     small: {
       marginTop: 2,
-
       fontSize: 10
     },
 
     switchTouch: {
       width: 53,
-
       height: 32,
-
-      justifyContent:
-        'center'
+      justifyContent: 'center'
     },
 
     switchTrack: {
-      position:
-        'relative',
-
+      position: 'relative',
       width: 53,
-
       height: 28,
-
       borderRadius: 999
     },
 
     switchKnob: {
-      position:
-        'absolute',
+      position: 'absolute',
 
       top: 4,
 
       width: 20,
-
       height: 20,
 
       borderRadius: 10,
 
       backgroundColor:
-        '#fff',
+        '#ffffff',
 
       elevation: 2
     },
 
     block: {
       paddingVertical: 16,
-
       borderBottomWidth: 1
     },
 
     themeGrid: {
       marginTop: 12,
-
       gap: 8
     },
 
@@ -1074,11 +1133,9 @@ const styles =
 
       paddingHorizontal: 10,
 
-      flexDirection:
-        'row',
+      flexDirection: 'row',
 
-      alignItems:
-        'center',
+      alignItems: 'center',
 
       gap: 10,
 
@@ -1089,21 +1146,16 @@ const styles =
 
     themePreview: {
       width: 34,
-
       height: 34,
 
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center',
+      justifyContent: 'center',
+      alignItems: 'center',
 
       borderRadius: 17
     },
 
     themeCheck: {
       width: 13,
-
       height: 13,
 
       borderWidth: 2,
@@ -1124,7 +1176,6 @@ const styles =
 
     themeStatus: {
       marginTop: 1,
-
       fontSize: 8.5
     },
 
@@ -1135,11 +1186,9 @@ const styles =
     fontGrid: {
       marginTop: 11,
 
-      flexDirection:
-        'row',
+      flexDirection: 'row',
 
-      flexWrap:
-        'wrap',
+      flexWrap: 'wrap',
 
       justifyContent:
         'space-between',
@@ -1154,11 +1203,9 @@ const styles =
 
       paddingHorizontal: 7,
 
-      flexDirection:
-        'row',
+      flexDirection: 'row',
 
-      alignItems:
-        'center',
+      alignItems: 'center',
 
       gap: 7,
 
@@ -1169,14 +1216,10 @@ const styles =
 
     aa: {
       width: 30,
-
       height: 30,
 
-      justifyContent:
-        'center',
-
-      alignItems:
-        'center',
+      justifyContent: 'center',
+      alignItems: 'center',
 
       borderRadius: 7
     },
