@@ -27,7 +27,7 @@ const ICONS = {
   instructions: HelpIcon
 };
 
-const MOTION_EASE =
+const EASE =
   Easing.bezier(
     0.22,
     1,
@@ -56,16 +56,10 @@ export default function AnimatedSection({
   ] = useState(0);
 
   /*
-   * Main open/close progress.
-   *
-   * 0 = closed square
-   * 1 = opened circle
-   *
-   * This same value drives the opposite
-   * rotations so reversing it automatically
-   * gives a visible reverse animation.
+   * Rotation is separate so it can
+   * stay on the native animation driver.
    */
-  const motion =
+  const rotation =
     useRef(
       new Animated.Value(
         active ? 1 : 0
@@ -73,8 +67,18 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * Height progress is separate because
-   * layout animation cannot use native driver.
+   * Morph controls square -> circle.
+   * Border radius requires JS driver.
+   */
+  const morph =
+    useRef(
+      new Animated.Value(
+        active ? 1 : 0
+      )
+    ).current;
+
+  /*
+   * Accordion height.
    */
   const panel =
     useRef(
@@ -83,6 +87,9 @@ export default function AnimatedSection({
       )
     ).current;
 
+  /*
+   * Inner content fade/slide.
+   */
   const content =
     useRef(
       new Animated.Value(
@@ -91,37 +98,60 @@ export default function AnimatedSection({
     ).current;
 
   /*
-   * Press feedback.
-   *
-   * This deliberately affects the whole label,
-   * NOT the open/close rotation progress.
+   * Independent tap response.
    */
   const pressScale =
     useRef(
       new Animated.Value(1)
     ).current;
 
+  /*
+   * Icon animation must NOT depend on
+   * content measurement. This fixes the
+   * first-tap animation sometimes being
+   * skipped.
+   */
   useEffect(() => {
-    motion.stopAnimation();
+    rotation.stopAnimation();
+    morph.stopAnimation();
 
-    Animated.timing(
-      motion,
-      {
-        toValue:
-          active ? 1 : 0,
+    Animated.parallel([
+      Animated.timing(
+        rotation,
+        {
+          toValue:
+            active ? 1 : 0,
 
-        /*
-         * Slow enough for the clockwise /
-         * counter-clockwise movement to be
-         * clearly visible and soothing.
-         */
-        duration: 650,
-        easing: MOTION_EASE,
-        useNativeDriver: false
-      }
-    ).start();
+          duration: 680,
+
+          easing: EASE,
+
+          useNativeDriver:
+            true
+        }
+      ),
+
+      Animated.timing(
+        morph,
+        {
+          toValue:
+            active ? 1 : 0,
+
+          duration: 610,
+
+          easing: EASE,
+
+          useNativeDriver:
+            false
+        }
+      )
+    ]).start();
   }, [active]);
 
+  /*
+   * Content opening / closing is kept
+   * independent from the spinning icon.
+   */
   useEffect(() => {
     if (
       contentHeight <= 0
@@ -132,87 +162,112 @@ export default function AnimatedSection({
     panel.stopAnimation();
     content.stopAnimation();
 
-    Animated.parallel([
-      Animated.timing(
-        panel,
-        {
-          toValue:
-            active ? 1 : 0,
+    if (active) {
+      Animated.parallel([
+        Animated.timing(
+          panel,
+          {
+            toValue: 1,
 
-          duration:
-            active
-              ? 570
-              : 530,
+            duration: 570,
 
-          easing:
-            MOTION_EASE,
+            easing: EASE,
 
-          useNativeDriver:
-            false
-        }
-      ),
+            useNativeDriver:
+              false
+          }
+        ),
 
-      Animated.timing(
-        content,
-        {
-          toValue:
-            active ? 1 : 0,
+        Animated.timing(
+          content,
+          {
+            toValue: 1,
 
-          duration:
-            active
-              ? 460
-              : 300,
+            duration: 470,
 
-          delay:
-            active
-              ? 70
-              : 0,
+            delay: 55,
 
-          easing:
-            active
-              ? MOTION_EASE
-              : Easing.inOut(
-                  Easing.ease
-                ),
+            easing: EASE,
 
-          useNativeDriver:
-            true
-        }
-      )
-    ]).start();
+            useNativeDriver:
+              true
+          }
+        )
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(
+          panel,
+          {
+            toValue: 0,
+
+            duration: 530,
+
+            easing: EASE,
+
+            useNativeDriver:
+              false
+          }
+        ),
+
+        Animated.timing(
+          content,
+          {
+            toValue: 0,
+
+            duration: 330,
+
+            easing:
+              Easing.inOut(
+                Easing.ease
+              ),
+
+            useNativeDriver:
+              true
+          }
+        )
+      ]).start();
+    }
   }, [
     active,
     contentHeight
   ]);
 
-  function pressIn() {
+  function handlePressIn() {
     pressScale.stopAnimation();
 
     Animated.timing(
       pressScale,
       {
         toValue: 0.975,
+
         duration: 150,
+
         easing:
           Easing.out(
             Easing.quad
           ),
-        useNativeDriver: true
+
+        useNativeDriver:
+          true
       }
     ).start();
   }
 
-  function pressOut() {
+  function handlePressOut() {
     pressScale.stopAnimation();
 
     Animated.spring(
       pressScale,
       {
         toValue: 1,
+
         stiffness: 250,
-        damping: 15,
-        mass: 0.75,
-        useNativeDriver: true
+        damping: 14,
+        mass: 0.72,
+
+        useNativeDriver:
+          true
       }
     ).start();
   }
@@ -222,13 +277,19 @@ export default function AnimatedSection({
     HelpIcon;
 
   /*
-   * OUTER:
-   * full clockwise rotation on open.
-   * Interpolation reverses naturally on close.
+   * Full clockwise turn.
+   *
+   * On close the Animated.Value goes
+   * from 1 -> 0, therefore this visibly
+   * spins backwards automatically.
    */
   const outerRotation =
-    motion.interpolate({
-      inputRange: [0, 1],
+    rotation.interpolate({
+      inputRange: [
+        0,
+        1
+      ],
+
       outputRange: [
         '0deg',
         '360deg'
@@ -236,24 +297,28 @@ export default function AnimatedSection({
     });
 
   /*
-   * INNER:
-   * full counter-clockwise rotation.
+   * Opposite rotation.
    */
   const innerRotation =
-    motion.interpolate({
-      inputRange: [0, 1],
+    rotation.interpolate({
+      inputRange: [
+        0,
+        1
+      ],
+
       outputRange: [
         '0deg',
         '-360deg'
       ]
     });
 
-  /*
-   * Arrow only needs half a turn.
-   */
   const arrowRotation =
-    motion.interpolate({
-      inputRange: [0, 1],
+    rotation.interpolate({
+      inputRange: [
+        0,
+        1
+      ],
+
       outputRange: [
         '0deg',
         '180deg'
@@ -261,11 +326,15 @@ export default function AnimatedSection({
     });
 
   /*
-   * Rounded square -> true circle.
+   * Rounded-square -> circle.
    */
   const outerRadius =
-    motion.interpolate({
-      inputRange: [0, 1],
+    morph.interpolate({
+      inputRange: [
+        0,
+        1
+      ],
+
       outputRange: [
         9,
         21
@@ -273,26 +342,31 @@ export default function AnimatedSection({
     });
 
   const innerRadius =
-    motion.interpolate({
-      inputRange: [0, 1],
+    morph.interpolate({
+      inputRange: [
+        0,
+        1
+      ],
+
       outputRange: [
         7,
-        18
+        19
       ]
     });
 
   /*
-   * A tiny scale change makes the layered
-   * movement readable without moving the
-   * stationary center SVG.
+   * Very subtle breathing of the layers
+   * makes the counter-rotation easier to
+   * perceive without moving the SVG.
    */
   const outerScale =
-    motion.interpolate({
+    rotation.interpolate({
       inputRange: [
         0,
-        0.48,
+        0.46,
         1
       ],
+
       outputRange: [
         1,
         1.055,
@@ -301,12 +375,13 @@ export default function AnimatedSection({
     });
 
   const innerScale =
-    motion.interpolate({
+    rotation.interpolate({
       inputRange: [
         0,
         0.52,
         1
       ],
+
       outputRange: [
         1,
         0.94,
@@ -316,7 +391,11 @@ export default function AnimatedSection({
 
   const panelHeight =
     panel.interpolate({
-      inputRange: [0, 1],
+      inputRange: [
+        0,
+        1
+      ],
+
       outputRange: [
         0,
         contentHeight
@@ -325,9 +404,13 @@ export default function AnimatedSection({
 
   const contentY =
     content.interpolate({
-      inputRange: [0, 1],
+      inputRange: [
+        0,
+        1
+      ],
+
       outputRange: [
-        -10,
+        -11,
         0
       ]
     });
@@ -336,6 +419,7 @@ export default function AnimatedSection({
     <View
       style={[
         styles.section,
+
         {
           backgroundColor:
             colors.surface,
@@ -347,7 +431,8 @@ export default function AnimatedSection({
     >
       <Animated.View
         style={[
-          styles.barMotion,
+          styles.pressMotion,
+
           {
             transform: [
               {
@@ -362,12 +447,15 @@ export default function AnimatedSection({
           onPress={() =>
             toggle(name)
           }
+
           onPressIn={
-            pressIn
+            handlePressIn
           }
+
           onPressOut={
-            pressOut
+            handlePressOut
           }
+
           style={
             styles.bar
           }
@@ -378,12 +466,15 @@ export default function AnimatedSection({
             }
           >
             {/*
-             * Only this colored layer rotates.
+             * OUTER:
+             * clockwise rotating color layer.
              */}
             <Animated.View
               pointerEvents="none"
+
               style={[
                 styles.outer,
+
                 {
                   backgroundColor:
                     accent,
@@ -396,6 +487,7 @@ export default function AnimatedSection({
                       rotate:
                         outerRotation
                     },
+
                     {
                       scale:
                         outerScale
@@ -406,13 +498,15 @@ export default function AnimatedSection({
             />
 
             {/*
-             * Outline rotates independently
-             * in the opposite direction.
+             * INNER:
+             * counter-clockwise outline.
              */}
             <Animated.View
               pointerEvents="none"
+
               style={[
                 styles.inner,
+
                 {
                   borderRadius:
                     innerRadius,
@@ -422,6 +516,7 @@ export default function AnimatedSection({
                       rotate:
                         innerRotation
                     },
+
                     {
                       scale:
                         innerScale
@@ -432,13 +527,15 @@ export default function AnimatedSection({
             />
 
             {/*
-             * IMPORTANT:
-             * This SVG is deliberately outside
-             * both rotating Animated.Views.
-             * It never rotates.
+             * SVG deliberately has NO animated
+             * transform and is not inside either
+             * rotating layer.
+             *
+             * It remains completely stationary.
              */}
             <View
               pointerEvents="none"
+
               style={
                 styles.iconContent
               }
@@ -458,6 +555,7 @@ export default function AnimatedSection({
             <Text
               style={[
                 styles.title,
+
                 {
                   color:
                     colors.text,
@@ -472,8 +570,10 @@ export default function AnimatedSection({
 
             <Text
               numberOfLines={1}
+
               style={[
                 styles.subtitle,
+
                 {
                   color:
                     colors.muted,
@@ -489,8 +589,10 @@ export default function AnimatedSection({
 
           <Animated.View
             pointerEvents="none"
+
             style={[
               styles.arrowStage,
+
               {
                 transform: [
                   {
@@ -504,6 +606,7 @@ export default function AnimatedSection({
             <View
               style={[
                 styles.arrow,
+
                 {
                   borderColor:
                     colors.muted
@@ -516,13 +619,15 @@ export default function AnimatedSection({
 
       {/*
        * Invisible natural-height copy.
-       * It only measures the children.
+       * This exists only to measure children.
        */}
       <View
         pointerEvents="none"
+
         style={
           styles.measure
         }
+
         onLayout={event => {
           const height =
             event
@@ -540,10 +645,8 @@ export default function AnimatedSection({
             );
 
             /*
-             * If this section was already open
-             * on first measurement, make sure
-             * its panel does not briefly render
-             * collapsed.
+             * Important when a section is
+             * already open during measurement.
              */
             if (active) {
               panel.setValue(1);
@@ -555,6 +658,7 @@ export default function AnimatedSection({
         <View
           style={[
             styles.measureBody,
+
             {
               borderTopColor:
                 colors.border
@@ -571,8 +675,10 @@ export default function AnimatedSection({
             ? 'auto'
             : 'none'
         }
+
         style={[
           styles.panel,
+
           {
             height:
               panelHeight
@@ -582,6 +688,7 @@ export default function AnimatedSection({
         <Animated.View
           style={[
             styles.body,
+
             {
               borderTopColor:
                 colors.border,
@@ -608,99 +715,143 @@ export default function AnimatedSection({
 const styles =
   StyleSheet.create({
     section: {
-      position: 'relative',
-      overflow: 'hidden',
+      position:
+        'relative',
+
+      overflow:
+        'hidden',
+
       borderWidth: 1,
+
       borderRadius: 14
     },
 
-    /*
-     * Animated.View owns the press scale while
-     * Pressable keeps normal Flexbox layout.
-     */
-    barMotion: {
+    pressMotion: {
       width: '100%'
     },
 
     bar: {
       minHeight: 67,
+
       paddingHorizontal: 14,
+
       paddingVertical: 11,
-      flexDirection: 'row',
-      alignItems: 'center'
+
+      flexDirection:
+        'row',
+
+      alignItems:
+        'center'
     },
 
     iconStage: {
+      position:
+        'relative',
+
       width: 44,
+
       height: 44,
+
       flexShrink: 0,
-      justifyContent: 'center',
-      alignItems: 'center'
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center'
     },
 
     outer: {
-      position: 'absolute',
+      position:
+        'absolute',
+
       width: 42,
+
       height: 42
     },
 
     /*
-     * Outline stays close to the outer edge.
-     * 38 inside 42 leaves only ~2px per side.
+     * Only 2px inset from the outer layer.
      */
     inner: {
-      position: 'absolute',
+      position:
+        'absolute',
+
       width: 38,
+
       height: 38,
+
       borderWidth: 1.35,
+
       borderColor:
         'rgba(255,255,255,.38)'
     },
 
-    /*
-     * Completely independent of rotating
-     * layers, so the SVG remains stationary.
-     */
     iconContent: {
-      position: 'absolute',
+      position:
+        'absolute',
+
+      zIndex: 5,
+
       width: 44,
+
       height: 44,
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 5
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center'
     },
 
     copy: {
       flex: 1,
+
       minWidth: 0,
+
       paddingHorizontal: 12,
-      justifyContent: 'center'
+
+      justifyContent:
+        'center'
     },
 
     title: {
       fontSize: 14,
+
       lineHeight: 19
     },
 
     subtitle: {
       marginTop: 1,
+
       fontSize: 10,
+
       lineHeight: 14
     },
 
     arrowStage: {
       width: 28,
+
       height: 28,
+
       flexShrink: 0,
-      justifyContent: 'center',
-      alignItems: 'center'
+
+      justifyContent:
+        'center',
+
+      alignItems:
+        'center'
     },
 
     arrow: {
       width: 10,
+
       height: 10,
+
       borderRightWidth: 2,
+
       borderBottomWidth: 2,
+
       transform: [
         {
           rotate: '45deg'
@@ -709,26 +860,36 @@ const styles =
     },
 
     measure: {
-      position: 'absolute',
+      position:
+        'absolute',
+
       left: 0,
+
       right: 0,
+
       top: 67,
+
       zIndex: -50,
+
       opacity: 0
     },
 
     measureBody: {
       width: '100%',
+
       borderTopWidth: 1
     },
 
     panel: {
       width: '100%',
-      overflow: 'hidden'
+
+      overflow:
+        'hidden'
     },
 
     body: {
       width: '100%',
+
       borderTopWidth: 1
     }
   });
