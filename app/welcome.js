@@ -40,19 +40,19 @@ export default function WelcomeScreen() {
       useNativeDriver: true,
     }).start();
 
-    // Continuous floating ambient pulses
+    // Continuous floating ambient pulses (Fixed Easing functions)
     Animated.loop(
       Animated.sequence([
         Animated.timing(floatAnim1, {
           toValue: 1,
           duration: 7000 * animSpeed,
-          easing: Easing.inOut(Easing.ease),
+          easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
         Animated.timing(floatAnim1, {
           toValue: 0,
           duration: 7000 * animSpeed,
-          easing: Easing.inOut(Easing.ease),
+          easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
       ])
@@ -63,13 +63,13 @@ export default function WelcomeScreen() {
         Animated.timing(floatAnim2, {
           toValue: 1,
           duration: 9000 * animSpeed,
-          easing: Easing.inOut(Easing.ease),
+          easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
         Animated.timing(floatAnim2, {
           toValue: 0,
           duration: 9000 * animSpeed,
-          easing: Easing.inOut(Easing.ease),
+          easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
       ])
