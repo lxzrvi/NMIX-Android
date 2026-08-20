@@ -47,6 +47,14 @@ const descriptions = [
   'NMIX is built as a native Android experience with smooth interaction and offline-ready tools.'
 ];
 
+const EASE =
+  Easing.bezier(
+    0.22,
+    1,
+    0.36,
+    1
+  );
+
 export default function Welcome() {
   const fontsLoaded =
     useNMixFonts();
@@ -88,17 +96,8 @@ export default function Welcome() {
       {
         toValue: 1,
         duration: 900,
-
-        easing:
-          Easing.bezier(
-            0.22,
-            1,
-            0.36,
-            1
-          ),
-
-        useNativeDriver:
-          true
+        easing: EASE,
+        useNativeDriver: true
       }
     ).start();
 
@@ -110,14 +109,11 @@ export default function Welcome() {
             {
               toValue: 1,
               duration: 10500,
-
               easing:
                 Easing.inOut(
                   Easing.ease
                 ),
-
-              useNativeDriver:
-                true
+              useNativeDriver: true
             }
           ),
 
@@ -126,14 +122,11 @@ export default function Welcome() {
             {
               toValue: 0,
               duration: 10500,
-
               easing:
                 Easing.inOut(
                   Easing.ease
                 ),
-
-              useNativeDriver:
-                true
+              useNativeDriver: true
             }
           )
         ])
@@ -147,14 +140,11 @@ export default function Welcome() {
             {
               toValue: 1,
               duration: 13000,
-
               easing:
                 Easing.inOut(
                   Easing.ease
                 ),
-
-              useNativeDriver:
-                true
+              useNativeDriver: true
             }
           ),
 
@@ -163,14 +153,11 @@ export default function Welcome() {
             {
               toValue: 0,
               duration: 13000,
-
               easing:
                 Easing.inOut(
                   Easing.ease
                 ),
-
-              useNativeDriver:
-                true
+              useNativeDriver: true
             }
           )
         ])
@@ -187,40 +174,32 @@ export default function Welcome() {
             {
               toValue: 0,
               duration: 260,
-              useNativeDriver:
-                true
+              useNativeDriver: true
             }
-          ).start(() => {
-            setDescriptionIndex(
-              value =>
-                (
-                  value + 1
-                ) %
-                descriptions.length
-            );
+          ).start(
+            () => {
+              setDescriptionIndex(
+                value =>
+                  (
+                    value + 1
+                  ) %
+                  descriptions.length
+              );
 
-            descriptionMotion
-              .setValue(0);
+              descriptionMotion
+                .setValue(0);
 
-            Animated.timing(
-              descriptionMotion,
-              {
-                toValue: 1,
-                duration: 650,
-
-                easing:
-                  Easing.bezier(
-                    0.22,
-                    1,
-                    0.36,
-                    1
-                  ),
-
-                useNativeDriver:
-                  true
-              }
-            ).start();
-          });
+              Animated.timing(
+                descriptionMotion,
+                {
+                  toValue: 1,
+                  duration: 650,
+                  easing: EASE,
+                  useNativeDriver: true
+                }
+              ).start();
+            }
+          );
         },
         6800
       );
@@ -260,20 +239,20 @@ export default function Welcome() {
     } catch {}
   }
 
-  function openGithub() {
+  function openWebsite() {
     Linking
       .openURL(
-        'https://github.com/lxzrvi'
+        'https://lxzrvi.github.io/NMIX/'
       )
       .catch(
         () => {}
       );
   }
 
-  function openWebsite() {
+  function openGithub() {
     Linking
       .openURL(
-        'https://lxzrvi.github.io/NMIX/'
+        'https://github.com/lxzrvi'
       )
       .catch(
         () => {}
@@ -288,7 +267,6 @@ export default function Welcome() {
       <View
         style={{
           flex: 1,
-
           backgroundColor:
             '#07110f'
         }}
@@ -654,8 +632,7 @@ export default function Welcome() {
               styles.heading,
 
               {
-                color:
-                  text
+                color: text
               }
             ]}
           >
@@ -842,6 +819,9 @@ export default function Welcome() {
             </View>
           </View>
 
+          {/*
+           * Centered Web + GitHub pair.
+           */}
           <View
             style={
               styles.infoActions
@@ -1024,17 +1004,14 @@ const styles =
     },
 
     subtitle: {
-      fontFamily: 'Poppins-Bold',
+      fontFamily:
+        'Poppins-Bold',
       fontSize: 10,
       lineHeight: 15,
       letterSpacing: 2.8,
       textAlign: 'center'
     },
 
-    /*
-     * Extra width/padding protects both N
-     * and X from Android font clipping.
-     */
     logoFix: {
       width: 300,
       minHeight: 76,
@@ -1080,7 +1057,8 @@ const styles =
     },
 
     actionText: {
-      fontFamily: 'Poppins-Bold',
+      fontFamily:
+        'Poppins-Bold',
       fontSize: 14
     },
 
@@ -1088,9 +1066,9 @@ const styles =
       position: 'relative',
       width: '100%',
       maxWidth: 460,
-      minHeight: 210,
+      minHeight: 218,
       padding: 13,
-      paddingBottom: 59,
+      paddingBottom: 65,
       overflow: 'hidden',
       borderRadius: 18,
       elevation: 8
@@ -1098,7 +1076,8 @@ const styles =
 
     heading: {
       marginBottom: 11,
-      fontFamily: 'Poppins-Bold',
+      fontFamily:
+        'Poppins-Bold',
       fontSize: 14
     },
 
@@ -1133,7 +1112,8 @@ const styles =
 
     description: {
       marginTop: 6,
-      fontFamily: 'Poppins-Regular',
+      fontFamily:
+        'Poppins-Regular',
       fontSize: 10.5,
       lineHeight: 16
     },
@@ -1147,13 +1127,15 @@ const styles =
     },
 
     detailsHeading: {
-      fontFamily: 'Poppins-Bold',
+      fontFamily:
+        'Poppins-Bold',
       fontSize: 11.5
     },
 
     builtFor: {
       marginTop: 10,
-      fontFamily: 'Poppins-Bold',
+      fontFamily:
+        'Poppins-Bold',
       fontSize: 9.5
     },
 
@@ -1172,24 +1154,26 @@ const styles =
     },
 
     chipText: {
-      fontFamily: 'Poppins-Bold',
+      fontFamily:
+        'Poppins-Bold',
       fontSize: 8
     },
 
     infoActions: {
       position: 'absolute',
-      left: 13,
-      right: 13,
+      left: 0,
+      right: 0,
       bottom: 12,
       flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center'
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 12
     },
 
     infoActionButton: {
-      minWidth: 80,
-      minHeight: 34,
-      paddingHorizontal: 15,
+      minWidth: 98,
+      minHeight: 39,
+      paddingHorizontal: 19,
       justifyContent: 'center',
       alignItems: 'center',
       borderRadius: 999
@@ -1197,8 +1181,10 @@ const styles =
 
     infoActionText: {
       color: '#ffffff',
-      fontFamily: 'Poppins-Bold',
-      fontSize: 10
+      fontFamily:
+        'Poppins-Bold',
+      fontSize: 11.5,
+      lineHeight: 16
     },
 
     bottomBrand: {
@@ -1237,14 +1223,18 @@ const styles =
     },
 
     footerMain: {
-      color: 'rgba(255,255,255,.72)',
-      fontFamily: 'Poppins-Regular',
+      color:
+        'rgba(255,255,255,.72)',
+      fontFamily:
+        'Poppins-Regular',
       fontSize: 10
     },
 
     footerSub: {
-      color: 'rgba(255,255,255,.52)',
-      fontFamily: 'Poppins-Regular',
+      color:
+        'rgba(255,255,255,.52)',
+      fontFamily:
+        'Poppins-Regular',
       fontSize: 8
     }
   });
