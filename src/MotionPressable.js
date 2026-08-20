@@ -25,12 +25,6 @@ export default function MotionPressable({
   hitSlop,
   onPressIn,
   onPressOut,
-
-  /*
-   * Special controls can disable the
-   * automatic global tap sound and play
-   * their own select/open/result sound.
-   */
   sound = true
 }) {
   const scale =
@@ -43,6 +37,10 @@ export default function MotionPressable({
       new Animated.Value(1)
     ).current;
 
+  /*
+   * Shared context only.
+   * No audio player is created here.
+   */
   const {
     tap
   } = useNMixSounds();
@@ -54,9 +52,11 @@ export default function MotionPressable({
       Animated.timing(
         scale,
         {
-          toValue: 0.955,
+          toValue:
+            0.955,
 
-          duration: 150,
+          duration:
+            150,
 
           useNativeDriver:
             true
@@ -66,9 +66,11 @@ export default function MotionPressable({
       Animated.timing(
         opacity,
         {
-          toValue: 0.86,
+          toValue:
+            0.86,
 
-          duration: 150,
+          duration:
+            150,
 
           useNativeDriver:
             true
@@ -104,7 +106,8 @@ export default function MotionPressable({
         {
           toValue: 1,
 
-          duration: 220,
+          duration:
+            220,
 
           useNativeDriver:
             true
