@@ -1,6 +1,10 @@
-import {
+import React, {
+  createContext,
   useCallback,
+  useContext,
   useEffect,
+  useMemo,
+  useRef,
   useState
 } from 'react';
 
@@ -17,195 +21,33 @@ const UI_SOUND_KEY =
 const TIMER_ALARM_KEY =
   'nmix-timer-alarm';
 
-let state = {
-  loaded: false,
+const SoundContext =
+  createContext(null);
 
-  uiSounds: true,
-
-  timerAlarm: true
-};
-
-const listeners =
-  new Set();
-
-let loadingPromise =
-  null;
-
-function snapshot() {
-  return {
-    loaded:
-      state.loaded,
-
-    uiSounds:
-      state.uiSounds,
-
-    timerAlarm:
-      state.timerAlarm
-  };
-}
-
-function emit() {
-  listeners.forEach(
-    listener => {
-      try {
-        listener(
-          snapshot()
-        );
-      } catch {}
-    }
-  );
-}
-
-function subscribe(
-  listener
-) {
-  listeners.add(
-    listener
-  );
-
-  return () =>
-    listeners.delete(
-      listener
-    );
-}
-
-async function loadSettings() {
-  if (
-    state.loaded
-  ) {
-    return;
-  }
-
-  if (
-    loadingPromise
-  ) {
-    return loadingPromise;
-  }
-
-  loadingPromise =
-    (async () => {
-      try {
-        const values =
-          await AsyncStorage
-            .multiGet([
-              UI_SOUND_KEY,
-              TIMER_ALARM_KEY
-            ]);
-
-        const saved =
-          Object.fromEntries(
-            values
-          );
-
-        if (
-          saved[
-            UI_SOUND_KEY
-          ] !== null
-        ) {
-          state.uiSounds =
-            saved[
-              UI_SOUND_KEY
-            ] !== '0';
-        }
-
-        if (
-          saved[
-            TIMER_ALARM_KEY
-          ] !== null
-        ) {
-          state.timerAlarm =
-            saved[
-              TIMER_ALARM_KEY
-            ] !== '0';
-        }
-      } catch {
-        /*
-         * Defaults remain enabled.
-         */
-      } finally {
-        state.loaded =
-          true;
-
-        loadingPromise =
-          null;
-
-        emit();
-      }
-    })();
-
-  return loadingPromise;
-}
-
-function setUiSounds(
-  value
-) {
-  const next =
-    Boolean(
-      value
-    );
-
-  state.uiSounds =
-    next;
-
-  emit();
-
-  AsyncStorage
-    .setItem(
-      UI_SOUND_KEY,
-      next
-        ? '1'
-        : '0'
-    )
-    .catch(
-      () => {}
-    );
-}
-
-function setTimerAlarm(
-  value
-) {
-  const next =
-    Boolean(
-      value
-    );
-
-  state.timerAlarm =
-    next;
-
-  emit();
-
-  AsyncStorage
-    .setItem(
-      TIMER_ALARM_KEY,
-      next
-        ? '1'
-        : '0'
-    )
-    .catch(
-      () => {}
-    );
-}
-
-/*
- * Avoid replaying the same ultra-short
- * UI sound too aggressively.
- */
-const lastPlayed = {
-  tap: 0,
-  open: 0,
-  close: 0,
-  select: 0,
-  result: 0
-};
-
-export default function useNMixSounds() {
+export function NMixSoundProvider({
+  children
+}) {
   const [
-    settings,
-    setSettings
-  ] = useState(
-    snapshot
-  );
+    loaded,
+    setLoaded
+  ] = useState(false);
 
+  const [
+    uiSounds,
+    setUiSoundsState
+  ] = useState(true);
+
+  const [
+    timerAlarm,
+    setTimerAlarmState
+  ] = useState(true);
+
+  /*
+   * IMPORTANT:
+   * These six players exist ONCE for the
+   * whole app because Provider lives in
+   * app/_layout.js.
+   */
   const tapPlayer =
     useAudioPlayer(
       require(
@@ -248,30 +90,111 @@ export default function useNMixSounds() {
       )
     );
 
+  const uiSoundsRef =
+    useRef(true);
+
+  const timerAlarmRef =
+    useRef(true);
+
+  const lastPlayed =
+    useRef({
+      tap: 0,
+      open: 0,
+      close: 0,
+      select: 0,
+      result: 0,
+      alarm: 0
+    });
+
   useEffect(() => {
-    const unsubscribe =
-      subscribe(
-        setSettings
-      );
+    async function load() {
+      try {
+        const values =
+          await AsyncStorage
+            .multiGet([
+              UI_SOUND_KEY,
+              TIMER_ALARM_KEY
+            ]);
 
-    setSettings(
-      snapshot()
-    );
+        const saved =
+          Object.fromEntries(
+            values
+          );
 
-    loadSettings();
+        const nextUi =
+          saved[
+            UI_SOUND_KEY
+          ] === null
+            ? true
+            : saved[
+                UI_SOUND_KEY
+              ] !== '0';
 
-    return unsubscribe;
+        const nextAlarm =
+          saved[
+            TIMER_ALARM_KEY
+          ] === null
+            ? true
+            : saved[
+                TIMER_ALARM_KEY
+              ] !== '0';
+
+        uiSoundsRef.current =
+          nextUi;
+
+        timerAlarmRef.current =
+          nextAlarm;
+
+        setUiSoundsState(
+          nextUi
+        );
+
+        setTimerAlarmState(
+          nextAlarm
+        );
+      } catch {
+        uiSoundsRef.current =
+          true;
+
+        timerAlarmRef.current =
+          true;
+      } finally {
+        setLoaded(true);
+      }
+    }
+
+    load();
   }, []);
+
+  const restart =
+    useCallback(
+      player => {
+        try {
+          player.pause();
+        } catch {}
+
+        try {
+          player.seekTo(
+            0
+          );
+        } catch {}
+
+        try {
+          player.play();
+        } catch {}
+      },
+      []
+    );
 
   const playUi =
     useCallback(
       (
         key,
         player,
-        minimumGap = 35
+        minimumGap
       ) => {
         if (
-          !state.uiSounds
+          !uiSoundsRef.current
         ) {
           return;
         }
@@ -281,27 +204,27 @@ export default function useNMixSounds() {
 
         if (
           now -
-            lastPlayed[
-              key
-            ] <
+            lastPlayed
+              .current[
+                key
+              ] <
           minimumGap
         ) {
           return;
         }
 
-        lastPlayed[
-          key
-        ] = now;
+        lastPlayed
+          .current[
+            key
+          ] = now;
 
-        try {
-          player.seekTo(
-            0
-          );
-
-          player.play();
-        } catch {}
+        restart(
+          player
+        );
       },
-      []
+      [
+        restart
+      ]
     );
 
   const tap =
@@ -310,12 +233,11 @@ export default function useNMixSounds() {
         playUi(
           'tap',
           tapPlayer,
-          28
+          25
         ),
-
       [
-        tapPlayer,
-        playUi
+        playUi,
+        tapPlayer
       ]
     );
 
@@ -325,12 +247,11 @@ export default function useNMixSounds() {
         playUi(
           'open',
           openPlayer,
-          90
+          80
         ),
-
       [
-        openPlayer,
-        playUi
+        playUi,
+        openPlayer
       ]
     );
 
@@ -340,12 +261,11 @@ export default function useNMixSounds() {
         playUi(
           'close',
           closePlayer,
-          90
+          80
         ),
-
       [
-        closePlayer,
-        playUi
+        playUi,
+        closePlayer
       ]
     );
 
@@ -355,12 +275,11 @@ export default function useNMixSounds() {
         playUi(
           'select',
           selectPlayer,
-          55
+          45
         ),
-
       [
-        selectPlayer,
-        playUi
+        playUi,
+        selectPlayer
       ]
     );
 
@@ -370,12 +289,11 @@ export default function useNMixSounds() {
         playUi(
           'result',
           resultPlayer,
-          120
+          110
         ),
-
       [
-        resultPlayer,
-        playUi
+        playUi,
+        resultPlayer
       ]
     );
 
@@ -383,47 +301,156 @@ export default function useNMixSounds() {
     useCallback(
       () => {
         if (
-          !state.timerAlarm
+          !timerAlarmRef.current
         ) {
           return;
         }
 
-        try {
-          alarmPlayer
-            .seekTo(
-              0
-            );
+        const now =
+          Date.now();
 
+        if (
+          now -
+            lastPlayed
+              .current
+              .alarm <
+          800
+        ) {
+          return;
+        }
+
+        lastPlayed
+          .current
+          .alarm = now;
+
+        restart(
           alarmPlayer
-            .play();
-        } catch {}
+        );
       },
-
       [
-        alarmPlayer
+        alarmPlayer,
+        restart
       ]
     );
 
-  return {
-    loaded:
-      settings.loaded,
+  const setUiSounds =
+    useCallback(
+      value => {
+        const next =
+          Boolean(
+            value
+          );
 
-    uiSounds:
-      settings.uiSounds,
+        uiSoundsRef.current =
+          next;
 
-    setUiSounds,
+        setUiSoundsState(
+          next
+        );
 
-    timerAlarm:
-      settings.timerAlarm,
+        AsyncStorage
+          .setItem(
+            UI_SOUND_KEY,
+            next
+              ? '1'
+              : '0'
+          )
+          .catch(
+            () => {}
+          );
+      },
+      []
+    );
 
-    setTimerAlarm,
+  const setTimerAlarm =
+    useCallback(
+      value => {
+        const next =
+          Boolean(
+            value
+          );
 
-    tap,
-    open,
-    close,
-    select,
-    result,
+        timerAlarmRef.current =
+          next;
 
-    timerFinished
-  };
+        setTimerAlarmState(
+          next
+        );
+
+        AsyncStorage
+          .setItem(
+            TIMER_ALARM_KEY,
+            next
+              ? '1'
+              : '0'
+          )
+          .catch(
+            () => {}
+          );
+      },
+      []
+    );
+
+  const value =
+    useMemo(
+      () => ({
+        loaded,
+
+        uiSounds,
+        setUiSounds,
+
+        timerAlarm,
+        setTimerAlarm,
+
+        tap,
+        open,
+        close,
+        select,
+        result,
+        timerFinished
+      }),
+      [
+        loaded,
+        uiSounds,
+        setUiSounds,
+        timerAlarm,
+        setTimerAlarm,
+        tap,
+        open,
+        close,
+        select,
+        result,
+        timerFinished
+      ]
+    );
+
+  return (
+    <SoundContext.Provider
+      value={
+        value
+      }
+    >
+      {children}
+    </SoundContext.Provider>
+  );
+}
+
+export default function useNMixSounds() {
+  const context =
+    useContext(
+      SoundContext
+    );
+
+  /*
+   * Catch incorrect usage immediately
+   * during development instead of creating
+   * extra audio players.
+   */
+  if (!context) {
+    throw new Error(
+      'useNMixSounds must be used inside NMixSoundProvider'
+    );
+  }
+
+  return context;
 }
