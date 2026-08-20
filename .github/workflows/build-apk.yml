@@ -8,7 +8,6 @@ permissions:
 
 jobs:
   build:
-    name: Build Release APK
     runs-on: ubuntu-latest
 
     steps:
@@ -23,50 +22,62 @@ jobs:
       - name: Configure npm
         run: npm config set legacy-peer-deps true
 
-      - name: Install dependencies
-        run: npm install
+      - name: Clean and install dependencies
+        run: |
+          rm -rf node_modules
+          rm -f package-lock.json
+          npm install
 
       - name: Install NMIX native packages
         run: |
           npx expo install react-native-svg expo-splash-screen expo-image-picker expo-file-system expo-screen-orientation
 
+      - name: Check Expo project
+        run: npx expo-doctor
+
+      - name: Test JavaScript bundle
+        run: npx expo export --platform android --output-dir dist
+
       - name: Generate Android project
         run: npx expo prebuild --platform android --no-install
 
-      - name: Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      - name: Build release APK
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build standalone release APK
         working-directory: android
-        run: |
-          chmod +x gradlew
-          ./gradlew assembleRelease --build-cache --parallel
+        run: ./gradlew assembleRelease
 
-      - name: Prepare NMIX APK
-        run: |
-          mkdir -p release
-          cp android/app/build/outputs/apk/release/app-release.apk release/NMIX.apk
-
-      - name: Upload APK artifact
+      - name: Upload NMIX APK
         uses: actions/upload-artifact@v4
         with:
           name: NMIX-Android-Release
-          path: release/NMIX.apk
-          if-no-files-found: error
-          compression-level: 0
+          path: android/app/build/outputs/apk/release/app-release.apk
 
-      - name: Create GitHub Release
+      - name: Get next version
+        id: version
+        uses: reallukemorrison/next-version@v1
+        with:
+          prefix: "v"
+
+      - name: Create NMIX Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: nmix-build-${{ github.run_number }}
-          name: NMIX Build ${{ github.run_number }}
+          tag_name: ${{ steps.version.outputs.version }}
+          name: NMIX ${{ steps.version.outputs.version }}
           body: |
-            NMIX — everything with numbers
+            ## NMIX ${{ steps.version.outputs.version }}
 
-            Native Android release APK
-            Package: com.lxz.nmix
-            Commit: ${{ github.sha }}
-          files: release/NMIX.apk
+            🔢 Anything with numbers
+
+            📱 Android APK release.
+          files: android/app/build/outputs/apk/release/app-release.apk
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
